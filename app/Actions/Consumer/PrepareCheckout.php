@@ -30,6 +30,7 @@ class PrepareCheckout
                     'id' => $product->id,
                     'cart_key' => null,
                     'artisan_id' => $product->artisan_id ?? $product->user_id,
+                    'category' => $product->category,
                     'shop_name' => $product->user?->shop_name ?? ($product->user?->name ?? 'Shop'),
                     'seller_city' => $product->user?->city ?? null,
                     'location' => $product->user?->city ?? null,
@@ -89,6 +90,7 @@ class PrepareCheckout
                     $item['moq'] = (int) ($live->moq ?: 1);
                     $item['supply_unit'] = $live->supply_unit ?: 'pcs';
                     $item['artisan_id'] = $live->artisan_id ?? $live->user_id;
+                    $item['category'] = $live->category;
                     $item['shop_name'] = $live->user?->shop_name ?? ($live->user?->name ?? 'Shop');
                     $item['seller_city'] = $live->user?->city ?? ($item['seller_city'] ?? null);
                     $item['location'] = $live->user?->city ?? ($item['location'] ?? null);

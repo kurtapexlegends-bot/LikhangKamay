@@ -6,6 +6,8 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Discount;
+use App\Models\Voucher;
+use App\Models\VoucherRedemption;
 use App\Models\PlatformActivity;
 use App\Mail\OrderPlaced;
 use App\Mail\BuyerOrderConfirmationMail;
@@ -13,6 +15,7 @@ use App\Support\OrderWorkflowHelper;
 use App\Services\SponsorshipAnalyticsService;
 use App\Services\OrderFinanceService;
 use App\Services\CheckoutShippingService;
+use App\Services\VoucherService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -28,17 +31,20 @@ class PlaceOrder
     private OrderFinanceService $orderFinanceService;
     private CheckoutShippingService $checkoutShippingService;
     private PickupScheduleService $pickupScheduleService;
+    private VoucherService $voucherService;
 
     public function __construct(
         SponsorshipAnalyticsService $sponsorshipAnalytics,
         OrderFinanceService $orderFinanceService,
         CheckoutShippingService $checkoutShippingService,
-        PickupScheduleService $pickupScheduleService
+        PickupScheduleService $pickupScheduleService,
+        ?VoucherService $voucherService = null
     ) {
         $this->sponsorshipAnalytics = $sponsorshipAnalytics;
         $this->orderFinanceService = $orderFinanceService;
         $this->checkoutShippingService = $checkoutShippingService;
         $this->pickupScheduleService = $pickupScheduleService;
+        $this->voucherService = $voucherService ?? app(VoucherService::class);
     }
 
     /**
@@ -138,6 +144,9 @@ class PlaceOrder
         $groupedItems = OrderWorkflowHelper::groupCheckoutItemsBySeller($request->items);
 
         $financeBySeller = [];
+        $subtotalsBySeller = [];
+        $shippingFeesBySeller = [];
+        $sellersById = [];
         $grandTotal = 0.0;
 
         foreach ($groupedItems as $artisanId => $items) {
@@ -235,6 +244,10 @@ class PlaceOrder
                 $shippingFee = (float) ($shippingQuote['amount'] ?? 0);
             }
 
+            $subtotalsBySeller[(string) $artisanId] = (float) $merchandiseSubtotal;
+            $shippingFeesBySeller[(string) $artisanId] = (float) $shippingFee;
+            $sellersById[(string) $artisanId] = $seller;
+
             $financeBySeller[(string) $artisanId] = $this->orderFinanceService->calculateAmounts(
                 $merchandiseSubtotal,
                 $request->shipping_method,
@@ -264,14 +277,58 @@ class PlaceOrder
             $shippingLongitude,
             $paymentMethod,
             $financeBySeller,
+            $subtotalsBySeller,
+            $shippingFeesBySeller,
+            $sellersById,
             $supportsWasSponsored,
             $supportsSponsorshipRequestId,
             $supportsSponsoredAtCheckout,
             &$createdOrders,
             &$lowStockNotifications
         ) {
+            $requestedShopVouchers = is_array($request->input('shop_vouchers')) ? $request->input('shop_vouchers') : [];
+            $fallbackVoucherCode = trim((string) $request->input('voucher_code', ''));
+
+            if ($fallbackVoucherCode !== '' && empty($requestedShopVouchers)) {
+                $flattenedItems = collect($groupedItems)->flatten(1)->all();
+                $fallbackValidated = $this->voucherService->validateVoucher($fallbackVoucherCode, $buyer, $subtotalsBySeller, null, true, $flattenedItems, true);
+                if (!empty($fallbackValidated['shop_id'])) {
+                    $requestedShopVouchers[(string) $fallbackValidated['shop_id']] = $fallbackValidated['code'];
+                }
+            }
+
+            $validatedShopVouchers = [];
+
+            foreach ($subtotalsBySeller as $sellerKey => $rawSub) {
+                $shopCode = trim((string) ($requestedShopVouchers[$sellerKey] ?? $requestedShopVouchers[(int) $sellerKey] ?? ''));
+                if ($shopCode !== '') {
+                    $validatedShopVouchers[$sellerKey] = $this->voucherService->validateVoucher(
+                        $shopCode,
+                        $buyer,
+                        $subtotalsBySeller,
+                        (int) $sellerKey,
+                        true,
+                        $groupedItems[$sellerKey] ?? ($groupedItems[(int) $sellerKey] ?? []),
+                        true
+                    );
+                }
+            }
+
             foreach ($groupedItems as $artisanId => $items) {
-                $finance = $financeBySeller[(string) $artisanId];
+                $sellerKey = (string) $artisanId;
+                $shopVoucherInfo = $validatedShopVouchers[$sellerKey] ?? null;
+                $shopDiscount = (float) ($shopVoucherInfo['discount_amount'] ?? 0.0);
+
+                $finance = $shopDiscount > 0
+                    ? $this->orderFinanceService->calculateAmounts(
+                        $subtotalsBySeller[$sellerKey],
+                        $request->shipping_method,
+                        $shippingFeesBySeller[$sellerKey],
+                        $sellersById[$sellerKey] ?? null,
+                        $shopDiscount
+                    )
+                    : $financeBySeller[$sellerKey];
+
                 $paymentStatus = 'pending';
 
                 $pickupDate = null;
@@ -338,12 +395,18 @@ class PlaceOrder
                     $orderShippingAddress = $pickupLocationSnapshot['address'] ?? 'Store Pick-up';
                 }
 
+                $shopVoucherModel = $shopVoucherInfo['voucher'] ?? null;
+                $appliedShopDiscount = (float) ($finance['voucher_discount_amount'] ?? 0.0);
+
                 $order = Order::create(Order::filterSchemaCompatibleAttributes([
                     'order_number' => 'ORD-' . strtoupper(uniqid()),
                     'user_id' => $buyer->id,
                     'artisan_id' => $artisanId,
                     'customer_name' => $buyer->name,
                     'merchandise_subtotal' => $finance['merchandise_subtotal'],
+                    'voucher_id' => ($appliedShopDiscount > 0 && $shopVoucherModel) ? $shopVoucherModel->id : null,
+                    'voucher_code' => ($appliedShopDiscount > 0 && $shopVoucherModel) ? $shopVoucherModel->code : null,
+                    'voucher_discount_amount' => $appliedShopDiscount,
                     'convenience_fee_amount' => $finance['convenience_fee_amount'],
                     'shipping_fee_amount' => $finance['shipping_fee_amount'],
                     'platform_commission_amount' => $finance['platform_commission_amount'],
@@ -377,6 +440,18 @@ class PlaceOrder
                     'pickup_location_snapshot' => $pickupLocationSnapshot,
                     'is_test' => (bool) ($buyer->is_test ?? false),
                 ]));
+
+                if ($appliedShopDiscount > 0 && $shopVoucherModel) {
+                    VoucherRedemption::create([
+                        'voucher_id' => $shopVoucherModel->id,
+                        'user_id' => $buyer->id,
+                        'order_id' => $order->id,
+                        'discount_amount' => $appliedShopDiscount,
+                        'status' => VoucherRedemption::STATUS_REDEEMED,
+                        'redeemed_at' => now(),
+                    ]);
+                    $shopVoucherModel->increment('used_count');
+                }
 
                 foreach ($items as $item) {
                     $product = Product::lockForUpdate()->find($item['id']);

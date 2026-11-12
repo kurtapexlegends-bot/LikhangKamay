@@ -51,9 +51,10 @@
    - Cavite Coordinates: Latitude `14.2312`, Longitude `120.9744`, Geofence Radius: `100m`.
    - Toggle `enforce_strict_geofence: true` (`POST /shop-locations`).
    - Assert new location renders in workshop locations directory with Cavite badge.
-5. **Discount Engine & Lifecycle CRUD (`/discounts`):**
-   - Create percentage discount voucher: `TESTSAVE10`, Type Percentage (`10%`), Min Spend `₱100`, Max Uses `100`. Assert voucher renders in table.
-   - Create temporary discount voucher: `TEMPDELETE15`, Type `15%`, Min Spend `₱200`. Update min spend to `₱250` (`PATCH /discounts/{id}`). Delete temporary voucher (`DELETE /discounts/{id}`).
+5. **Product Markdowns (`/discounts`) & Shop Vouchers (`/seller/vouchers`) Lifecycle CRUD:**
+   - On `/discounts` (Elite Product Markdowns tab), create/edit/toggle a product markdown campaign (`POST /discounts`, `PUT /discounts/{id}`, `DELETE /discounts/{id}`).
+   - Switch to the **Shop Vouchers** tab (`/seller/vouchers` or `/discounts?tab=vouchers`): click `New Voucher`, create percentage voucher `TESTSAVE10` (`10%`, Min Spend `₱100`, Max Uses `100`, `POST /seller/vouchers`). Assert voucher renders in table/cards.
+   - Create temporary voucher `TEMPDELETE15` (`15%`, Min Spend `₱200`), update min spend to `₱250` (`PUT /seller/vouchers/{id}`), then deactivate/delete (`DELETE /seller/vouchers/{id}`).
 6. **Active Product Creation with Real 3D Model (`ProductFormModal.jsx` on `/products`):**
    - Click `Add Product`. Fill Title: `"Handcrafted Glazed Ceramic Vase"`, Category: `"Pottery & Ceramics"`, Base Price: `750`, Stock: `50`.
    - Recipe (BOM): Link material `"Stoneware Clay"` (2kg).

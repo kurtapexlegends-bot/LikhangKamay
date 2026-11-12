@@ -20,6 +20,7 @@ export default function FilterToolbarHeader({
     onApplyFilters = null,
     onResetFilters = null,
     activeFilterTags = [],
+    beforeSearch = null,
     extraActions = null,
     containerClassName = "",
 }) {
@@ -220,6 +221,12 @@ export default function FilterToolbarHeader({
 
                 {/* Search Input, Actions, and Filter Button */}
                 <div className="flex items-center gap-2 flex-1 md:flex-initial shrink-0 justify-end min-w-0 h-[38px]">
+                    {beforeSearch && (
+                        <div className="shrink-0 flex items-center">
+                            {beforeSearch}
+                        </div>
+                    )}
+
                     {/* Search Input */}
                     {onSearchChange && (
                         <div className="relative flex-1 md:flex-initial md:w-56 lg:w-64 min-w-0">

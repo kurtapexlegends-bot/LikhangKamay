@@ -36,7 +36,11 @@ if (app()->environment('local')) {
             $request->session()->regenerate();
             
             if (str_contains($target, '/cart') || str_contains($target, '/checkout')) {
-                $products = \App\Models\Product::where('status', 'Active')->get()->unique('user_id')->take(2);
+                $products = \App\Models\Product::where('status', 'Active')
+                    ->orderByRaw("CASE WHEN user_id = 60 THEN 0 ELSE 1 END")
+                    ->get()
+                    ->unique('user_id')
+                    ->take(2);
                 if ($products->isNotEmpty()) {
                     $cart = [];
                     foreach ($products as $p) {
@@ -260,6 +264,12 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         Route::post('/discounts', [\App\Http\Controllers\Seller\DiscountController::class, 'store'])->middleware('seller.module:discounts')->name('discounts.store');
         Route::put('/discounts/{discount}', [\App\Http\Controllers\Seller\DiscountController::class, 'update'])->middleware('seller.module:discounts')->name('discounts.update');
         Route::delete('/discounts/{discount}', [\App\Http\Controllers\Seller\DiscountController::class, 'destroy'])->middleware('seller.module:discounts')->name('discounts.destroy');
+
+        // SHOP VOUCHERS
+        Route::get('/seller/vouchers', [\App\Http\Controllers\Seller\VoucherController::class, 'index'])->middleware('seller.module:vouchers')->name('vouchers.index');
+        Route::post('/seller/vouchers', [\App\Http\Controllers\Seller\VoucherController::class, 'store'])->middleware('seller.module:vouchers')->name('vouchers.store');
+        Route::put('/seller/vouchers/{voucher}', [\App\Http\Controllers\Seller\VoucherController::class, 'update'])->middleware('seller.module:vouchers')->name('vouchers.update');
+        Route::delete('/seller/vouchers/{voucher}', [\App\Http\Controllers\Seller\VoucherController::class, 'destroy'])->middleware('seller.module:vouchers')->name('vouchers.destroy');
         
         Route::get('/3d-manager', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'index'])->middleware('seller.module:3d')->name('3d.index');
         Route::post('/3d-manager/upload', [\App\Http\Controllers\Seller\ThreeDManagerController::class, 'upload'])->middleware('seller.module:3d,products')->name('3d.upload');
@@ -417,6 +427,9 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
             Route::post('/checkout/shipping-quote', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'quoteShipping'])
                 ->middleware('throttle:30,1')
                 ->name('checkout.shipping-quote');
+            Route::post('/checkout/validate-voucher', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'validateVoucher'])
+                ->middleware('throttle:30,1')
+                ->name('checkout.validate-voucher');
             Route::post('/checkout', [\App\Http\Controllers\Consumer\BuyerOrderController::class, 'store'])
                 ->middleware('throttle:checkout.initiate')
                 ->name('checkout.store');

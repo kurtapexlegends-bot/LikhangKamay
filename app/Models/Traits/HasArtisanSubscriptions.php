@@ -161,6 +161,35 @@ trait HasArtisanSubscriptions
         return $this->canUseFeature('discounts');
     }
 
+    public function getActiveVoucherLimit(): ?int
+    {
+        if ($this->isEliteTier()) {
+            return null;
+        }
+
+        return (int) \App\Facades\Settings::get('tier_standard_voucher_limit', 3);
+    }
+
+    public function getActiveVoucherCount(): int
+    {
+        return (int) rescue(fn () => \App\Models\Voucher::where('shop_id', $this->id)
+            ->where('is_active', \Illuminate\Support\Facades\DB::raw('true'))
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+            })
+            ->count(), 0);
+    }
+
+    public function canCreateMoreVouchers(): bool
+    {
+        $limit = $this->getActiveVoucherLimit();
+        if ($limit === null) {
+            return true;
+        }
+
+        return $this->getActiveVoucherCount() < $limit;
+    }
+
     public function canUseMaterialRecipes(): bool
     {
         return $this->canUseFeature('material_recipes');
@@ -215,6 +244,7 @@ trait HasArtisanSubscriptions
         return [
             'overview',
             'products',
+            'vouchers',
             'analytics',
             '3d',
             'orders',

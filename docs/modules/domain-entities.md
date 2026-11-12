@@ -69,7 +69,7 @@ This document details the core Laravel Eloquent models, their database relations
 *   `status` (Pending, Accepted, Shipped, Delivered, Completed, Cancelled)
 *   `payment_method` (COD, GCash, Maya)
 *   `payment_status` (Pending, Paid, Failed)
-*   `merchandise_subtotal`, `shipping_fee_amount`, `platform_commission_amount` (0.00), `seller_net_amount` (decimal values equal to merchandise subtotal)
+*   `merchandise_subtotal`, `voucher_id`, `voucher_code`, `voucher_discount_amount`, `shipping_fee_amount`, `platform_commission_amount` (0.00), `seller_net_amount` (`max(0, merchandise_subtotal - voucher_discount_amount)`)
 
 ### Core Rules & Hooks
 1.  **Stock Restoration on Cancellation**:
@@ -210,8 +210,10 @@ Calculations are orchestrated by [AccountingLedgerService.php](file:///c:/larago
    * Directly routes to deep tabs (`tab: 'approvals'`, `tab: 'disputes'`, `tab: 'flags'`, `tab: 'taxonomy'`) with automated search queries populated.
 2. **Seller Workspace Scope**:
    * Strictly scopes every SQL query to `$sellerId = $user->getEffectiveSellerId()`, completely eliminating cross-tenant leakage.
-   * **Module-Gated RBAC for Staff**:
-     * `products`: Products, Marketing Discounts, 3D Models.
+   * **Module-Gated RBAC for Staff** ([SellerSearchService.php](file:///c:/laragon/www/LikhangKamay/app/Services/Search/SellerSearchService.php)):
+     * `products`: Products, 3D Models.
+     * `discounts`: Product Markdowns & Shop Vouchers.
+     * `vouchers`: Shop Vouchers.
      * `orders`: Orders (searchable by number, recipient, address, tracking number, buyer email).
      * `procurement`: Raw Supplies & Inventory.
      * `stock_requests`: Supply replenishment requests.

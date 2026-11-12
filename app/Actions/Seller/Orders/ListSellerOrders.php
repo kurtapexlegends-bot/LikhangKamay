@@ -270,6 +270,8 @@ class ListSellerOrders
                 'total' => number_format($order->total_amount, 2),
                 'total_amount' => (float) $order->total_amount,
                 'merchandise_subtotal' => (float) $order->merchandise_subtotal,
+                'voucher_code' => $order->voucher_code,
+                'voucher_discount_amount' => (float) ($order->voucher_discount_amount ?? 0),
                 'convenience_fee_amount' => (float) $order->convenience_fee_amount,
                 'shipping_fee_amount' => $order->getResolvedShippingFeeAmount(),
                 'vehicle_info' => $vehicleInfo,

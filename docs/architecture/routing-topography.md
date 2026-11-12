@@ -70,11 +70,15 @@ Protected under `auth`:
 *   **Buyer Notifications**: `/notifications` (`name('notifications.index')`)
 *   **Biometric Face Check**: `POST /profile/verify-face` (`name('profile.verify-face')`) handled by [FaceVerificationController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/FaceVerificationController.php) for one-time checkout and profile liveness completion.
 
+*   **Consumer Voucher Validation**: `POST /checkout/validate-voucher` (`checkout.validate-voucher`) in [BuyerOrderController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/BuyerOrderController.php) validated by [ValidateVoucherRequest.php](file:///c:/laragon/www/LikhangKamay/app/Http/Requests/Consumer/ValidateVoucherRequest.php).
+
 ### Seller Management Modules
 Protected under `seller.workspace` and feature-toggled via `seller.module`:
 *   **Orders Dashboard**: `/orders` (Module: `orders`)
 *   **Financial & Performance Analytics**: `/analytics` (Module: `analytics`)
 *   **Inventory & Products**: `/products` (Module: `products`)
+*   **Product Markdowns (Elite)**: `/discounts` (Module: `discounts`, `discounts.*`)
+*   **Shop Vouchers**: `/seller/vouchers` (Module: `vouchers`, `vouchers.*`; staff prefix `'vouchers.'` allowed in [EnsureStaffSecurityGate.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/EnsureStaffSecurityGate.php))
 *   **3D Assets Manager**: `/3d-manager` (Module: `3d`)
 *   **Human Resources & Payroll**: `/hr` (Module: `hr`)
 *   **Procurement / Restocking**: `/procurement` (Module: `procurement`)

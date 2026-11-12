@@ -404,24 +404,37 @@
 
             <!-- Right Side: Totals -->
             <td class="totals-box">
+                @php
+                    $voucherDiscount = (float) ($order->voucher_discount_amount ?? 0);
+                    $netMerchandise = max(0.00, round((float) $order->merchandise_subtotal - $voucherDiscount, 2));
+                    $displayVatableSales = $netMerchandise <= 0 ? 0.00 : (float) $order->vatable_sales;
+                    $displayVatAmount = $netMerchandise <= 0 ? 0.00 : (float) $order->vat_amount;
+                    $displayVatExempt = $netMerchandise <= 0 ? 0.00 : ((float) $order->vat_exempt_sales > 0 ? (float) $order->vat_exempt_sales : $netMerchandise);
+                @endphp
                 <table class="totals-table">
                     <tr>
                         <td class="label">Items Subtotal:</td>
                         <td class="value">&#8369;{{ number_format($order->merchandise_subtotal, 2) }}</td>
                     </tr>
+                    @if($voucherDiscount > 0)
+                        <tr>
+                            <td class="label" style="color: #047857;">Shop Voucher{{ $order->voucher_code ? ' (' . $order->voucher_code . ')' : '' }}:</td>
+                            <td class="value" style="color: #047857;">-&#8369;{{ number_format($voucherDiscount, 2) }}</td>
+                        </tr>
+                    @endif
                     @if($order->vat_type === 'vat_inclusive' || (float) $order->vat_amount > 0)
                         <tr>
                             <td class="label" style="font-size: 9.5px; color: #78716c;">Vatable Sales:</td>
-                            <td class="value" style="font-size: 9.5px;">&#8369;{{ number_format($order->vatable_sales, 2) }}</td>
+                            <td class="value" style="font-size: 9.5px;">&#8369;{{ number_format($displayVatableSales, 2) }}</td>
                         </tr>
                         <tr>
                             <td class="label" style="font-size: 9.5px; color: #78716c;">12% VAT (Included):</td>
-                            <td class="value" style="font-size: 9.5px;">&#8369;{{ number_format($order->vat_amount, 2) }}</td>
+                            <td class="value" style="font-size: 9.5px;">&#8369;{{ number_format($displayVatAmount, 2) }}</td>
                         </tr>
                     @else
                         <tr>
                             <td class="label" style="font-size: 9.5px; color: #78716c;">VAT-Exempt Sales:</td>
-                            <td class="value" style="font-size: 9.5px;">&#8369;{{ number_format($order->vat_exempt_sales ?: $order->merchandise_subtotal, 2) }}</td>
+                            <td class="value" style="font-size: 9.5px;">&#8369;{{ number_format($displayVatExempt, 2) }}</td>
                         </tr>
                         <tr>
                             <td class="label" style="font-size: 9.5px; color: #78716c;">12% VAT:</td>

@@ -15,11 +15,15 @@ import StorePickupScheduler from '@/Components/Consumer/Shop/Checkout/StorePicku
 import CheckoutHeader from '@/Components/Consumer/Shop/Checkout/CheckoutHeader';
 import MultiWorkshopPickupSection from '@/Components/Consumer/Shop/Checkout/MultiWorkshopPickupSection';
 import CheckoutDeliveryNotesCard from '@/Components/Consumer/Shop/Checkout/CheckoutDeliveryNotesCard';
+import CheckoutVoucherSection from '@/Components/Consumer/Shop/Checkout/CheckoutVoucherSection';
+import CheckoutVoucherDrawer from '@/Components/Consumer/Shop/Checkout/CheckoutVoucherDrawer';
 import CheckoutMobileStickyBar from '@/Components/Consumer/Shop/Checkout/CheckoutMobileStickyBar';
 import { CheckoutEmptyCartState, CheckoutAdminRestrictedState } from '@/Components/Consumer/Shop/Checkout/CheckoutStatusNotice';
 import FormErrorSummary from '@/Components/Common/FormErrorSummary';
 import useCheckoutCart from '@/Components/Consumer/Shop/Checkout/hooks/useCheckoutCart';
 import useShippingQuote from '@/Components/Consumer/Shop/Checkout/hooks/useShippingQuote';
+import useCheckoutVouchers from '@/Components/Consumer/Shop/Checkout/hooks/useCheckoutVouchers';
+import validateCheckoutBeforeSubmit from '@/Components/Consumer/Shop/Checkout/hooks/validateCheckoutBeforeSubmit';
 
 const TYPES = [{ value: 'home', label: 'Home' }, { value: 'office', label: 'Office' }, { value: 'other', label: 'Other' }];
 const typeLabel = (value) => TYPES.find((type) => type.value === value)?.label || 'Other';
@@ -32,7 +36,12 @@ const resolveAddressDisplay = (address) => address?.full_address || formatStruct
 });
 
 export default function Checkout({ auth, pricing }) {
-    const { flash, items: incomingItems = [], pickupConfigs = {} } = usePage().props;
+    const {
+        flash,
+        items: incomingItems = [],
+        pickupConfigs = {},
+        availableVouchers = { shops: {} },
+    } = usePage().props;
     const { addToast } = useToast();
     const isArtisan = auth?.user?.role === 'artisan';
     const isPendingArtisan = auth?.user?.role === 'artisan' && auth?.user?.artisan_status === 'pending';
@@ -44,7 +53,6 @@ export default function Checkout({ auth, pricing }) {
     const [showNotes, setShowNotes] = useState(false);
     const [showFaceCheckModal, setShowFaceCheckModal] = useState(false);
 
-    // Dynamic items and cart syncing hook
     const {
         checkoutItems,
         updatingItemId,
@@ -76,7 +84,7 @@ export default function Checkout({ auth, pricing }) {
         return groups;
     }, {}), [checkoutItems]);
 
-    const sellerGroups = Object.values(grouped);
+    const sellerGroups = useMemo(() => Object.values(grouped), [grouped]);
     const totalSellers = sellerGroups.length;
 
     const primarySellerId = sellerGroups[0]?.sellerId;
@@ -90,8 +98,6 @@ export default function Checkout({ auth, pricing }) {
     }, [sellerGroups, pickupConfigs]);
 
     const hasPickupDisabledSeller = sellersWithPickupDisabled.length > 0;
-
-    // Multi-workshop pickup active tab
     const [activeWorkshopSellerId, setActiveWorkshopSellerId] = useState(primarySellerId);
 
     useEffect(() => {
@@ -100,7 +106,6 @@ export default function Checkout({ auth, pricing }) {
         }
     }, [sellerGroups, activeWorkshopSellerId, primarySellerId]);
 
-    // Initialize pickupSchedules for all sellers
     const [pickupSchedules, setPickupSchedules] = useState(() => {
         const initial = {};
         sellerGroups.forEach((group) => {
@@ -142,15 +147,38 @@ export default function Checkout({ auth, pricing }) {
         pickup_date: pickupSchedules[String(primarySellerId)]?.date || '',
         pickup_time_slot: pickupSchedules[String(primarySellerId)]?.time_slot || '',
         save_address: false,
+        shop_vouchers: {},
         total: 0,
     });
 
-    // Synchronize data.items with checkoutItems
+    const {
+        appliedShopVouchers,
+        dynamicAvailableVouchers,
+        voucherCalculations,
+        promoCodeInput,
+        setPromoCodeInput,
+        validatingCode,
+        voucherError,
+        setVoucherError,
+        isVoucherDrawerOpen,
+        setIsVoucherDrawerOpen,
+        applyVoucherObject,
+        removeShopVoucher,
+        handleApplyPromoCode,
+        handleFollowShop,
+        followingShopId,
+        totalAvailableVouchersCount,
+    } = useCheckoutVouchers({
+        sellerGroups,
+        availableVouchers,
+        setData,
+        addToast,
+    });
+
     useEffect(() => {
         setData('items', checkoutItems);
     }, [checkoutItems, setData]);
 
-    // Synchronize pickup_schedules with data form
     useEffect(() => {
         setData((current) => ({
             ...current,
@@ -177,7 +205,6 @@ export default function Checkout({ auth, pricing }) {
     const isNewAddress = data.selected_address_id === 'new' || !auth?.user?.addresses?.length;
     const activeShippingAddress = isNewAddress ? structuredShippingPreview : data.shipping_address;
 
-    // Courier quote hook
     const {
         shippingQuote,
         setQuoteRetryNonce,
@@ -196,55 +223,85 @@ export default function Checkout({ auth, pricing }) {
         const shippingFeeTotal = data.shipping_method === 'Delivery'
             ? Number(shippingQuote.totalShippingFee || 0)
             : 0;
-        const vatableSalesTotal = Number(sellerGroups.reduce((sum, g) => sum + (g.is_vat_registered ? Number((g.subtotal / 1.12).toFixed(2)) : 0), 0).toFixed(2));
-        const vatAmountTotal = Number(sellerGroups.reduce((sum, g) => sum + (g.is_vat_registered ? Number((g.subtotal - Number((g.subtotal / 1.12).toFixed(2))).toFixed(2)) : 0), 0).toFixed(2));
-        const vatExemptSalesTotal = Number(sellerGroups.reduce((sum, g) => sum + (g.is_vat_registered ? 0 : Number(g.subtotal.toFixed(2))), 0).toFixed(2));
+
+        const totalShopDiscount = Number((voucherCalculations.totalShopDiscount || 0).toFixed(2));
+        const totalVoucherDiscount = totalShopDiscount;
+
+        const groups = sellerGroups.map((group) => {
+            const key = String(group.sellerId);
+            const shopDisc = Number((voucherCalculations.shopDiscountsBySeller?.[key] || 0).toFixed(2));
+            const netMerch = Number(Math.max(0, group.subtotal - shopDisc).toFixed(2));
+
+            const isVat = Boolean(group.is_vat_registered);
+            const vatable = isVat ? Number((netMerch / 1.12).toFixed(2)) : 0;
+            const vat = isVat ? Number((netMerch - vatable).toFixed(2)) : 0;
+            const vatExempt = isVat ? 0 : netMerch;
+            const pFee = data.shipping_method === 'Delivery' ? platformFeeForSubtotal(group.subtotal) : 0;
+            const sFee = data.shipping_method === 'Delivery'
+                ? Number(shippingQuote.groups[key] || 0)
+                : 0;
+
+            return {
+                ...group,
+                is_vat_registered: isVat,
+                vatable_sales: vatable,
+                vat_amount: vat,
+                vat_exempt_sales: vatExempt,
+                shopVoucherDiscount: shopDisc,
+                shopVoucherCode: appliedShopVouchers[key]?.code || null,
+                platformFee: pFee,
+                shippingFee: sFee,
+                vehicleInfo: data.shipping_method === 'Delivery'
+                    ? (shippingQuote.vehicles?.[key] || null)
+                    : null,
+                pickupSchedule: data.shipping_method === 'Pick Up'
+                    ? (pickupSchedules[key] || null)
+                    : null,
+                total: Number((netMerch + pFee + sFee).toFixed(2)),
+            };
+        });
+
+        const vatableSalesTotal = Number(groups.reduce((sum, g) => sum + g.vatable_sales, 0).toFixed(2));
+        const vatAmountTotal = Number(groups.reduce((sum, g) => sum + g.vat_amount, 0).toFixed(2));
+        const vatExemptSalesTotal = Number(groups.reduce((sum, g) => sum + g.vat_exempt_sales, 0).toFixed(2));
         const hasVatRegistered = sellerGroups.some((g) => g.is_vat_registered);
+        const netMerchandiseSubtotal = Number(Math.max(0, merchandiseSubtotal - totalVoucherDiscount).toFixed(2));
 
         return {
             merchandiseSubtotal,
+            totalShopDiscount,
+            totalVoucherDiscount,
             platformFeeTotal,
             shippingFeeTotal,
             vatableSalesTotal,
             vatAmountTotal,
             vatExemptSalesTotal,
             hasVatRegistered,
-            grandTotal: Number((merchandiseSubtotal + platformFeeTotal + shippingFeeTotal).toFixed(2)),
-            groups: sellerGroups.map((group) => {
-                const isVat = Boolean(group.is_vat_registered);
-                const vatable = isVat ? Number((group.subtotal / 1.12).toFixed(2)) : 0;
-                const vat = isVat ? Number((group.subtotal - vatable).toFixed(2)) : 0;
-                const vatExempt = isVat ? 0 : Number(group.subtotal.toFixed(2));
-
-                return {
-                    ...group,
-                    is_vat_registered: isVat,
-                    vatable_sales: vatable,
-                    vat_amount: vat,
-                    vat_exempt_sales: vatExempt,
-                    platformFee: data.shipping_method === 'Delivery' ? platformFeeForSubtotal(group.subtotal) : 0,
-                    shippingFee: data.shipping_method === 'Delivery'
-                        ? Number(shippingQuote.groups[String(group.sellerId)] || 0)
-                        : 0,
-                    vehicleInfo: data.shipping_method === 'Delivery'
-                        ? (shippingQuote.vehicles?.[String(group.sellerId)] || null)
-                        : null,
-                    pickupSchedule: data.shipping_method === 'Pick Up'
-                        ? (pickupSchedules[String(group.sellerId)] || null)
-                        : null,
-                    total: Number((
-                        data.shipping_method === 'Delivery'
-                            ? group.subtotal
-                                + platformFeeForSubtotal(group.subtotal)
-                                + Number(shippingQuote.groups[String(group.sellerId)] || 0)
-                            : group.subtotal
-                    ).toFixed(2)),
-                };
-            }),
+            grandTotal: Number((netMerchandiseSubtotal + platformFeeTotal + shippingFeeTotal).toFixed(2)),
+            groups,
         };
-    }, [convenienceFeeRate, data.shipping_method, sellerGroups, shippingQuote.groups, shippingQuote.totalShippingFee, shippingQuote.vehicles, pickupSchedules]);
+    }, [
+        convenienceFeeRate,
+        data.shipping_method,
+        sellerGroups,
+        shippingQuote.groups,
+        shippingQuote.totalShippingFee,
+        shippingQuote.vehicles,
+        pickupSchedules,
+        voucherCalculations,
+        appliedShopVouchers,
+    ]);
 
-    const showAggregateBreakdown = totalSellers > 1;
+    const showAggregateBreakdown = totalSellers > 1 || summary.totalVoucherDiscount > 0;
+    const canEvaluateOrderMinimum = data.shipping_method === 'Pick Up' || shippingQuote.status === 'ready';
+    const hasSubMinimumOrder = canEvaluateOrderMinimum && summary.groups.some((group) => Number(group.total || 0) < 20);
+
+    useEffect(() => {
+        if (hasSubMinimumOrder && (data.payment_method === 'GCash' || data.payment_method === 'Maya')) {
+            setData('payment_method', 'COD');
+            addToast('Switched to Cash on Delivery because online payment requires at least PHP 20.00 per order.', 'info');
+        }
+    }, [hasSubMinimumOrder, data.payment_method, setData, addToast]);
 
     useEffect(() => {
         setData('total', summary.grandTotal);
@@ -288,94 +345,22 @@ export default function Checkout({ auth, pricing }) {
 
         clearPendingTimers();
 
-        if (data.shipping_method === 'Delivery') {
-            const localErrors = {};
-            
-            if (!data.recipient_name || data.recipient_name.trim() === '') {
-                localErrors.recipient_name = 'Recipient name is required';
-            }
-            if (!data.phone_number || data.phone_number.trim() === '') {
-                localErrors.phone_number = 'Phone number is required';
-            } else if (!/^(09|\+639)\d{9}$/.test(data.phone_number.replace(/\s+/g, ''))) {
-                localErrors.phone_number = 'Please enter a valid Philippine mobile number (e.g. 09171234567)';
-            }
-            if (!data.shipping_street_address || data.shipping_street_address.trim() === '') {
-                localErrors.shipping_street_address = 'Street address is required';
-            }
-            if (!data.shipping_city || data.shipping_city.trim() === '') {
-                localErrors.shipping_city = 'City/Municipality is required';
-            }
-            if (!data.shipping_barangay || data.shipping_barangay.trim() === '') {
-                localErrors.shipping_barangay = 'Barangay is required';
-            }
-            if (!data.shipping_region || data.shipping_region.trim() === '') {
-                localErrors.shipping_region = 'Province/Region is required';
-            }
+        const isValid = validateCheckoutBeforeSubmit({
+            data,
+            summary,
+            shippingQuote,
+            hasPickupDisabledSeller,
+            sellersWithPickupDisabled,
+            totalSellers,
+            sellerGroups,
+            pickupConfigs,
+            pickupSchedules,
+            primaryPickupConfig,
+            setError,
+            addToast,
+        });
 
-            if (Object.keys(localErrors).length > 0) {
-                setError(localErrors);
-                addToast('Please complete all delivery details before placing order.', 'error');
-                return;
-            }
-
-            if (shippingQuote.status !== 'ready') {
-                if (shippingQuote.status === 'error') {
-                    const errorMsg = shippingQuote.errorMessage || 'Unable to calculate shipping quote. Please check your delivery address.';
-                    addToast(errorMsg, 'error');
-                } else {
-                    addToast('Wait for the delivery quote before placing the order.', 'info');
-                }
-                return;
-            }
-        } else if (data.shipping_method === 'Pick Up') {
-            const localErrors = {};
-
-            if (hasPickupDisabledSeller) {
-                for (const group of sellersWithPickupDisabled) {
-                    localErrors[`pickup_schedules.${group.sellerId}`] = `${group.shopName} does not offer workshop pick-up. Please switch to Standard Delivery or purchase their items separately.`;
-                }
-                setError(localErrors);
-                addToast(
-                    `${sellersWithPickupDisabled[0].shopName} does not offer workshop pick-up. Please switch to Standard Delivery or purchase their items separately.`,
-                    'error'
-                );
-                return;
-            }
-
-            if (totalSellers > 1) {
-                for (const group of sellerGroups) {
-                    const config = pickupConfigs?.[String(group.sellerId)];
-                    if (config && config.pickup_enabled === false) {
-                        localErrors[`pickup_schedules.${group.sellerId}`] = `${group.shopName} does not offer workshop pick-up. Please switch to Standard Delivery or purchase their items separately.`;
-                    } else {
-                        const sched = pickupSchedules[String(group.sellerId)];
-                        if (!sched?.date) {
-                            localErrors[`pickup_schedules.${group.sellerId}`] = `Please select a pickup date for ${group.shopName}.`;
-                        } else if (!sched?.time_slot) {
-                            localErrors[`pickup_schedules.${group.sellerId}`] = `Please select a time slot for ${group.shopName}.`;
-                        }
-                    }
-                }
-            } else {
-                const config = primaryPickupConfig;
-                if (config && config.pickup_enabled === false) {
-                    localErrors.pickup_date = `${sellerGroups[0]?.shopName || 'This workshop'} does not offer workshop pick-up. Please switch to Standard Delivery.`;
-                } else {
-                    if (!data.pickup_date) {
-                        localErrors.pickup_date = 'Please select a pickup date.';
-                    }
-                    if (!data.pickup_time_slot) {
-                        localErrors.pickup_time_slot = 'Please select an available pickup time window.';
-                    }
-                }
-            }
-
-            if (Object.keys(localErrors).length > 0) {
-                setError(localErrors);
-                addToast('Please select your preferred pickup date and time window for each workshop.', 'error');
-                return;
-            }
-        }
+        if (!isValid) return;
 
         if (requiresCheckoutFaceCheck) {
             setShowFaceCheckModal(true);
@@ -516,6 +501,21 @@ export default function Checkout({ auth, pricing }) {
                             setShowNotes={setShowNotes}
                         />
 
+                        {/* 4. Promotions & Vouchers */}
+                        <CheckoutVoucherSection
+                            promoCodeInput={promoCodeInput}
+                            setPromoCodeInput={setPromoCodeInput}
+                            onApplyPromoCode={handleApplyPromoCode}
+                            validatingCode={validatingCode}
+                            voucherError={voucherError}
+                            setVoucherError={setVoucherError}
+                            appliedShopVouchers={appliedShopVouchers}
+                            voucherCalculations={voucherCalculations}
+                            onRemoveShopVoucher={removeShopVoucher}
+                            onOpenDrawer={() => setIsVoucherDrawerOpen(true)}
+                            totalAvailableVouchersCount={totalAvailableVouchersCount}
+                        />
+
                         {/* One-Time Safety Check Notice */}
                         {requiresCheckoutFaceCheck && (
                             <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 flex items-start gap-2.5 text-xs text-amber-900">
@@ -526,11 +526,12 @@ export default function Checkout({ auth, pricing }) {
                             </div>
                         )}
 
-                        {/* 4. Payment Method */}
+                        {/* 5. Payment Method */}
                         <PaymentMethodSelector 
                             paymentMethod={data.payment_method}
                             setPaymentMethod={(val) => setData('payment_method', val)}
                             shippingMethod={data.shipping_method}
+                            onlinePaymentDisabled={hasSubMinimumOrder}
                             errors={errors}
                         />
                     </div>
@@ -575,6 +576,24 @@ export default function Checkout({ auth, pricing }) {
                 handleRemoveItem={handleRemoveItem}
                 updatingItemId={updatingItemId}
                 removingItemId={removingItemId}
+            />
+
+            <CheckoutVoucherDrawer
+                isOpen={isVoucherDrawerOpen}
+                onClose={() => setIsVoucherDrawerOpen(false)}
+                availableVouchers={dynamicAvailableVouchers}
+                sellerGroups={sellerGroups}
+                appliedShopVouchers={appliedShopVouchers}
+                voucherCalculations={voucherCalculations}
+                onApplyVoucher={applyVoucherObject}
+                onRemoveShopVoucher={removeShopVoucher}
+                onFollowShop={handleFollowShop}
+                followingShopId={followingShopId}
+                promoCodeInput={promoCodeInput}
+                setPromoCodeInput={setPromoCodeInput}
+                onApplyPromoCode={handleApplyPromoCode}
+                validatingCode={validatingCode}
+                voucherError={voucherError}
             />
 
             <CheckoutFaceCheckModal

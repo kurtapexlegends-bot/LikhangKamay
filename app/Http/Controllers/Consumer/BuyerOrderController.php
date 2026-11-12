@@ -10,7 +10,9 @@ use App\Models\User;
 use App\Http\Requests\CheckoutRequest;
 use App\Http\Requests\Consumer\QuoteShippingRequest;
 use App\Http\Requests\Consumer\RequestReturnRequest;
+use App\Http\Requests\Consumer\ValidateVoucherRequest;
 use App\Services\OrderFinanceService;
+use App\Services\VoucherService;
 use App\Actions\Consumer\QuoteCheckoutShipping;
 use App\Actions\Consumer\PrepareCheckout;
 use App\Actions\Consumer\PlaceOrder;
@@ -55,6 +57,7 @@ class BuyerOrderController extends Controller
 
         $pickupScheduleService = app(\App\Services\PickupScheduleService::class);
         $pickupConfigs = [];
+        $subtotalsBySeller = [];
         $sellerItems = collect($items)->groupBy('artisan_id');
 
         foreach ($sellerItems as $artisanId => $sellerGroupItems) {
@@ -64,6 +67,7 @@ class BuyerOrderController extends Controller
             }
 
             $maxLeadTime = (int) $sellerGroupItems->max('lead_time');
+            $subtotalsBySeller[(string) $artisanId] = (float) $sellerGroupItems->sum(fn ($it) => ((float) ($it['price'] ?? 0)) * ((int) ($it['qty'] ?? 1)));
             $pickupConfigs[(string) $artisanId] = rescue(
                 fn() => $pickupScheduleService->getScheduleOverviewForBuyer($seller, $maxLeadTime),
                 ['pickup_enabled' => false, 'seller_id' => $seller->id, 'shop_name' => $seller->shop_name ?: $seller->name, 'days' => []],
@@ -71,13 +75,41 @@ class BuyerOrderController extends Controller
             );
         }
 
+        $availableVouchers = rescue(
+            fn () => app(VoucherService::class)->getAvailableVouchersForCheckout($user, $subtotalsBySeller, $items),
+            ['shops' => []]
+        );
+
         return Inertia::render('Consumer/Shop/Checkout', [
             'items' => $items,
             'pricing' => OrderFinanceService::getPricingData(),
             'pickupConfigs' => $pickupConfigs,
+            'availableVouchers' => $availableVouchers,
             'auth' => [
                 'user' => rescue(fn() => $user?->load('addresses'), $user),
             ]
+        ]);
+    }
+
+    /**
+     * BUYER: Validate promo code / voucher at checkout
+     */
+    public function validateVoucher(ValidateVoucherRequest $request, VoucherService $voucherService)
+    {
+        $validated = $voucherService->validateVoucher(
+            (string) $request->input('code'),
+            $request->user(),
+            (array) $request->input('subtotals', []),
+            $request->filled('shop_id') ? (int) $request->input('shop_id') : null,
+            false,
+            (array) $request->input('items', [])
+        );
+
+        unset($validated['voucher']);
+
+        return response()->json([
+            'valid' => true,
+            'voucher' => $validated,
         ]);
     }
 

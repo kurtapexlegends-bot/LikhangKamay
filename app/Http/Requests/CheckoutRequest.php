@@ -44,6 +44,9 @@ class CheckoutRequest extends FormRequest
             'pickup_date' => 'nullable|date',
             'pickup_time_slot' => 'nullable|string|max:100',
             'pickup_schedules' => 'nullable|array',
+            'voucher_code' => 'nullable|string|max:50',
+            'shop_vouchers' => 'nullable|array',
+            'shop_vouchers.*' => 'nullable|string|max:50',
         ];
     }
 

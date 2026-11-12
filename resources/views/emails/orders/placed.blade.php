@@ -43,6 +43,26 @@
                         <td align="right" style="padding: 10px 0; font-size: 14px; color: #5C524A; border-bottom: 1px dashed #E7E1D8;">₱{{ number_format($item->price * $item->quantity, 2) }}</td>
                     </tr>
                     @endforeach
+                    @if((float) ($order->voucher_discount_amount ?? 0) > 0)
+                    <tr>
+                        <td align="left" style="padding: 10px 0; font-size: 13px; color: #047857; border-bottom: 1px dashed #E7E1D8;">
+                            Shop Voucher{{ $order->voucher_code ? ' (' . $order->voucher_code . ')' : '' }}
+                        </td>
+                        <td align="right" style="padding: 10px 0; font-size: 13px; color: #047857; font-weight: 600; border-bottom: 1px dashed #E7E1D8;">-₱{{ number_format((float) $order->voucher_discount_amount, 2) }}</td>
+                    </tr>
+                    @endif
+                    @if((float) ($order->convenience_fee_amount ?? 0) > 0)
+                    <tr>
+                        <td align="left" style="padding: 10px 0; font-size: 13px; color: #8C827A; border-bottom: 1px dashed #E7E1D8;">Service Fee</td>
+                        <td align="right" style="padding: 10px 0; font-size: 13px; color: #8C827A; border-bottom: 1px dashed #E7E1D8;">₱{{ number_format((float) $order->convenience_fee_amount, 2) }}</td>
+                    </tr>
+                    @endif
+                    @if((float) ($order->shipping_fee_amount ?? 0) > 0)
+                    <tr>
+                        <td align="left" style="padding: 10px 0; font-size: 13px; color: #8C827A; border-bottom: 1px dashed #E7E1D8;">Delivery Fee</td>
+                        <td align="right" style="padding: 10px 0; font-size: 13px; color: #8C827A; border-bottom: 1px dashed #E7E1D8;">₱{{ number_format((float) $order->shipping_fee_amount, 2) }}</td>
+                    </tr>
+                    @endif
                     <tr>
                         <td align="left" style="font-size: 16px; font-weight: bold; color: #A2582F; padding-top: 16px;">Total</td>
                         <td align="right" style="font-size: 16px; font-weight: bold; color: #A2582F; padding-top: 16px;">₱{{ number_format($order->total_amount, 2) }}</td>

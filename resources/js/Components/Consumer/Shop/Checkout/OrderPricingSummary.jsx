@@ -59,6 +59,8 @@ export default function OrderPricingSummary({
             ? peso(summary.shippingFeeTotal)
             : shippingQuote.status === 'error'
                 ? 'Unavailable'
+            : shippingQuote.status === 'idle'
+                ? <span className="text-stone-400 font-medium text-xs">Enter address</span>
             : quoteShimmer;
 
     const renderPackages = () => (
@@ -179,6 +181,12 @@ export default function OrderPricingSummary({
                                         <span className="text-stone-500">Items Subtotal ({totalItemsCount} {totalItemsCount === 1 ? 'item' : 'items'})</span>
                                         <span className="font-semibold text-stone-800 shrink-0 text-right whitespace-nowrap">{peso(group.subtotal)}</span>
                                     </div>
+                                    {group.shopVoucherDiscount > 0 && (
+                                        <div className="flex items-center justify-between gap-2 text-emerald-700">
+                                            <span>Shop Voucher ({group.shopVoucherCode})</span>
+                                            <span className="font-bold shrink-0 text-right whitespace-nowrap">-{peso(group.shopVoucherDiscount)}</span>
+                                        </div>
+                                    )}
                                     {shippingMethod === 'Delivery' ? (
                                         <>
                                             <div className="flex items-start justify-between gap-2">
@@ -218,6 +226,8 @@ export default function OrderPricingSummary({
                                                         peso(group.shippingFee)
                                                     ) : shippingQuote.status === 'error' ? (
                                                         'Unavailable'
+                                                    ) : shippingQuote.status === 'idle' ? (
+                                                        <span className="text-stone-400 font-normal text-xs">—</span>
                                                     ) : quoteShimmer}
                                                 </span>
                                             </div>
@@ -290,6 +300,12 @@ export default function OrderPricingSummary({
                         <span>Items Subtotal</span>
                         <span className="font-semibold text-stone-900 shrink-0 text-right whitespace-nowrap">{peso(summary.merchandiseSubtotal)}</span>
                     </div>
+                    {summary.totalShopDiscount > 0 && (
+                        <div className="flex justify-between items-center gap-2 text-emerald-700">
+                            <span>Shop Voucher Discount</span>
+                            <span className="font-bold shrink-0 text-right whitespace-nowrap">-{peso(summary.totalShopDiscount)}</span>
+                        </div>
+                    )}
                     <div className="flex justify-between items-center gap-2">
                         <span>Delivery & Handling Care ({parseFloat((convenienceFeeRate * 100).toFixed(2))}%)</span>
                         <span className="font-semibold text-stone-900 shrink-0 text-right whitespace-nowrap">{peso(summary.platformFeeTotal)}</span>

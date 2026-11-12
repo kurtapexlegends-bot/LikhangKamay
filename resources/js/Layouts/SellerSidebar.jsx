@@ -90,10 +90,10 @@ export default function SellerSidebar({
         return {
             tierLabel: isElite ? 'Elite' : isPremium ? 'Premium' : 'Standard',
             visibleModules: isElite
-                ? ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'sponsorships', 'discounts', 'supply_hub', 'hr', 'accounting', 'procurement', 'stock_requests', 'approvals', 'team_messages']
+                ? ['overview', 'products', 'vouchers', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'sponsorships', 'discounts', 'supply_hub', 'hr', 'accounting', 'procurement', 'stock_requests', 'approvals', 'team_messages']
                 : isPremium
-                    ? ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'procurement', 'stock_requests', 'approvals', 'team_messages']
-                    : ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings'],
+                    ? ['overview', 'products', 'vouchers', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'procurement', 'stock_requests', 'approvals', 'team_messages']
+                    : ['overview', 'products', 'vouchers', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings'],
             toggleableModules: isElite || isPremium ? ['hr', 'accounting', 'procurement'] : [],
             enabledToggleableModules: isElite ? ['hr', 'accounting', 'procurement'] : ['procurement'],
             showGear: user?.role === 'artisan' && (isElite || isPremium),
@@ -252,7 +252,7 @@ export default function SellerSidebar({
             : ['orders', 'messages', 'team_messages', 'reviews'].some((moduleName) => visibleModulesSet.has(moduleName))
     );
     const hasMarketing = (!isStaffActor || hasActiveAttendanceSession) && (
-        visibleModulesSet.has('sponsorships') || visibleModulesSet.has('discounts')
+        visibleModulesSet.has('sponsorships') || visibleModulesSet.has('discounts') || visibleModulesSet.has('vouchers')
     );
     const hasAdvanced = (!isStaffActor || hasActiveAttendanceSession) && (
         ['hr', 'accounting', 'procurement', 'stock_requests', 'supply_hub'].some(moduleName => visibleModulesSet.has(moduleName))
@@ -453,9 +453,11 @@ export default function SellerSidebar({
                                 onToggle={() => toggleGroup('marketing')}
                                 isCollapsed={isCollapsed}
                             >
-                                {visibleModulesSet.has('discounts') && (
-                                    <NavItem href={route('discounts.index')} icon={Tag} active={active === 'discounts'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Discounts')} onMouseLeave={handleTooltipLeave}>Discounts</NavItem>
-                                )}
+                                {visibleModulesSet.has('discounts') ? (
+                                    <NavItem href={route('discounts.index')} icon={Tag} active={active === 'discounts'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Discounts & Vouchers')} onMouseLeave={handleTooltipLeave}>Discounts & Vouchers</NavItem>
+                                ) : visibleModulesSet.has('vouchers') ? (
+                                    <NavItem href={route('vouchers.index')} icon={Tag} active={active === 'discounts'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Shop Vouchers')} onMouseLeave={handleTooltipLeave}>Shop Vouchers</NavItem>
+                                ) : null}
                                 {visibleModulesSet.has('sponsorships') && (
                                     <NavItem href={route('seller.sponsorships')} icon={Award} active={active === 'sponsorships'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Featured Items')} onMouseLeave={handleTooltipLeave}>Featured Items</NavItem>
                                 )}

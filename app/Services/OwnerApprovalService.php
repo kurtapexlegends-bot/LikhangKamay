@@ -14,6 +14,7 @@ use App\Models\Discount;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\SellerActivityLog;
+use App\Models\Voucher;
 use App\Notifications\OwnerApprovalDecisionNotification;
 use App\Notifications\TeamRequestSubmittedNotification;
 use App\Services\AccountingLedgerService;
@@ -228,6 +229,68 @@ class OwnerApprovalService
                 ? ((is_string($discount->start_at) ? $discount->start_at : $discount->start_at->toDateString()) . ' to ' . (is_string($discount->end_at) ? $discount->end_at : $discount->end_at->toDateString()))
                 : 'Immediate / Ongoing',
             'promo_stock' => $discount->promo_stock,
+            'products_count' => $products->count(),
+            'products' => $lineItems,
+            'items' => $lineItems,
+        ];
+    }
+
+    /**
+     * Build an itemized shop voucher payload for the Owner Approval Hub.
+     */
+    public function buildVoucherPayload(Voucher $voucher): array
+    {
+        $type = $voucher->discount_type ?? Voucher::TYPE_PERCENTAGE;
+        $val = (float) ($voucher->discount_value ?? 0);
+        $display = $type === Voucher::TYPE_PERCENTAGE
+            ? "{$val}% OFF"
+            : 'PHP ' . number_format($val, 2) . ' OFF';
+
+        $productIds = array_values(array_filter(array_map('intval', (array) ($voucher->applicable_products ?? []))));
+        $products = !empty($productIds)
+            ? Product::whereIn('id', $productIds)->get(['id', 'name', 'sku', 'price'])
+            : collect();
+
+        $lineItems = $products->map(function ($p) use ($type, $val, $voucher) {
+            $orig = (float) $p->price;
+            $saved = $type === Voucher::TYPE_PERCENTAGE
+                ? round($orig * ($val / 100), 2)
+                : $val;
+            if ($type === Voucher::TYPE_PERCENTAGE && $voucher->max_discount !== null && (float) $voucher->max_discount > 0) {
+                $saved = min($saved, (float) $voucher->max_discount);
+            }
+            $disc = max(0.00, round($orig - $saved, 2));
+
+            return [
+                'id' => $p->id,
+                'name' => $p->name,
+                'sku' => $p->sku,
+                'original_price' => $orig,
+                'discounted_price' => $disc,
+                'savings' => round($orig - $disc, 2),
+            ];
+        })->values()->all();
+
+        $schedule = ($voucher->starts_at || $voucher->expires_at)
+            ? (($voucher->starts_at ? $voucher->starts_at->toDateString() : 'Immediate') . ' to ' . ($voucher->expires_at ? $voucher->expires_at->toDateString() : 'No Expiry'))
+            : 'Immediate / Ongoing';
+
+        return [
+            'voucher_id' => $voucher->id,
+            'voucher_code' => $voucher->code,
+            'campaign_name' => "{$voucher->name} ({$voucher->code})",
+            'type' => $type,
+            'value' => $val,
+            'discount_rate' => $display,
+            'discount_display' => $display,
+            'scope_type' => $voucher->scope_type ?? Voucher::SCOPE_ALL,
+            'applicable_category' => $voucher->applicable_category,
+            'target_audience' => $voucher->target_audience ?? Voucher::AUDIENCE_ALL,
+            'min_spend' => (float) ($voucher->min_spend ?? 0),
+            'max_discount' => $voucher->max_discount !== null ? (float) $voucher->max_discount : null,
+            'start_at' => $voucher->starts_at?->toDateString(),
+            'end_at' => $voucher->expires_at?->toDateString(),
+            'schedule' => $schedule,
             'products_count' => $products->count(),
             'products' => $lineItems,
             'items' => $lineItems,
@@ -645,7 +708,27 @@ class OwnerApprovalService
                 break;
 
             case OwnerApproval::DOMAIN_DISCOUNT:
-                if ($approval->approvable_id && $approval->approvable instanceof Discount) {
+                if ($approval->approvable_id && $approval->approvable instanceof Voucher) {
+                    $voucher = $approval->approvable;
+                    $seller = $approval->seller ?? User::withTrashed()->find($approval->seller_id);
+                    if ($seller && !$voucher->is_active && !$seller->canCreateMoreVouchers()) {
+                        $limit = $seller->getActiveVoucherLimit();
+                        throw new \RuntimeException("Cannot activate voucher: workshop has reached its active voucher limit ({$limit}).");
+                    }
+                    $voucher->update(['is_active' => true]);
+                } elseif (!empty($payload['voucher_id'])) {
+                    $voucher = Voucher::where('id', $payload['voucher_id'])
+                        ->where('shop_id', $approval->seller_id)
+                        ->first();
+                    if ($voucher) {
+                        $seller = $approval->seller ?? User::withTrashed()->find($approval->seller_id);
+                        if ($seller && !$voucher->is_active && !$seller->canCreateMoreVouchers()) {
+                            $limit = $seller->getActiveVoucherLimit();
+                            throw new \RuntimeException("Cannot activate voucher: workshop has reached its active voucher limit ({$limit}).");
+                        }
+                        $voucher->update(['is_active' => true]);
+                    }
+                } elseif ($approval->approvable_id && $approval->approvable instanceof Discount) {
                     $approval->approvable->update(['is_active' => true]);
                 } elseif (!empty($payload['discount_id'])) {
                     Discount::where('id', $payload['discount_id'])

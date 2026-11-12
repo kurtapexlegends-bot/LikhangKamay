@@ -39,6 +39,7 @@ class HRRolePresets
         $labels = [
             'overview' => ['label' => 'Overview', 'description' => 'Seller dashboard overview.'],
             'products' => ['label' => 'Products', 'description' => 'Product manager and stock actions.'],
+            'vouchers' => ['label' => 'Shop Vouchers', 'description' => 'Create and manage shop promo codes and vouchers.'],
             'analytics' => ['label' => 'Analytics', 'description' => 'Sales and product performance reports.'],
             '3d' => ['label' => '3D Manager', 'description' => '3D asset uploads and management.'],
             'orders' => ['label' => 'Orders', 'description' => 'Order processing and status updates.'],

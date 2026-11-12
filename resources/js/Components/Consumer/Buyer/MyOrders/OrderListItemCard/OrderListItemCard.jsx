@@ -216,7 +216,9 @@ export default function OrderListItemCard({
             </div>
 
             {/* Expandable Price & Fee Breakdown Drawer */}
-            {isBreakdownExpanded && (
+            {isBreakdownExpanded && (() => {
+                const voucherDiscount = parseFloat(String(order.voucher_discount_amount || 0).replace(/,/g, '')) || 0;
+                return (
                 <div className="px-4 sm:px-5 py-3 bg-stone-50/70 border-b border-stone-100 text-xs text-stone-600 space-y-1.5">
                     <div className="flex items-center justify-between text-[11px]">
                         <span className="text-stone-500">Items Subtotal ({totalItemCount} {totalItemCount === 1 ? 'item' : 'items'})</span>
@@ -224,6 +226,14 @@ export default function OrderListItemCard({
                             {formatPHP(order.merchandise_subtotal || items.reduce((acc, it) => acc + (Number(it.price || 0) * Number(it.qty || 1)), 0))}
                         </span>
                     </div>
+                    {voucherDiscount > 0 && (
+                        <div className="flex items-center justify-between text-[11px] text-emerald-700">
+                            <span>Shop Voucher{order.voucher_code ? ` (${order.voucher_code})` : ''}</span>
+                            <span className="font-mono font-semibold">
+                                -{formatPHP(voucherDiscount)}
+                            </span>
+                        </div>
+                    )}
                     <div className="flex items-center justify-between text-[11px]">
                         <span className="text-stone-500">Shipping Fee ({order.shipping_method === 'Pick Up' ? 'Workshop Pick Up' : 'Doorstep Delivery'})</span>
                         <span className="font-mono font-medium text-stone-800">
@@ -252,7 +262,8 @@ export default function OrderListItemCard({
                         <span>All listed retail prices are VAT-inclusive • Download sales invoice for official BIR tax matrix (RA 11976)</span>
                     </div>
                 </div>
-            )}
+                );
+            })()}
 
             {/* 5. Minimalist Actions Footer */}
             <OrderCardActions 

@@ -92,6 +92,11 @@
         <div class="summary-box">
             <h4>Gross Sales (GMV)</h4>
             <div class="amount">₱{{ number_format($data['summary']['gross_sales'], 2) }}</div>
+            @if(($data['summary']['voucher_discounts'] ?? 0) > 0)
+                <div style="font-size: 10px; color: #047857; font-weight: 700; margin-top: 3px;">
+                    Vouchers: -₱{{ number_format($data['summary']['voucher_discounts'], 2) }}
+                </div>
+            @endif
         </div>
         <div class="summary-box">
             <h4>Net Earnings</h4>
@@ -116,6 +121,7 @@
                 <th>Customer</th>
                 <th>Payment</th>
                 <th class="right">Gross</th>
+                <th class="right">Voucher</th>
                 <th class="right">Courier</th>
                 <th class="right">Platform</th>
                 <th class="right">Net</th>
@@ -129,13 +135,14 @@
                     <td>{{ $order['customer_name'] }}</td>
                     <td>{{ $order['payment_method'] }}</td>
                     <td class="right">₱{{ number_format($order['merchandise_subtotal'], 2) }}</td>
+                    <td class="right" style="color: #047857;">{{ ($order['voucher_discount'] ?? 0) > 0 ? '-₱' . number_format($order['voucher_discount'], 2) : '₱0.00' }}</td>
                     <td class="right">₱{{ number_format($order['shipping_fee'], 2) }}</td>
                     <td class="right">₱{{ number_format($order['platform_fee'], 2) }}</td>
                     <td class="right" style="font-weight: 700; color: #15803d;">₱{{ number_format($order['seller_net'], 2) }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8" class="no-data">No completed orders during this billing cycle.</td>
+                    <td colspan="9" class="no-data">No completed orders during this billing cycle.</td>
                 </tr>
             @endforelse
         </tbody>

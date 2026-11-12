@@ -29,7 +29,16 @@ export default function useShippingQuote({
             return undefined;
         }
 
-        if (!activeShippingAddress.trim() || checkoutItems.length === 0) {
+        const isSelectedSavedAddress = Boolean(data.selected_address_id && data.selected_address_id !== 'new');
+        const hasCompleteAddress = isSelectedSavedAddress
+            ? Boolean(data.shipping_address?.trim())
+            : Boolean(
+                data.shipping_street_address?.trim() &&
+                data.shipping_barangay?.trim() &&
+                data.shipping_city?.trim()
+            );
+
+        if (!hasCompleteAddress || checkoutItems.length === 0) {
             setShippingQuote({
                 status: 'idle',
                 totalShippingFee: 0,
@@ -128,6 +137,10 @@ export default function useShippingQuote({
         data.shipping_postal_code,
         data.shipping_region,
         data.shipping_street_address,
+        data.shipping_latitude,
+        data.shipping_longitude,
+        data.latitude,
+        data.longitude,
         checkoutItems,
         quoteRetryNonce,
         data.selected_address_id,

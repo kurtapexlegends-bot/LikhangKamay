@@ -18,7 +18,7 @@ Every Proof-of-Work report returned by `/e2e-browser` MUST include this explicit
 | **Follow Shop Toggle**| `button:has-text("Follow")` | Unfollowed State | Following Badge Active $\rightarrow$ Unfollowed | `200 OK` | Shop Follow Record Mutated | `path/to/follow_shop.png` |
 | **Inline Quick Restock**| `button[title="Restock"]` | Catalog Product Row | Restock Modal Submit (+5 units) | `200 OK` | Stock Incremented (+5) | `path/to/quick_restock.png` |
 | **Inline Quick Deduct** | `button[title="Deduct"]` | Catalog Product Row | Deduct Modal Submit (-5 units) | `200 OK` | Stock Restored to Baseline | `path/to/quick_deduct.png` |
-| **Voucher Full CRUD** | `button:has-text("Create Voucher")` | Discount Directory | Created $\rightarrow$ Edited $\rightarrow$ Deleted | `200 OK` | Voucher ID Created & Purged | `path/to/voucher_crud.png` |
+| **Voucher Full CRUD** | `button:has-text("New Voucher")` | Shop Vouchers (`/seller/vouchers`) | Created $\rightarrow$ Edited $\rightarrow$ Deleted | `200 OK` | Voucher ID Created & Purged | `path/to/voucher_crud.png` |
 | **Canned Chat Snippet**| `button:has-text("Save Template")` | Chat Automation Modal | Template Saved $\rightarrow$ Used $\rightarrow$ Deleted | `200 OK` | Template ID Created & Purged | `path/to/chat_template.png` |
 | **Cancel Return Claim**| `button:has-text("Cancel Return")` | Return Under Review | Status Reverts to Completed | `200 OK` | Return Request Cancelled | `path/to/cancel_return.png` |
 | **Live Leaflet Route** | `button:has-text("Track Route")` | Order Details View | Leaflet Waypoint Road Route Modal | `200 OK` | Map Polyline Rendered (0 Err) | `path/to/route_preview.png` |

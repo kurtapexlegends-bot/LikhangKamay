@@ -53,6 +53,14 @@ export default function OrderPricingCard({
                             PHP {Number(order.merchandise_subtotal).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
                     </div>
+                    {Number(order.voucher_discount_amount || 0) > 0 && (
+                        <div className="flex justify-between text-emerald-700">
+                            <span>Shop Voucher{order.voucher_code ? ` (${order.voucher_code})` : ''}:</span>
+                            <span className="font-semibold">
+                                -PHP {Number(order.voucher_discount_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </span>
+                        </div>
+                    )}
                     {order.vat_type === 'vat_inclusive' || Number(order.vat_amount || 0) > 0 ? (
                         <>
                             <div className="flex justify-between text-stone-500 text-[10px] pl-2">

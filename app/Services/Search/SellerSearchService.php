@@ -18,6 +18,7 @@ use App\Models\StockRequest;
 use App\Models\Supply;
 use App\Models\TeamChannel;
 use App\Models\User;
+use App\Models\Voucher;
 
 class SellerSearchService
 {
@@ -43,6 +44,10 @@ class SellerSearchService
 
         if ($user->canAccessSellerModule('discounts')) {
             $results = array_merge($results, $this->searchSellerDiscounts($sellerId, $query, $like));
+        }
+
+        if ($user->canAccessSellerModule('vouchers') || $user->canAccessSellerModule('discounts')) {
+            $results = array_merge($results, $this->searchSellerVouchers($sellerId, $query, $like, $user->canAccessSellerModule('discounts')));
         }
 
         if ($user->canAccessSellerModule('3d')) {
@@ -258,6 +263,17 @@ class SellerSearchService
                 'owner_only' => false,
             ],
             [
+                'keywords' => ['voucher', 'vouchers', 'promo', 'promo code', 'coupon', 'marketing'],
+                'title' => 'Shop Vouchers',
+                'subtitle' => 'Issue claimable shop vouchers and private promo codes',
+                'type' => 'Module',
+                'url' => $this->safeRoute('vouchers.index'),
+                'icon' => 'tag',
+                'module' => 'vouchers',
+                'hide_if_module' => 'discounts',
+                'owner_only' => false,
+            ],
+            [
                 'keywords' => ['team messages', 'team chat', 'channel', 'team channels', 'inbox'],
                 'title' => 'Team Messages & Channels',
                 'subtitle' => 'Internal team communication, group channels, and real-time collaboration',
@@ -335,6 +351,9 @@ class SellerSearchService
             if ($item['module'] && !$user->canAccessSellerModule($item['module'])) {
                 continue;
             }
+            if (!empty($item['hide_if_module']) && $user->canAccessSellerModule($item['hide_if_module'])) {
+                continue;
+            }
             foreach ($item['keywords'] as $kw) {
                 if (str_contains($kw, $q) || str_contains($q, $kw)) {
                     $results[] = [
@@ -390,6 +409,31 @@ class SellerSearchService
                 'subtitle' => ($d->type === 'percentage' ? "{$d->value}% Off" : "₱" . number_format((float) $d->value, 2) . " Off") . " • " . ($d->is_currently_active ? 'Active Promo' : 'Inactive/Expired'),
                 'type' => 'Discount',
                 'url' => $this->safeRoute('discounts.index', ['search' => $d->name]),
+                'icon' => 'tag',
+            ])->toArray();
+    }
+
+    public function searchSellerVouchers(int $sellerId, string $query, string $like, bool $hasDiscountsModule = false): array
+    {
+        return Voucher::select(['id', 'shop_id', 'code', 'name', 'discount_type', 'discount_value', 'is_active', 'starts_at', 'expires_at', 'used_count', 'usage_limit_total'])
+            ->where('shop_id', $sellerId)
+            ->where(function ($q) use ($query, $like) {
+                $q->where('code', $like, "%{$query}%")
+                    ->orWhere('name', $like, "%{$query}%")
+                    ->orWhere('description', $like, "%{$query}%");
+            })
+            ->limit(4)
+            ->get()
+            ->map(fn ($v) => [
+                'id' => "voucher-{$v->id}",
+                'title' => "Voucher: {$v->code} ({$v->name})",
+                'subtitle' => ($v->discount_type === Voucher::TYPE_PERCENTAGE
+                    ? "{$v->discount_value}% Off"
+                    : 'PHP ' . number_format((float) $v->discount_value, 2) . ' Off') . ' • ' . ucfirst((string) $v->status_label),
+                'type' => 'Voucher',
+                'url' => $hasDiscountsModule
+                    ? $this->safeRoute('discounts.index', ['tab' => 'vouchers', 'search' => $v->code])
+                    : $this->safeRoute('vouchers.index', ['search' => $v->code]),
                 'icon' => 'tag',
             ])->toArray();
     }

@@ -6,7 +6,7 @@ Welcome to the LikhangKamay Second Brain vault. This documentation map is design
 
 *   **[[domain-entities|Core Domain Entities & Rules]]**: Detailed schema and business rules governing models like Users, Products, Orders, and Payroll.
 *   **[[finance-vat-taxation|Finance, BIR VAT & E-Wallet Payout Architecture]]**: Philippine 12% inclusive VAT math, BIR sales invoices, tax classification profiles, and GCash/Maya disbursement architecture.
-*   **[[marketing-discounts|Marketing & Discount Engine]]**: Discount campaigns, strategy selection, promo stock limits, and countdown badging.
+*   **[[marketing-discounts|Marketing, Discount & Shop Voucher Engine]]**: Product markdown campaigns, shop promo code vouchers, targeting rules, tier quotas, and countdown badging.
 *   **[[routing-topography|Routing & Access Control]]**: Route layouts, middleware topology, and role-based permissions.
 *   **[[integrations-webhooks|External Integrations & Webhooks]]**: Operational flows and webhooks for PayMongo and Lalamove.
 *   **[[ui-design-tokens|UI/UX & Design Tokens]]**: Artisan theme standards, color palettes, spacing, and guidelines to avoid automated design elements.

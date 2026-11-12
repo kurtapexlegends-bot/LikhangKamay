@@ -120,6 +120,8 @@ class GetBuyerOrders
             'shipping_recipient_name' => $order->shipping_recipient_name,
             'shipping_contact_phone' => $order->shipping_contact_phone,
             'merchandise_subtotal' => number_format((float) $order->merchandise_subtotal, 2),
+            'voucher_code' => $order->voucher_code,
+            'voucher_discount_amount' => number_format((float) ($order->voucher_discount_amount ?? 0), 2),
             'convenience_fee_amount' => number_format((float) $order->convenience_fee_amount, 2),
             'shipping_fee_amount' => number_format($order->getResolvedShippingFeeAmount(), 2),
             'platform_commission_amount' => number_format($order->getResolvedPlatformCommissionAmount(), 2),

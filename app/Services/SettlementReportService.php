@@ -35,13 +35,14 @@ class SettlementReportService
             ->get();
 
         $grossSales = (float) $completedOrders->sum('merchandise_subtotal');
+        $voucherDiscounts = (float) $completedOrders->sum('voucher_discount_amount');
         $ordersCount = $completedOrders->count();
 
         $codOrders = $completedOrders->where('payment_method', 'COD');
         $onlineOrders = $completedOrders->where('payment_method', '!=', 'COD');
 
-        $codSales = (float) $codOrders->sum('merchandise_subtotal');
-        $onlineSales = (float) $onlineOrders->sum('merchandise_subtotal');
+        $codSales = (float) $codOrders->sum('seller_net_amount');
+        $onlineSales = (float) $onlineOrders->sum('seller_net_amount');
 
         $shippingFees = (float) $completedOrders->sum('shipping_fee_amount');
         $platformFees = (float) $completedOrders->sum('platform_commission_amount');
@@ -85,6 +86,8 @@ class SettlementReportService
                 'customer_name' => $order->customer_name ?: ($order->user?->name ?? 'Customer'),
                 'payment_method' => $order->payment_method,
                 'merchandise_subtotal' => (float) $order->merchandise_subtotal,
+                'voucher_discount' => (float) ($order->voucher_discount_amount ?? 0),
+                'voucher_code' => $order->voucher_code,
                 'shipping_fee' => (float) $order->shipping_fee_amount,
                 'platform_fee' => (float) $order->platform_commission_amount,
                 'seller_net' => (float) $order->seller_net_amount,
@@ -122,6 +125,7 @@ class SettlementReportService
             ],
             'summary' => [
                 'gross_sales' => $grossSales,
+                'voucher_discounts' => $voucherDiscounts,
                 'orders_count' => $ordersCount,
                 'cod_sales' => $codSales,
                 'online_sales' => $onlineSales,
@@ -176,8 +180,9 @@ class SettlementReportService
             fputcsv($handle, ['PERIOD FINANCIAL SUMMARY']);
             fputcsv($handle, ['Completed Orders Count', $data['summary']['orders_count']]);
             fputcsv($handle, ['Gross Merchandise Value (GMV)', number_format($data['summary']['gross_sales'], 2)]);
-            fputcsv($handle, ['  - Cash On Delivery (COD) Sales', number_format($data['summary']['cod_sales'], 2)]);
-            fputcsv($handle, ['  - Online / Card / GCash Sales', number_format($data['summary']['online_sales'], 2)]);
+            fputcsv($handle, ['Total Shop Voucher Discounts', number_format($data['summary']['voucher_discounts'], 2)]);
+            fputcsv($handle, ['  - Cash On Delivery (COD) Net Sales', number_format($data['summary']['cod_sales'], 2)]);
+            fputcsv($handle, ['  - Online / Card / GCash Net Sales', number_format($data['summary']['online_sales'], 2)]);
             fputcsv($handle, ['Total Shipping / Courier Fees', number_format($data['summary']['shipping_fees'], 2)]);
             fputcsv($handle, ['Total Platform Commission Fees', number_format($data['summary']['platform_fees'], 2)]);
             fputcsv($handle, ['Total Net Seller Merchandise Earnings', number_format($data['summary']['net_earnings'], 2)]);
@@ -189,7 +194,7 @@ class SettlementReportService
 
             // 3. Itemized Completed Orders
             fputcsv($handle, ['COMPLETED RETAIL & B2B ORDERS']);
-            fputcsv($handle, ['Order Number', 'Date', 'Customer Name', 'Payment Method', 'Gross (PHP)', 'Shipping Fee', 'Commission', 'Seller Net (PHP)']);
+            fputcsv($handle, ['Order Number', 'Date', 'Customer Name', 'Payment Method', 'Gross (PHP)', 'Voucher Discount (PHP)', 'Shipping Fee', 'Commission', 'Seller Net (PHP)']);
             foreach ($data['orders'] as $order) {
                 fputcsv($handle, [
                     $order['order_number'],
@@ -197,6 +202,7 @@ class SettlementReportService
                     $order['customer_name'],
                     $order['payment_method'],
                     number_format($order['merchandise_subtotal'], 2),
+                    number_format($order['voucher_discount'], 2),
                     number_format($order['shipping_fee'], 2),
                     number_format($order['platform_fee'], 2),
                     number_format($order['seller_net'], 2),

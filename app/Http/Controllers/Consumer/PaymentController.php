@@ -57,13 +57,14 @@ class PaymentController extends Controller
             return redirect()->route($targetRoute)->with('error', 'This order is not eligible for online payment.');
         }
 
-        if ($order->total_amount < 20) {
+        $order->loadMissing('items');
+        [$lineItems, $calculatedTotal] = $this->buildCheckoutLineItems($order);
+
+        if ((float) $order->total_amount < 20 || $calculatedTotal < 20) {
             return redirect()->back()->with('error', 'Payment failed: Minimum amount for online payment is PHP 20.00.');
         }
 
-        [$lineItems, $calculatedTotal] = $this->buildCheckoutLineItems($order);
-
-        if ((float) $order->total_amount !== (float) $calculatedTotal) {
+        if (round((float) $order->total_amount, 2) !== round((float) $calculatedTotal, 2)) {
             $order->update(['total_amount' => $calculatedTotal]);
         }
 
@@ -420,19 +421,63 @@ class PaymentController extends Controller
     private function buildCheckoutLineItems(Order $order): array
     {
         $lineItems = [];
-        $calculatedTotal = 0;
+        $calculatedTotal = 0.0;
+        $voucherDiscount = max(0.0, (float) ($order->voucher_discount_amount ?? 0));
 
-        foreach ($order->items as $item) {
-            $lineItems[] = [
-                'currency' => 'PHP',
-                'amount' => (int) round($item->price * 100),
-                'description' => $item->product_name,
-                'name' => $item->product_name,
-                'quantity' => $item->quantity,
-                'images' => [\App\Services\StorageUrl::url($item->product_img, asset('images/placeholder.svg'))],
-            ];
+        if ($voucherDiscount > 0) {
+            $grossItemsCents = 0;
+            foreach ($order->items as $item) {
+                $grossItemsCents += (int) round(((float) $item->price) * 100) * (int) $item->quantity;
+            }
 
-            $calculatedTotal += $item->price * $item->quantity;
+            if ($grossItemsCents <= 0 && (float) $order->merchandise_subtotal > 0) {
+                $grossItemsCents = (int) round(((float) $order->merchandise_subtotal) * 100);
+            }
+
+            $discountCents = (int) round($voucherDiscount * 100);
+            $netMerchandiseCents = max(0, $grossItemsCents - $discountCents);
+
+            if ($netMerchandiseCents > 0) {
+                $firstItem = $order->items->first();
+                if ($order->items->count() === 1 && $firstItem && (int) $firstItem->quantity === 1) {
+                    $itemName = $firstItem->product_name . ($order->voucher_code ? " (Voucher {$order->voucher_code})" : ' (Discounted)');
+                    $itemDesc = $firstItem->product_name . ' - Less shop voucher PHP ' . number_format($voucherDiscount, 2);
+                } else {
+                    $summaryNames = $order->items
+                        ->map(fn ($it) => "{$it->quantity}x {$it->product_name}")
+                        ->take(3)
+                        ->implode(', ');
+                    if ($order->items->count() > 3) {
+                        $summaryNames .= ', ...';
+                    }
+                    $itemName = 'Order #' . $order->order_number . ' Items' . ($order->voucher_code ? " (Voucher {$order->voucher_code})" : '');
+                    $itemDesc = ($summaryNames ?: 'Handcrafted items') . ' - Less shop voucher PHP ' . number_format($voucherDiscount, 2);
+                }
+
+                $lineItems[] = [
+                    'currency' => 'PHP',
+                    'amount' => $netMerchandiseCents,
+                    'description' => $itemDesc,
+                    'name' => $itemName,
+                    'quantity' => 1,
+                    'images' => [\App\Services\StorageUrl::url($firstItem?->product_img, asset('images/placeholder.svg'))],
+                ];
+
+                $calculatedTotal += round($netMerchandiseCents / 100, 2);
+            }
+        } else {
+            foreach ($order->items as $item) {
+                $lineItems[] = [
+                    'currency' => 'PHP',
+                    'amount' => (int) round($item->price * 100),
+                    'description' => $item->product_name,
+                    'name' => $item->product_name,
+                    'quantity' => $item->quantity,
+                    'images' => [\App\Services\StorageUrl::url($item->product_img, asset('images/placeholder.svg'))],
+                ];
+
+                $calculatedTotal += $item->price * $item->quantity;
+            }
         }
 
         if ((float) $order->convenience_fee_amount > 0) {
@@ -461,6 +506,6 @@ class PaymentController extends Controller
             $calculatedTotal += $shippingFeeAmount;
         }
 
-        return [$lineItems, $calculatedTotal];
+        return [$lineItems, round($calculatedTotal, 2)];
     }
 }

@@ -53,6 +53,7 @@ class SellerEntitlementService
         return [
             'overview',
             'products',
+            'vouchers',
             'analytics',
             '3d',
             'orders',
@@ -74,7 +75,7 @@ class SellerEntitlementService
     public function getRolePresetDefaults(): array
     {
         return [
-            'shop_manager' => ['overview', 'products', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'hr', 'accounting', 'procurement', 'stock_requests'],
+            'shop_manager' => ['overview', 'products', 'vouchers', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'hr', 'accounting', 'procurement', 'stock_requests'],
             'accountant' => ['overview', 'analytics', 'hr', 'accounting'],
             'hr' => ['overview', 'hr'],
             'stock_clerk' => ['overview', 'products', 'orders', 'procurement', 'stock_requests'],
@@ -463,6 +464,7 @@ class SellerEntitlementService
             'procurement',
             'stock_requests',
             '3d',
+            'vouchers',
             'sponsorships',
             'messages',
             'team_messages',
@@ -486,6 +488,7 @@ class SellerEntitlementService
             'procurement' => 'procurement.index',
             'stock_requests' => 'stock-requests.index',
             '3d' => '3d.index',
+            'vouchers' => 'vouchers.index',
             'discounts' => 'discounts.index',
             'approvals' => 'seller.approvals.index',
             'sponsorships' => 'seller.sponsorships',

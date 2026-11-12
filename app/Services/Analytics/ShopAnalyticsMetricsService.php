@@ -15,14 +15,27 @@ use App\Models\StockRequest;
 
 class ShopAnalyticsMetricsService
 {
+    private function netItemRevenueExpression(): string
+    {
+        return 'CASE '
+            . 'WHEN COALESCE(orders.merchandise_subtotal, 0) > 0 AND COALESCE(orders.voucher_discount_amount, 0) > 0 '
+            . 'THEN CASE '
+            . 'WHEN (orders.merchandise_subtotal - orders.voucher_discount_amount) <= 0 THEN 0 '
+            . 'ELSE (order_items.price * order_items.quantity) * ((orders.merchandise_subtotal - orders.voucher_discount_amount) * 1.0 / orders.merchandise_subtotal) '
+            . 'END '
+            . 'ELSE (order_items.price * order_items.quantity) '
+            . 'END';
+    }
+
     public function getFinancialMetrics(int $sellerId): array
     {
         $now = Carbon::now();
         $startOfThisMonth = $now->copy()->startOfMonth();
         $startOfLastMonth = $now->copy()->subMonth()->startOfMonth();
         $endOfLastMonth = $now->copy()->subMonth()->endOfMonth();
+        $netItemExpr = $this->netItemRevenueExpression();
 
-        $getMetrics = function ($start, $end) use ($sellerId) {
+        $getMetrics = function ($start, $end) use ($sellerId, $netItemExpr) {
             $ordersCount = (int) Order::where('artisan_id', $sellerId)
                 ->where(function ($q) {
                     $q->where('is_test', false)->orWhereNull('is_test');
@@ -34,17 +47,19 @@ class ShopAnalyticsMetricsService
                 ])
                 ->count();
 
-            $revenue = (float) OrderItem::whereHas('order', function ($q) use ($sellerId, $start, $end) {
-                $q->where('artisan_id', $sellerId)
-                    ->where(function ($sq) {
-                        $sq->where('is_test', false)->orWhereNull('is_test');
-                    })
-                    ->where('status', 'Completed')
-                    ->whereBetween('created_at', [
-                        $start->copy()->startOfDay(),
-                        $end->copy()->endOfDay(),
-                    ]);
-            })->sum(DB::raw('price * quantity'));
+            $revenue = round((float) OrderItem::query()
+                ->join('orders', 'order_items.order_id', '=', 'orders.id')
+                ->where('orders.artisan_id', $sellerId)
+                ->where(function ($sq) {
+                    $sq->where('orders.is_test', false)->orWhereNull('orders.is_test');
+                })
+                ->where('orders.status', 'Completed')
+                ->whereBetween('orders.created_at', [
+                    $start->copy()->startOfDay(),
+                    $end->copy()->endOfDay(),
+                ])
+                ->selectRaw("COALESCE(SUM({$netItemExpr}), 0) as total_revenue")
+                ->value('total_revenue'), 2);
 
             $cost = (float) OrderItem::whereHas('order', function ($q) use ($sellerId, $start, $end) {
                 $q->where('artisan_id', $sellerId)
@@ -111,9 +126,10 @@ class ShopAnalyticsMetricsService
                 ->where('products.category', $categoryFilter);
         };
 
+        $netItemExpr = $this->netItemRevenueExpression();
         $sumExpr = $isAllCategories
             ? 'SUM(orders.seller_net_amount)'
-            : 'SUM(order_items.price * order_items.quantity)';
+            : "SUM({$netItemExpr})";
 
         $monthExpr = $this->monthNumberExpression('orders.created_at');
         $monthlyRaw = $chartBaseQuery()
@@ -128,7 +144,7 @@ class ShopAnalyticsMetricsService
         for ($i = 5; $i >= 0; $i--) {
             $monthNum = (int) Carbon::now()->subMonths($i)->format('n');
             $monthName = Carbon::now()->subMonths($i)->format('M');
-            $val = $monthlyRaw->has($monthNum) ? (float) $monthlyRaw[$monthNum]->value : 0.0;
+            $val = $monthlyRaw->has($monthNum) ? round((float) $monthlyRaw[$monthNum]->value, 2) : 0.0;
             $monthlyData[] = [
                 'name' => $monthName,
                 'value' => $val,
@@ -151,7 +167,7 @@ class ShopAnalyticsMetricsService
 
         $yearlyData = [];
         for ($year = $startYear; $year <= $currentYear; $year++) {
-            $val = $yearlyRaw->has($year) ? (float) $yearlyRaw[$year]->value : 0.0;
+            $val = $yearlyRaw->has($year) ? round((float) $yearlyRaw[$year]->value, 2) : 0.0;
             $yearlyData[] = [
                 'name' => (string) $year,
                 'value' => $val,
@@ -168,30 +184,34 @@ class ShopAnalyticsMetricsService
 
     public function getCategoryPerformance(int $sellerId): Collection
     {
-        return OrderItem::whereHas('order', function ($query) use ($sellerId) {
-            $query->where('artisan_id', $sellerId)
-                ->where(function ($q) {
-                    $q->where('is_test', false)->orWhereNull('is_test');
-                })
-                ->where('status', 'Completed');
-        })
+        $netItemExpr = $this->netItemRevenueExpression();
+
+        return OrderItem::query()
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->where('orders.artisan_id', $sellerId)
+            ->where(function ($q) {
+                $q->where('orders.is_test', false)->orWhereNull('orders.is_test');
+            })
+            ->where('orders.status', 'Completed')
             ->select([
-                'products.category', 
+                'products.category',
                 DB::raw('SUM(order_items.quantity) as volume'),
-                DB::raw('SUM(order_items.price * order_items.quantity) as revenue'),
+                DB::raw("SUM({$netItemExpr}) as revenue"),
                 DB::raw('SUM(order_items.cost * order_items.quantity) as cost')
             ])
             ->groupBy('products.category')
             ->get()
             ->map(function ($item) {
-                $profit = $item->revenue - $item->cost;
-                $margin = $item->revenue > 0 ? ($profit / $item->revenue) * 100 : 0;
-                
+                $revenue = round((float) $item->revenue, 2);
+                $cost = round((float) $item->cost, 2);
+                $profit = $revenue - $cost;
+                $margin = $revenue > 0 ? ($profit / $revenue) * 100 : 0;
+
                 return [
                     'category' => $item->category,
                     'value' => (int) $item->volume,
-                    'revenue' => (float) $item->revenue,
+                    'revenue' => $revenue,
                     'profit' => (float) $profit,
                     'margin' => round($margin, 1),
                 ];
@@ -200,32 +220,36 @@ class ShopAnalyticsMetricsService
 
     public function getTopProducts(int $sellerId): Collection
     {
-        return OrderItem::whereHas('order', function ($query) use ($sellerId) {
-            $query->where('artisan_id', $sellerId)
-                ->where(function ($q) {
-                    $q->where('is_test', false)->orWhereNull('is_test');
-                })
-                ->where('status', 'Completed');
-        })
+        $netItemExpr = $this->netItemRevenueExpression();
+
+        return OrderItem::query()
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->where('orders.artisan_id', $sellerId)
+            ->where(function ($q) {
+                $q->where('orders.is_test', false)->orWhereNull('orders.is_test');
+            })
+            ->where('orders.status', 'Completed')
             ->select([
-                'product_name',
-                DB::raw('SUM(quantity) as total_sold'),
-                DB::raw('SUM(price * quantity) as revenue'),
-                DB::raw('SUM(cost * quantity) as total_cost'),
-                DB::raw('MAX(product_img) as img')
+                'order_items.product_name',
+                DB::raw('SUM(order_items.quantity) as total_sold'),
+                DB::raw("SUM({$netItemExpr}) as revenue"),
+                DB::raw('SUM(order_items.cost * order_items.quantity) as total_cost'),
+                DB::raw('MAX(order_items.product_img) as img')
             ])
-            ->groupBy('product_name')
+            ->groupBy('order_items.product_name')
             ->orderByDesc('total_sold')
             ->limit(5)
             ->get()
             ->map(function ($item) {
-                $profit = $item->revenue - $item->total_cost;
-                $margin = $item->revenue > 0 ? ($profit / $item->revenue) * 100 : 0;
+                $revenue = round((float) $item->revenue, 2);
+                $totalCost = round((float) $item->total_cost, 2);
+                $profit = $revenue - $totalCost;
+                $margin = $revenue > 0 ? ($profit / $revenue) * 100 : 0;
 
                 return [
                     'name' => $item->product_name,
                     'sales' => $item->total_sold,
-                    'revenue' => $item->revenue,
+                    'revenue' => $revenue,
                     'profit' => $profit,
                     'margin' => round($margin, 1),
                     'img' => \App\Services\StorageUrl::url($item->img),

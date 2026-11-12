@@ -32,9 +32,17 @@ class OrderFinanceService
     /**
      * @return array<string, mixed>
      */
-    public function calculateAmounts(float $merchandiseSubtotal, string $shippingMethod, float $shippingFee = 0, ?User $seller = null): array
-    {
+    public function calculateAmounts(
+        float $merchandiseSubtotal,
+        string $shippingMethod,
+        float $shippingFee = 0,
+        ?User $seller = null,
+        float $shopVoucherDiscount = 0.0
+    ): array {
         $normalizedSubtotal = $this->money($merchandiseSubtotal);
+        $normalizedShopDiscount = $this->money(min(max(0.0, $shopVoucherDiscount), $normalizedSubtotal));
+        $netDiscountedSubtotal = $this->money(max(0.0, $normalizedSubtotal - $normalizedShopDiscount));
+
         $convenienceFee = $shippingMethod === 'Delivery'
             ? $this->money($normalizedSubtotal * self::getConvenienceFeeRate())
             : 0.00;
@@ -42,26 +50,28 @@ class OrderFinanceService
             ? $this->money($shippingFee)
             : 0.00;
         $platformCommission = 0.00;
-        $sellerNet = $normalizedSubtotal;
-        $grandTotal = $this->money($normalizedSubtotal + $convenienceFee + $normalizedShippingFee);
+        // Seller funds their own shop voucher discount.
+        $sellerNet = $netDiscountedSubtotal;
+        $grandTotal = $this->money($netDiscountedSubtotal + $convenienceFee + $normalizedShippingFee);
 
         $isVatRegistered = (bool) ($seller?->is_vat_registered);
         $vatRate = 12.00;
 
         if ($isVatRegistered) {
-            $vatableSales = $this->money($normalizedSubtotal / 1.12);
-            $vatAmount = $this->money($normalizedSubtotal - $vatableSales);
+            $vatableSales = $this->money($netDiscountedSubtotal / 1.12);
+            $vatAmount = $this->money($netDiscountedSubtotal - $vatableSales);
             $vatExemptSales = 0.00;
             $vatType = 'vat_inclusive';
         } else {
             $vatableSales = 0.00;
             $vatAmount = 0.00;
-            $vatExemptSales = $normalizedSubtotal;
+            $vatExemptSales = $netDiscountedSubtotal;
             $vatType = 'vat_exempt';
         }
 
         return [
             'merchandise_subtotal' => $normalizedSubtotal,
+            'voucher_discount_amount' => $normalizedShopDiscount,
             'convenience_fee_amount' => $convenienceFee,
             'shipping_fee_amount' => $normalizedShippingFee,
             'platform_commission_amount' => $platformCommission,

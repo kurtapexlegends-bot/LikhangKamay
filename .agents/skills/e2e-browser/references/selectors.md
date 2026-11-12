@@ -49,10 +49,15 @@ This reference eliminates blind accessibility tree dumps by providing pre-verifi
 - **Shipping Method Store Pickup Radio:** `input[value="Pickup"]`
 - **Payment Method COD Radio:** `input[value="COD"]`
 - **Payment Method GCash Radio:** `input[value="GCash"]`
+- **Payment Method Maya Radio:** `input[value="Maya"]`
+- **Shop Voucher Selector / Drawer Trigger:** `button:has-text("Select Voucher")`, `button:has-text("Change")`
+- **Shop Voucher Manual Code Input:** `input[placeholder*="voucher code" i]`
+- **Shop Voucher Apply Button:** `button:has-text("Apply")`
 - **Place Order Button:** `button:has-text("Place Order")`
 - **Order Confirmation Number:** `span.font-mono`, `[data-order-number]`
 
 ### Artisan Workspace & Catalog Operations
+- **New Shop Voucher Button (`/seller/vouchers`):** `button:has-text("New Voucher")`
 - **Add Product Button:** `button:has-text("Add Product")`
 - **Product Title Input:** `input#title`
 - **Product Category Select:** `select#category`

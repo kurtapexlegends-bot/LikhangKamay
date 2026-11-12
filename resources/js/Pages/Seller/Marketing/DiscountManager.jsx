@@ -1,19 +1,55 @@
-import React, { useState, useMemo } from "react";
-import { Head, Link, router } from "@inertiajs/react";
+import React, { useState, useMemo, useEffect } from "react";
+import { Head, router } from "@inertiajs/react";
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from "@/Layouts/SellerWorkspaceLayout";
 import SellerHeader from "@/Layouts/SellerHeader";
 import DiscountModal from "@/Components/Seller/Catalog/DiscountModal";
+import VoucherManagementPanel from "@/Components/Seller/Marketing/VoucherManagementPanel";
 import KPICard from "@/Components/KPICard";
 import WorkspaceEmptyState from "@/Components/WorkspaceEmptyState";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import FilterToolbarHeader from "@/Components/Seller/Shared/FilterToolbarHeader";
-import { Tag, Plus, PowerOff, CheckCircle2, Clock, TrendingUp, Edit3 } from "lucide-react";
+import useSellerModuleAccess from "@/hooks/useSellerModuleAccess";
+import { Tag, Ticket, Plus, PowerOff, CheckCircle2, Clock, TrendingUp, Edit3 } from "lucide-react";
 import { resolveImageUrl } from "@/lib/media";
 
 const EMPTY_SELECTED_PRODUCTS = [];
 
-export default function DiscountManager({ discounts, stats, filters, products, auth }) {
+export default function DiscountManager({
+    discounts,
+    stats,
+    filters,
+    products,
+    vouchers = [],
+    voucherStats = {},
+    voucherQuota = null,
+    canAccessCampaignDiscounts = true,
+    canAccessVouchers,
+    canEditVouchers,
+    canEditCampaignDiscounts,
+    auth,
+}) {
     const { openSidebar } = useSellerWorkspaceShell();
+    const { canAccess: moduleCanAccessVouchers, canEdit: moduleCanEditVouchers } = useSellerModuleAccess("vouchers");
+    const { canEdit: moduleCanEditDiscounts } = useSellerModuleAccess("discounts");
+    const resolvedCanAccessVouchers = typeof canAccessVouchers === "boolean" ? canAccessVouchers : moduleCanAccessVouchers;
+    const resolvedCanEditVouchers = typeof canEditVouchers === "boolean" ? canEditVouchers : moduleCanEditVouchers;
+    const resolvedCanEditDiscounts = typeof canEditCampaignDiscounts === "boolean" ? canEditCampaignDiscounts : moduleCanEditDiscounts;
+
+    const [activeSection, setActiveSection] = useState(() => {
+        if (!canAccessCampaignDiscounts) return "vouchers";
+        if (filters?.tab === "vouchers" && resolvedCanAccessVouchers) return "vouchers";
+        return "campaigns";
+    });
+
+    useEffect(() => {
+        if (!canAccessCampaignDiscounts && resolvedCanAccessVouchers) {
+            setActiveSection("vouchers");
+        } else if (filters?.tab === "vouchers" && resolvedCanAccessVouchers) {
+            setActiveSection("vouchers");
+        } else if (filters?.tab === "campaigns" && canAccessCampaignDiscounts) {
+            setActiveSection("campaigns");
+        }
+    }, [canAccessCampaignDiscounts, resolvedCanAccessVouchers, filters?.tab]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingDiscount, setEditingDiscount] = useState(null);
     const [deactivatingId, setDeactivatingId] = useState(null);
@@ -98,268 +134,188 @@ export default function DiscountManager({ discounts, stats, filters, products, a
         });
     };
 
+    const handleSectionChange = (nextSection) => {
+        if (nextSection === "campaigns" && canAccessCampaignDiscounts && Array.isArray(discounts)) {
+            router.get(route("discounts.index"), { tab: "campaigns", status: activeStatus }, { preserveScroll: true });
+            return;
+        }
+        setActiveSection(nextSection);
+    };
+
     return (
         <>
-            <Head title="Discount Campaigns Manager" />
+            <Head title="Discounts & Vouchers Manager" />
 
             <SellerHeader
-                title="Discounts"
-                subtitle="Manage promotional pricing campaigns, scheduled discounts, and seller flash sales."
+                title="Discounts & Vouchers"
                 auth={auth}
                 onMenuClick={openSidebar}
             />
 
             <main className="flex-1 w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 overflow-y-auto space-y-6 pb-28 sm:pb-20">
-                {/* Standardized Horizontal Swiping KPI Cards on Mobile, 2x2 Grid on iPad/Tablet, 4-Col Row on Desktop */}
-                <div className="flex overflow-x-auto pb-2 gap-3 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-2 lg:grid-cols-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
-                    <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
-                        <KPICard
-                            title="Ongoing Campaigns"
-                            value={stats?.ongoing_count || 0}
-                            icon={CheckCircle2}
-                            color="text-emerald-600"
-                            bg="bg-emerald-50"
-                        />
-                    </div>
-                    <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
-                        <KPICard
-                            title="Upcoming"
-                            value={stats?.upcoming_count || 0}
-                            icon={Clock}
-                            color="text-amber-600"
-                            bg="bg-amber-50"
-                        />
-                    </div>
-                    <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
-                        <KPICard
-                            title="Expired / Ended"
-                            value={stats?.expired_count || 0}
-                            icon={PowerOff}
-                            color="text-stone-600"
-                            bg="bg-stone-100"
-                        />
-                    </div>
-                    <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
-                        <KPICard
-                            title="Total Promo Sold"
-                            value={stats?.total_promo_sold || 0}
-                            icon={TrendingUp}
-                            color="text-clay-600"
-                            bg="bg-clay-50"
-                        />
-                    </div>
+                {/* Top-Level Segmented Section Switcher */}
+                <div className="inline-flex items-center gap-1 rounded-2xl bg-stone-100 p-1 border border-stone-200/80">
+                    {canAccessCampaignDiscounts && (
+                        <button
+                            type="button"
+                            onClick={() => handleSectionChange("campaigns")}
+                            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+                                activeSection === "campaigns"
+                                    ? "bg-white text-stone-900 shadow-xs border border-stone-200/70"
+                                    : "text-stone-600 hover:text-stone-900"
+                            }`}
+                        >
+                            <Tag size={14} className={activeSection === "campaigns" ? "text-clay-600" : "text-stone-400"} />
+                            <span>Product Markdowns</span>
+                            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-extrabold text-stone-700">
+                                {stats?.ongoing_count || 0}
+                            </span>
+                        </button>
+                    )}
+                    {resolvedCanAccessVouchers && (
+                        <button
+                            type="button"
+                            onClick={() => handleSectionChange("vouchers")}
+                            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+                                activeSection === "vouchers"
+                                    ? "bg-white text-stone-900 shadow-xs border border-stone-200/70"
+                                    : "text-stone-600 hover:text-stone-900"
+                            }`}
+                        >
+                            <Ticket size={14} className={activeSection === "vouchers" ? "text-clay-600" : "text-stone-400"} />
+                            <span>Shop Vouchers</span>
+                            <span className="rounded-full bg-clay-50 px-2 py-0.5 text-[10px] font-extrabold text-clay-700 border border-clay-200/60">
+                                {voucherStats?.ongoing_count || 0}
+                            </span>
+                        </button>
+                    )}
                 </div>
 
-                {/* Status Tabs & Content Container */}
-                <div className="bg-white rounded-3xl border border-stone-200/80 shadow-sm relative">
-                    {/* Standardized Single-Row Filter Toolbar Header */}
-                    <FilterToolbarHeader
-                        tabs={[
-                            { key: "ongoing", label: "Ongoing", count: stats?.ongoing_count || 0 },
-                            { key: "upcoming", label: "Upcoming", count: stats?.upcoming_count || 0 },
-                            { key: "expired", label: "Expired / Past", count: stats?.expired_count || 0 },
-                        ]}
-                        activeTab={activeStatus}
-                        onTabChange={(statusKey) => {
-                            router.get(
-                                route("discounts.index"),
-                                { status: statusKey },
-                                { preserveState: true, preserveScroll: true }
-                            );
-                        }}
-                        searchQuery={searchQuery}
-                        onSearchChange={setSearchQuery}
-                        searchPlaceholder="Search campaign name, rate, product..."
-                        activeFiltersCount={typeFilter !== "all" ? 1 : 0}
-                        filterPopoverTitle="Filter Campaigns"
-                        filterPopoverFields={
-                            <div>
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
-                                    Discount Type
-                                </label>
-                                <select
-                                    value={typeFilter}
-                                    onChange={(e) => setTypeFilter(e.target.value)}
-                                    className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-800 outline-none focus:border-clay-500 bg-white"
-                                >
-                                    <option value="all">All Discount Types</option>
-                                    <option value="percentage">Percentage Discount (-X%)</option>
-                                    <option value="fixed">Fixed Amount Discount (₱X)</option>
-                                </select>
-                            </div>
-                        }
-                        onApplyFilters={() => {}}
-                        onResetFilters={() => {
-                            setSearchQuery("");
-                            setTypeFilter("all");
-                        }}
-                        extraActions={
-                            <button
-                                type="button"
-                                onClick={handleOpenCreate}
-                                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 h-11 sm:h-[38px] min-h-[44px] sm:min-h-[38px] text-xs font-bold text-white shadow-2xs transition hover:bg-clay-700 active:scale-95 shrink-0"
-                            >
-                                <Plus size={14} />
-                                <span className="hidden sm:inline">Campaign</span>
-                                <span className="sm:hidden">Create</span>
-                            </button>
-                        }
-                        activeFilterTags={
-                            typeFilter !== "all"
-                                ? [
-                                      {
-                                          label: `Type: ${typeFilter === "percentage" ? "Percentage (-X%)" : "Fixed Amount (₱X)"}`,
-                                          onRemove: () => setTypeFilter("all"),
-                                      },
-                                  ]
-                                : []
-                        }
-                        containerClassName="rounded-t-3xl border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
+                {activeSection === "vouchers" && resolvedCanAccessVouchers ? (
+                    <VoucherManagementPanel
+                        vouchers={vouchers}
+                        stats={voucherStats}
+                        quota={voucherQuota}
+                        products={products}
+                        isPlatformMode={false}
+                        canEdit={resolvedCanEditVouchers}
+                        initialSearch={filters?.search || ""}
+                        storeRouteName="vouchers.store"
+                        updateRouteName="vouchers.update"
+                        destroyRouteName="vouchers.destroy"
                     />
-
-                    {/* MOBILE & TABLET CARD LIST VIEW (< lg) */}
-                    <div className="block lg:hidden p-3.5 sm:p-4 space-y-3.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4 bg-stone-50/40 rounded-b-3xl">
-                        {filteredDiscounts.length > 0 ? (
-                            filteredDiscounts.map((discount) => {
-                                const now = new Date();
-                                const start = new Date(discount.start_at);
-                                const end = new Date(discount.end_at);
-                                const isActive = discount.is_active && start <= now && end >= now;
-                                const isUpcoming = discount.is_active && start > now;
-
-                                return (
-                                    <div
-                                        key={discount.id}
-                                        className="bg-white rounded-2xl border border-stone-200/80 p-4 shadow-xs space-y-3 hover:border-clay-200 transition-colors"
-                                    >
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div>
-                                                <h4 className="font-bold text-stone-900 text-sm sm:text-base leading-tight">
-                                                    {discount.name || `Discount Campaign #${discount.id}`}
-                                                </h4>
-                                                <span className="text-[10px] sm:text-xs text-stone-400 font-mono block mt-0.5">
-                                                    Created {new Date(discount.created_at).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                            <span className="bg-amber-50 text-amber-800 border border-amber-200/80 px-2.5 py-1 rounded-xl text-xs font-extrabold whitespace-nowrap shrink-0 shadow-2xs">
-                                                {discount.type === "percentage" ? `-${discount.value}% OFF` : `₱${Number(discount.value).toLocaleString(undefined, { minimumFractionDigits: 2 })} Fixed`}
-                                            </span>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-stone-100 text-[11px] sm:text-xs">
-                                            <div>
-                                                <span className="text-stone-400 uppercase text-[9px] sm:text-[10px] font-extrabold block">Start Date</span>
-                                                <span className="font-semibold text-stone-800 leading-tight block">{formatDate(discount.start_at)}</span>
-                                            </div>
-                                            <div>
-                                                <span className="text-stone-400 uppercase text-[9px] sm:text-[10px] font-extrabold block">End Date</span>
-                                                <span className="font-semibold text-stone-800 leading-tight block">{formatDate(discount.end_at)}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between pt-2 border-t border-stone-100 text-xs">
-                                            <div className="flex items-center gap-2">
-                                                {discount.products && discount.products.length > 0 ? (
-                                                    <>
-                                                        <div className="flex -space-x-1.5 items-center shrink-0">
-                                                            {discount.products.slice(0, 3).map((p) => {
-                                                                const imgUrl = resolveImageUrl(p.cover_photo_path || p.img);
-                                                                return (
-                                                                    <img
-                                                                        key={p.id}
-                                                                        src={imgUrl}
-                                                                        alt={p.name}
-                                                                        className="h-5 w-5 rounded-full ring-1 ring-white object-cover bg-stone-100 border border-stone-200 shrink-0"
-                                                                        onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
-                                                                    />
-                                                                );
-                                                            })}
-                                                        </div>
-                                                        <span className="text-[11px] font-bold text-stone-700 shrink-0 whitespace-nowrap">
-                                                            {discount.products.length} {discount.products.length === 1 ? "product" : "products"}
-                                                        </span>
-                                                    </>
-                                                ) : (
-                                                    <span className="text-stone-400 text-[11px]">No products</span>
-                                                )}
-                                            </div>
-
-                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                                isActive
-                                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
-                                                    : isUpcoming
-                                                    ? "bg-amber-50 text-amber-800 border border-amber-200/60"
-                                                    : "bg-stone-100 text-stone-600 border border-stone-200"
-                                            }`}>
-                                                <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-500" : isUpcoming ? "bg-amber-500" : "bg-stone-400"}`} />
-                                                {isActive ? "Active" : isUpcoming ? "Scheduled" : "Expired"}
-                                            </span>
-                                        </div>
-
-                                        {/* Mobile/Tablet Card Footer Actions */}
-                                        <div className="flex items-center justify-between pt-2.5 border-t border-stone-100">
-                                            <span className="text-[11px] sm:text-xs font-bold text-stone-500">
-                                                Sales: <strong className="text-stone-800">{discount.promo_sold || 0} units</strong>
-                                            </span>
-
-                                            <div className="flex items-center gap-2">
-                                                {discount.is_active && end >= now && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleOpenEdit(discount)}
-                                                        className="w-10 h-10 sm:w-8 sm:h-8 min-w-[40px] min-h-[40px] sm:min-w-0 sm:min-h-0 rounded-xl bg-sky-50 text-sky-700 border border-sky-200/70 flex items-center justify-center active:scale-95 shadow-2xs"
-                                                        title="Edit Campaign"
-                                                        aria-label="Edit Campaign"
-                                                    >
-                                                        <Edit3 size={15} />
-                                                    </button>
-                                                )}
-                                                {discount.is_active && end >= now && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => openConfirmDeactivate(discount)}
-                                                        disabled={deactivatingId === discount.id}
-                                                        className="w-10 h-10 sm:w-8 sm:h-8 min-w-[40px] min-h-[40px] sm:min-w-0 sm:min-h-0 rounded-xl bg-rose-50 text-rose-700 border border-rose-200/70 flex items-center justify-center active:scale-95 disabled:opacity-40 shadow-2xs"
-                                                        title="End Early"
-                                                        aria-label="End Early"
-                                                    >
-                                                        <PowerOff size={15} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        ) : (
-                            <div className="sm:col-span-2">
-                                <WorkspaceEmptyState
-                                    compact
-                                    align="top"
-                                    icon={Tag}
-                                    title="No promotional campaigns found"
-                                    description="Create your first promotional discount campaign to boost seller sales."
+                ) : (
+                    <>
+                        {/* KPI Cards */}
+                        <div className="flex overflow-x-auto pb-2 gap-3 flex-nowrap snap-x snap-mandatory sm:grid sm:grid-cols-2 lg:grid-cols-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+                            <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
+                                <KPICard
+                                    title="Ongoing Campaigns"
+                                    value={stats?.ongoing_count || 0}
+                                    icon={CheckCircle2}
+                                    color="text-emerald-600"
+                                    bg="bg-emerald-50"
                                 />
                             </div>
-                        )}
-                    </div>
+                            <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
+                                <KPICard
+                                    title="Upcoming"
+                                    value={stats?.upcoming_count || 0}
+                                    icon={Clock}
+                                    color="text-amber-600"
+                                    bg="bg-amber-50"
+                                />
+                            </div>
+                            <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
+                                <KPICard
+                                    title="Expired / Ended"
+                                    value={stats?.expired_count || 0}
+                                    icon={PowerOff}
+                                    color="text-stone-600"
+                                    bg="bg-stone-100"
+                                />
+                            </div>
+                            <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
+                                <KPICard
+                                    title="Total Promo Sold"
+                                    value={stats?.total_promo_sold || 0}
+                                    icon={TrendingUp}
+                                    color="text-clay-600"
+                                    bg="bg-clay-50"
+                                />
+                            </div>
+                        </div>
 
-                    {/* DESKTOP TABLE VIEW (>= lg) */}
-                    <div className="hidden lg:block overflow-x-auto rounded-b-3xl">
-                        <table className="w-full min-w-[960px] text-left text-xs border-collapse">
-                            <thead className="bg-stone-50 border-b border-stone-200/70 text-[10px] uppercase tracking-wider font-extrabold text-stone-400">
-                                <tr>
-                                    <th className="py-3 px-5">Campaign / Discount</th>
-                                    <th className="py-3 px-4 text-center">Type & Rate</th>
-                                    <th className="py-3 px-4">Effective Schedule</th>
-                                    <th className="py-3 px-4 text-center">Linked Products</th>
-                                    <th className="py-3 px-4 text-center">Order Limit</th>
-                                    <th className="py-3 px-4 text-center">Promo Sales</th>
-                                    <th className="py-3 px-4 text-center">Status</th>
-                                    <th className="py-3 px-5 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-stone-100">
+                        {/* Status Tabs & Content Container */}
+                        <div className="bg-white rounded-3xl border border-stone-200/80 shadow-sm relative">
+                            <FilterToolbarHeader
+                                tabs={[
+                                    { key: "ongoing", label: "Ongoing", count: stats?.ongoing_count || 0 },
+                                    { key: "upcoming", label: "Upcoming", count: stats?.upcoming_count || 0 },
+                                    { key: "expired", label: "Expired / Past", count: stats?.expired_count || 0 },
+                                ]}
+                                activeTab={activeStatus}
+                                onTabChange={(statusKey) => {
+                                    router.get(
+                                        route("discounts.index"),
+                                        { status: statusKey, tab: "campaigns" },
+                                        { preserveState: true, preserveScroll: true }
+                                    );
+                                }}
+                                searchQuery={searchQuery}
+                                onSearchChange={setSearchQuery}
+                                searchPlaceholder="Search campaign name, rate, product..."
+                                activeFiltersCount={typeFilter !== "all" ? 1 : 0}
+                                filterPopoverTitle="Filter Campaigns"
+                                filterPopoverFields={
+                                    <div>
+                                        <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
+                                            Discount Type
+                                        </label>
+                                        <select
+                                            value={typeFilter}
+                                            onChange={(e) => setTypeFilter(e.target.value)}
+                                            className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-800 outline-none focus:border-clay-500 bg-white"
+                                        >
+                                            <option value="all">All Discount Types</option>
+                                            <option value="percentage">Percentage Discount (-X%)</option>
+                                            <option value="fixed">Fixed Amount Discount (PHP X)</option>
+                                        </select>
+                                    </div>
+                                }
+                                onApplyFilters={() => {}}
+                                onResetFilters={() => {
+                                    setSearchQuery("");
+                                    setTypeFilter("all");
+                                }}
+                                extraActions={
+                                    resolvedCanEditDiscounts ? (
+                                        <button
+                                            type="button"
+                                            onClick={handleOpenCreate}
+                                            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 h-11 sm:h-[38px] min-h-[44px] sm:min-h-[38px] text-xs font-bold text-white shadow-2xs transition hover:bg-clay-700 active:scale-95 shrink-0"
+                                        >
+                                            <Plus size={14} />
+                                            <span className="hidden sm:inline">Campaign</span>
+                                            <span className="sm:hidden">Create</span>
+                                        </button>
+                                    ) : null
+                                }
+                                activeFilterTags={
+                                    typeFilter !== "all"
+                                        ? [
+                                              {
+                                                  label: `Type: ${typeFilter === "percentage" ? "Percentage (-X%)" : "Fixed Amount (PHP X)"}`,
+                                                  onRemove: () => setTypeFilter("all"),
+                                              },
+                                          ]
+                                        : []
+                                }
+                                containerClassName="rounded-t-3xl border-x-0 border-t-0 border-b border-stone-200/80 shadow-none bg-stone-50/40"
+                            />
+
+                            {/* MOBILE & TABLET CARD LIST VIEW (< lg) */}
+                            <div className="block lg:hidden p-3.5 sm:p-4 space-y-3.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4 bg-stone-50/40 rounded-b-3xl">
                                 {filteredDiscounts.length > 0 ? (
                                     filteredDiscounts.map((discount) => {
                                         const now = new Date();
@@ -369,149 +325,217 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                                         const isUpcoming = discount.is_active && start > now;
 
                                         return (
-                                            <tr key={discount.id} className="hover:bg-stone-50/50 transition">
-                                                {/* Campaign Name */}
-                                                <td className="py-3.5 px-5 font-bold text-stone-900">
+                                            <div
+                                                key={discount.id}
+                                                className="bg-white rounded-2xl border border-stone-200/80 p-4 shadow-xs space-y-3 hover:border-clay-200 transition-colors"
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
                                                     <div>
-                                                        <span className="block">{discount.name || `Discount Campaign #${discount.id}`}</span>
-                                                        <span className="text-[10px] text-stone-400 font-mono">Created {new Date(discount.created_at).toLocaleDateString()}</span>
-                                                    </div>
-                                                </td>
-
-                                                {/* Rate */}
-                                                <td className="py-3.5 px-4 text-center font-extrabold text-clay-700 whitespace-nowrap">
-                                                    <span className="bg-amber-50 text-amber-800 border border-amber-200/80 px-2.5 py-1 rounded-xl text-xs font-extrabold whitespace-nowrap inline-block shadow-sm">
-                                                        {discount.type === "percentage" ? `-${discount.value}% OFF` : `₱${Number(discount.value).toLocaleString(undefined, { minimumFractionDigits: 2 })} Fixed`}
-                                                    </span>
-                                                </td>
-
-                                                {/* Dates */}
-                                                <td className="py-3.5 px-4 text-stone-600 text-[11px] whitespace-nowrap">
-                                                    <div className="space-y-0.5">
-                                                        <p><span className="text-stone-400 uppercase text-[9px] font-extrabold mr-1">Start:</span><span className="font-semibold text-stone-800">{formatDate(discount.start_at)}</span></p>
-                                                        <p><span className="text-stone-400 uppercase text-[9px] font-extrabold mr-1.5">End:</span><span className="font-semibold text-stone-800">{formatDate(discount.end_at)}</span></p>
-                                                    </div>
-                                                </td>
-
-                                                {/* Linked Products */}
-                                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                                                    {discount.products && discount.products.length > 0 ? (
-                                                        <div className="inline-flex items-center justify-center gap-2 shrink-0" title={discount.products.map(p => p.name).join(", ")}>
-                                                            <div className="flex -space-x-2 items-center shrink-0">
-                                                                {discount.products.slice(0, 3).map((p) => {
-                                                                    const imgUrl = resolveImageUrl(p.cover_photo_path || p.img);
-                                                                    return (
-                                                                        <img
-                                                                            key={p.id}
-                                                                            src={imgUrl}
-                                                                            alt={p.name}
-                                                                            title={p.name}
-                                                                            className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover bg-stone-100 border border-stone-200 shrink-0"
-                                                                            onError={(e) => { e.target.onerror = null; e.target.src = '/images/placeholder.svg'; }}
-                                                                        />
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                            <span className="font-bold text-stone-800 text-xs shrink-0 whitespace-nowrap">
-                                                                {discount.products.length} {discount.products.length === 1 ? "product" : "products"}
-                                                            </span>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-stone-400 text-xs font-medium">No products</span>
-                                                    )}
-                                                </td>
-
-                                                {/* Purchase Limit */}
-                                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                                                    {discount.max_purchase_limit ? (
-                                                        <span className="bg-stone-100 text-stone-700 font-bold px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap border border-stone-200/60">
-                                                            Max {discount.max_purchase_limit} / order
+                                                        <h4 className="font-bold text-stone-900 text-sm sm:text-base leading-tight">
+                                                            {discount.name || `Discount Campaign #${discount.id}`}
+                                                        </h4>
+                                                        <span className="text-[10px] sm:text-xs text-stone-400 font-mono block mt-0.5">
+                                                            Created {new Date(discount.created_at).toLocaleDateString()}
                                                         </span>
-                                                    ) : (
-                                                        <span className="text-stone-300 text-[11px]">No Limit</span>
-                                                    )}
-                                                </td>
-
-                                                {/* Promo Sold */}
-                                                <td className="py-3.5 px-4 text-center font-bold text-stone-700 whitespace-nowrap">
-                                                    {discount.promo_sold || 0} units
-                                                </td>
-
-                                                {/* Status Badge */}
-                                                <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap ${
-                                                        isActive
-                                                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
-                                                            : isUpcoming
-                                                            ? "bg-amber-50 text-amber-800 border border-amber-200/60"
-                                                            : "bg-stone-100 text-stone-600 border border-stone-200"
-                                                    }`}>
-                                                        {isActive ? "Ongoing" : isUpcoming ? "Upcoming" : "Expired / Ended"}
+                                                    </div>
+                                                    <span className="bg-amber-50 text-amber-800 border border-amber-200/80 px-2.5 py-1 rounded-xl text-xs font-extrabold whitespace-nowrap shrink-0 shadow-2xs">
+                                                        {discount.type === "percentage" ? `-${discount.value}% OFF` : `PHP ${Number(discount.value).toLocaleString(undefined, { minimumFractionDigits: 2 })} Fixed`}
                                                     </span>
-                                                </td>
+                                                </div>
 
-                                                {/* Actions */}
-                                                <td className="py-3.5 px-5 text-right whitespace-nowrap">
-                                                    <div className="flex items-center justify-end gap-1">
-                                                        {discount.is_active && end >= now && (
+                                                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-stone-100 text-[11px] sm:text-xs">
+                                                    <div>
+                                                        <span className="text-stone-400 uppercase text-[9px] sm:text-[10px] font-extrabold block">Start Date</span>
+                                                        <span className="font-semibold text-stone-800 leading-tight block">{formatDate(discount.start_at)}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-stone-400 uppercase text-[9px] sm:text-[10px] font-extrabold block">End Date</span>
+                                                        <span className="font-semibold text-stone-800 leading-tight block">{formatDate(discount.end_at)}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center justify-between pt-2.5 border-t border-stone-100">
+                                                    <span className="text-[11px] sm:text-xs font-bold text-stone-500">
+                                                        Sales: <strong className="text-stone-800">{discount.promo_sold || 0} units</strong>
+                                                    </span>
+
+                                                    <div className="flex items-center gap-2">
+                                                        {resolvedCanEditDiscounts && discount.is_active && end >= now && (
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleOpenEdit(discount)}
-                                                                className="p-2 text-clay-700 hover:text-clay-900 hover:bg-clay-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs"
+                                                                className="w-10 h-10 sm:w-8 sm:h-8 rounded-xl bg-sky-50 text-sky-700 border border-sky-200/70 flex items-center justify-center active:scale-95"
                                                                 title="Edit Campaign"
+                                                                aria-label="Edit Campaign"
                                                             >
-                                                                <Edit3 size={14} />
+                                                                <Edit3 size={15} />
                                                             </button>
                                                         )}
-                                                        {discount.is_active && end >= now ? (
+                                                        {resolvedCanEditDiscounts && discount.is_active && end >= now && (
                                                             <button
                                                                 type="button"
                                                                 onClick={() => openConfirmDeactivate(discount)}
                                                                 disabled={deactivatingId === discount.id}
-                                                                className="p-2 text-rose-600 hover:bg-rose-50 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs disabled:opacity-40"
+                                                                className="w-10 h-10 sm:w-8 sm:h-8 rounded-xl bg-rose-50 text-rose-700 border border-rose-200/70 flex items-center justify-center active:scale-95 disabled:opacity-40"
                                                                 title="End Early"
+                                                                aria-label="End Early"
                                                             >
-                                                                <PowerOff size={14} />
+                                                                <PowerOff size={15} />
                                                             </button>
-                                                        ) : (
-                                                            <span className="text-[11px] text-stone-400 font-medium">—</span>
                                                         )}
                                                     </div>
-                                                </td>
-                                            </tr>
+                                                </div>
+                                            </div>
                                         );
                                     })
                                 ) : (
-                                    <tr>
-                                        <td colSpan="8" className="py-12 text-center text-xs text-stone-400">
-                                            <WorkspaceEmptyState
-                                                compact
-                                                align="top"
-                                                icon={Tag}
-                                                title="No promotional campaigns found"
-                                                description="Create your first promotional discount campaign to boost seller sales."
-                                            />
-                                        </td>
-                                    </tr>
+                                    <div className="sm:col-span-2">
+                                        <WorkspaceEmptyState
+                                            compact
+                                            align="top"
+                                            icon={Tag}
+                                            title="No promotional campaigns found"
+                                            description="Create your first promotional discount campaign to boost seller sales."
+                                        />
+                                    </div>
                                 )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                            </div>
+
+                            {/* DESKTOP TABLE VIEW (>= lg) */}
+                            <div className="hidden lg:block overflow-x-auto rounded-b-3xl">
+                                <table className="w-full min-w-[960px] text-left text-xs border-collapse">
+                                    <thead className="bg-stone-50 border-b border-stone-200/70 text-[10px] uppercase tracking-wider font-extrabold text-stone-400">
+                                        <tr>
+                                            <th className="py-3 px-5">Campaign / Discount</th>
+                                            <th className="py-3 px-4 text-center">Type & Rate</th>
+                                            <th className="py-3 px-4">Effective Schedule</th>
+                                            <th className="py-3 px-4 text-center">Linked Products</th>
+                                            <th className="py-3 px-4 text-center">Order Limit</th>
+                                            <th className="py-3 px-4 text-center">Promo Sales</th>
+                                            <th className="py-3 px-4 text-center">Status</th>
+                                            <th className="py-3 px-5 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-stone-100">
+                                        {filteredDiscounts.length > 0 ? (
+                                            filteredDiscounts.map((discount) => {
+                                                const now = new Date();
+                                                const start = new Date(discount.start_at);
+                                                const end = new Date(discount.end_at);
+                                                const isActive = discount.is_active && start <= now && end >= now;
+                                                const isUpcoming = discount.is_active && start > now;
+
+                                                return (
+                                                    <tr key={discount.id} className="hover:bg-stone-50/50 transition">
+                                                        <td className="py-3.5 px-5 font-bold text-stone-900">
+                                                            <span className="block">{discount.name || `Discount Campaign #${discount.id}`}</span>
+                                                            <span className="text-[10px] text-stone-400 font-mono">Created {new Date(discount.created_at).toLocaleDateString()}</span>
+                                                        </td>
+                                                        <td className="py-3.5 px-4 text-center font-extrabold text-clay-700 whitespace-nowrap">
+                                                            <span className="bg-amber-50 text-amber-800 border border-amber-200/80 px-2.5 py-1 rounded-xl text-xs font-extrabold whitespace-nowrap inline-block shadow-sm">
+                                                                {discount.type === "percentage" ? `-${discount.value}% OFF` : `PHP ${Number(discount.value).toLocaleString(undefined, { minimumFractionDigits: 2 })} Fixed`}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3.5 px-4 text-stone-600 text-[11px] whitespace-nowrap">
+                                                            <p><span className="text-stone-400 uppercase text-[9px] font-extrabold mr-1">Start:</span><span className="font-semibold text-stone-800">{formatDate(discount.start_at)}</span></p>
+                                                            <p><span className="text-stone-400 uppercase text-[9px] font-extrabold mr-1.5">End:</span><span className="font-semibold text-stone-800">{formatDate(discount.end_at)}</span></p>
+                                                        </td>
+                                                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                                            {discount.products && discount.products.length > 0 ? (
+                                                                <div className="inline-flex items-center justify-center gap-2 shrink-0">
+                                                                    <div className="flex -space-x-2 items-center shrink-0">
+                                                                        {discount.products.slice(0, 3).map((p) => (
+                                                                            <img
+                                                                                key={p.id}
+                                                                                src={resolveImageUrl(p.cover_photo_path || p.img)}
+                                                                                alt={p.name}
+                                                                                className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover bg-stone-100 border border-stone-200 shrink-0"
+                                                                                onError={(e) => { e.target.onerror = null; e.target.src = "/images/placeholder.svg"; }}
+                                                                            />
+                                                                        ))}
+                                                                    </div>
+                                                                    <span className="font-bold text-stone-800 text-xs">
+                                                                        {discount.products.length} {discount.products.length === 1 ? "product" : "products"}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-stone-400 text-xs font-medium">No products</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                                            {discount.max_purchase_limit ? (
+                                                                <span className="bg-stone-100 text-stone-700 font-bold px-2.5 py-1 rounded-lg text-[11px] border border-stone-200/60">
+                                                                    Max {discount.max_purchase_limit} / order
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-stone-300 text-[11px]">No Limit</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="py-3.5 px-4 text-center font-bold text-stone-700 whitespace-nowrap">
+                                                            {discount.promo_sold || 0} units
+                                                        </td>
+                                                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold ${
+                                                                isActive
+                                                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                                                                    : isUpcoming
+                                                                    ? "bg-amber-50 text-amber-800 border border-amber-200/60"
+                                                                    : "bg-stone-100 text-stone-600 border border-stone-200"
+                                                            }`}>
+                                                                {isActive ? "Ongoing" : isUpcoming ? "Upcoming" : "Expired / Ended"}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3.5 px-5 text-right whitespace-nowrap">
+                                                            <div className="flex items-center justify-end gap-1">
+                                                                {resolvedCanEditDiscounts && discount.is_active && end >= now && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleOpenEdit(discount)}
+                                                                        className="p-2 text-clay-700 hover:bg-clay-50/60 border border-stone-200/60 rounded-xl transition min-w-[36px] min-h-[36px] flex items-center justify-center bg-white"
+                                                                        title="Edit Campaign"
+                                                                    >
+                                                                        <Edit3 size={14} />
+                                                                    </button>
+                                                                )}
+                                                                {resolvedCanEditDiscounts && discount.is_active && end >= now ? (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => openConfirmDeactivate(discount)}
+                                                                        disabled={deactivatingId === discount.id}
+                                                                        className="p-2 text-rose-600 hover:bg-rose-50 border border-stone-200/60 rounded-xl transition min-w-[36px] min-h-[36px] flex items-center justify-center bg-white disabled:opacity-40"
+                                                                        title="End Early"
+                                                                    >
+                                                                        <PowerOff size={14} />
+                                                                    </button>
+                                                                ) : (
+                                                                    <span className="text-[11px] text-stone-400 font-medium">—</span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="8" className="py-12 text-center text-xs text-stone-400">
+                                                    <WorkspaceEmptyState
+                                                        compact
+                                                        align="top"
+                                                        icon={Tag}
+                                                        title="No promotional campaigns found"
+                                                        description="Create your first promotional discount campaign to boost seller sales."
+                                                    />
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </>
+                )}
             </main>
 
-            {/* Mobile Floating Action Button (FAB) */}
-            <button
-                type="button"
-                onClick={handleOpenCreate}
-                className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] right-4 z-40 bg-clay-600 text-white rounded-full p-3.5 shadow-xl active:scale-90 transition-transform md:hidden flex items-center justify-center min-h-[52px] min-w-[52px]"
-                title="Create Discount Campaign"
-                aria-label="Create Discount Campaign"
-            >
-                <Plus size={22} />
-            </button>
-
-            {/* Confirmation Modal for End Early */}
             <ConfirmationModal
                 isOpen={confirmModal.isOpen}
                 onClose={() => setConfirmModal({ isOpen: false, discountId: null, discountName: "" })}
@@ -525,13 +549,12 @@ export default function DiscountManager({ discounts, stats, filters, products, a
                 processing={deactivatingId !== null}
             />
 
-            {/* Discount Creation / Editing Modal */}
             <DiscountModal
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
                 allProducts={products}
                 selectedProducts={EMPTY_SELECTED_PRODUCTS}
-                canEdit={true}
+                canEdit={resolvedCanEditDiscounts}
                 discountToEdit={editingDiscount}
             />
         </>

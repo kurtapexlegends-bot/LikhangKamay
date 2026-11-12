@@ -5,9 +5,11 @@
     @php
         $isB2B = $order->isB2BOrder();
         $merchandiseSubtotal = (float) ($order->merchandise_subtotal ?? $order->total_amount ?? 0);
+        $voucherDiscount = (float) ($order->voucher_discount_amount ?? 0);
+        $netMerchandise = max(0.00, round($merchandiseSubtotal - $voucherDiscount, 2));
         $convenienceFee = (float) ($order->convenience_fee_amount ?? 0);
         $shippingFee = (float) ($order->shipping_fee_amount ?? 0);
-        $totalPaid = (float) ($order->total_amount ?? ($merchandiseSubtotal + $convenienceFee + $shippingFee));
+        $totalPaid = (float) ($order->total_amount ?? ($netMerchandise + $convenienceFee + $shippingFee));
         $shippingAddressType = $order->shipping_address_type ? ucfirst(str_replace('_', ' ', $order->shipping_address_type)) : 'Standard';
         $docTitle = $isB2B ? "B2B Purchase Order & Wholesale Sales Invoice - {$order->order_number}" : "Sales Invoice - {$order->order_number}";
 
@@ -19,14 +21,18 @@
 
         $vatRate = (float) ($order->vat_rate ?? 12.00);
 
-        if ($isVatRegistered) {
-            $vatableSales = (float) ($order->vatable_sales > 0 ? $order->vatable_sales : round($merchandiseSubtotal / 1.12, 2));
-            $vatAmount = (float) ($order->vat_amount > 0 ? $order->vat_amount : round($merchandiseSubtotal - $vatableSales, 2));
+        if ($netMerchandise <= 0) {
+            $vatableSales = 0.00;
+            $vatAmount = 0.00;
+            $vatExemptSales = 0.00;
+        } elseif ($isVatRegistered) {
+            $vatableSales = (float) ($order->vatable_sales > 0 ? $order->vatable_sales : round($netMerchandise / 1.12, 2));
+            $vatAmount = (float) ($order->vat_amount > 0 ? $order->vat_amount : round($netMerchandise - $vatableSales, 2));
             $vatExemptSales = 0.00;
         } else {
             $vatableSales = 0.00;
             $vatAmount = 0.00;
-            $vatExemptSales = (float) ($order->vat_exempt_sales > 0 ? $order->vat_exempt_sales : $merchandiseSubtotal);
+            $vatExemptSales = (float) ($order->vat_exempt_sales > 0 ? $order->vat_exempt_sales : $netMerchandise);
         }
     @endphp
     <title>{{ $docTitle }}</title>
@@ -254,7 +260,7 @@
                 @else
                 <tr>
                     <td class="tax-lbl">VAT-Exempt Sales:</td>
-                    <td class="tax-val">PHP {{ number_format($vatExemptSales ?: $merchandiseSubtotal, 2) }}</td>
+                    <td class="tax-val">PHP {{ number_format($vatExemptSales, 2) }}</td>
                 </tr>
                 @endif
             </table>
@@ -265,6 +271,12 @@
                 <span>{{ $isB2B ? 'Materials Subtotal' : 'Items Subtotal' }}</span>
                 <span>PHP {{ number_format($merchandiseSubtotal, 2) }}</span>
             </div>
+            @if($voucherDiscount > 0)
+            <div class="totals-row" style="color: #047857; font-weight: 700;">
+                <span>Shop Voucher{{ $order->voucher_code ? ' (' . $order->voucher_code . ')' : '' }}</span>
+                <span>-PHP {{ number_format($voucherDiscount, 2) }}</span>
+            </div>
+            @endif
             @if($convenienceFee > 0)
             <div class="totals-row">
                 <span>Service Fee</span>

@@ -91,13 +91,34 @@ class DiscountController extends Controller
                     'img' => StorageUrl::url($p->cover_photo_path, '/images/placeholder.svg'),
                 ]);
 
+            $actor = $request->user();
+            $canAccessVouchers = $actor->canAccessSellerModule('vouchers');
+            $canEditVouchers = $actor->isSellerOwner() || $actor->canEditSellerModule('vouchers');
+            $canEditCampaignDiscounts = $actor->isSellerOwner() || $actor->canEditSellerModule('discounts');
+
+            $voucherData = $canAccessVouchers
+                ? rescue(
+                    fn () => app(\App\Services\VoucherService::class)->getSellerVoucherDashboardData($seller),
+                    ['vouchers' => [], 'voucherStats' => ['ongoing_count' => 0, 'upcoming_count' => 0, 'expired_count' => 0, 'total_redeemed' => 0], 'voucherQuota' => ['active_count' => 0, 'limit' => $seller->getActiveVoucherLimit(), 'can_create' => true, 'is_elite' => $seller->isEliteTier()]]
+                )
+                : ['vouchers' => [], 'voucherStats' => ['ongoing_count' => 0, 'upcoming_count' => 0, 'expired_count' => 0, 'total_redeemed' => 0], 'voucherQuota' => ['active_count' => 0, 'limit' => $seller->getActiveVoucherLimit(), 'can_create' => false, 'is_elite' => $seller->isEliteTier()]];
+
             return Inertia::render('Seller/Marketing/DiscountManager', [
                 'discounts' => $discounts,
                 'stats' => $stats,
                 'filters' => [
                     'status' => $statusFilter,
+                    'tab' => $request->query('tab', 'campaigns'),
+                    'search' => $request->query('search', ''),
                 ],
                 'products' => $products,
+                'vouchers' => $voucherData['vouchers'],
+                'voucherStats' => $voucherData['voucherStats'],
+                'voucherQuota' => $voucherData['voucherQuota'],
+                'canAccessCampaignDiscounts' => true,
+                'canAccessVouchers' => $canAccessVouchers,
+                'canEditVouchers' => $canEditVouchers,
+                'canEditCampaignDiscounts' => $canEditCampaignDiscounts,
             ]);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('DiscountController index error: ' . $e->getMessage(), [
@@ -120,13 +141,31 @@ class DiscountController extends Controller
                 ]);
             }
 
+            $actor = $request->user();
+            $canAccessVouchers = $actor ? $actor->canAccessSellerModule('vouchers') : false;
+            $voucherData = $canAccessVouchers
+                ? rescue(
+                    fn () => app(\App\Services\VoucherService::class)->getSellerVoucherDashboardData($seller),
+                    ['vouchers' => [], 'voucherStats' => ['ongoing_count' => 0, 'upcoming_count' => 0, 'expired_count' => 0, 'total_redeemed' => 0], 'voucherQuota' => ['active_count' => 0, 'limit' => $seller->getActiveVoucherLimit(), 'can_create' => true, 'is_elite' => $seller->isEliteTier()]]
+                )
+                : ['vouchers' => [], 'voucherStats' => ['ongoing_count' => 0, 'upcoming_count' => 0, 'expired_count' => 0, 'total_redeemed' => 0], 'voucherQuota' => ['active_count' => 0, 'limit' => $seller->getActiveVoucherLimit(), 'can_create' => false, 'is_elite' => $seller->isEliteTier()]];
+
             return Inertia::render('Seller/Marketing/DiscountManager', [
                 'discounts' => $emptyPaginator,
                 'stats' => $emptyStats,
                 'filters' => [
                     'status' => $statusFilter,
+                    'tab' => $request->query('tab', 'campaigns'),
+                    'search' => $request->query('search', ''),
                 ],
                 'products' => collect(),
+                'vouchers' => $voucherData['vouchers'],
+                'voucherStats' => $voucherData['voucherStats'],
+                'voucherQuota' => $voucherData['voucherQuota'],
+                'canAccessCampaignDiscounts' => true,
+                'canAccessVouchers' => $canAccessVouchers,
+                'canEditVouchers' => $actor ? ($actor->isSellerOwner() || $actor->canEditSellerModule('vouchers')) : false,
+                'canEditCampaignDiscounts' => $actor ? ($actor->isSellerOwner() || $actor->canEditSellerModule('discounts')) : false,
                 'load_error' => 'Unable to load discounts at this moment.',
             ]);
         }

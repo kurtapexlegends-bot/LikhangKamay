@@ -56,6 +56,20 @@
                         <td colspan="2" align="center" style="padding: 12px 0; font-size: 13px; color: #8C827A;">Handcrafted items in preparation</td>
                     </tr>
                     @endforelse
+                    @if((float) ($order->voucher_discount_amount ?? 0) > 0)
+                    <tr>
+                        <td align="left" style="padding: 10px 0; font-size: 13px; color: #047857; border-bottom: 1px dashed #E7E1D8;">
+                            Shop Voucher{{ $order->voucher_code ? ' (' . $order->voucher_code . ')' : '' }}
+                        </td>
+                        <td align="right" style="padding: 10px 0; font-size: 13px; color: #047857; font-weight: 600; border-bottom: 1px dashed #E7E1D8;">-₱{{ number_format((float) $order->voucher_discount_amount, 2) }}</td>
+                    </tr>
+                    @endif
+                    @if((float) ($order->convenience_fee_amount ?? 0) > 0)
+                    <tr>
+                        <td align="left" style="padding: 10px 0; font-size: 13px; color: #8C827A; border-bottom: 1px dashed #E7E1D8;">Service Fee</td>
+                        <td align="right" style="padding: 10px 0; font-size: 13px; color: #8C827A; border-bottom: 1px dashed #E7E1D8;">₱{{ number_format((float) $order->convenience_fee_amount, 2) }}</td>
+                    </tr>
+                    @endif
                     @if(isset($order->shipping_fee_amount) && $order->shipping_fee_amount > 0)
                     <tr>
                         <td align="left" style="padding: 10px 0; font-size: 13px; color: #8C827A; border-bottom: 1px dashed #E7E1D8;">Delivery Fee</td>

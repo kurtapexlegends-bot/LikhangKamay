@@ -68,6 +68,7 @@ class Order extends Model
         'return_reason', 'return_proof_image',
         'replacement_resolution_description', 'replacement_started_at', 'replacement_resolved_at',
         'vat_type', 'vatable_sales', 'vat_amount', 'vat_exempt_sales', 'vat_rate',
+        'voucher_id', 'voucher_code', 'voucher_discount_amount',
         'is_test',
     ];
 
@@ -97,6 +98,7 @@ class Order extends Model
         'vat_amount' => 'decimal:2',
         'vat_exempt_sales' => 'decimal:2',
         'vat_rate' => 'decimal:2',
+        'voucher_discount_amount' => 'decimal:2',
         'review_reminder_sent' => \App\Casts\PostgresCompatibleBoolean::class,
         'shipment_reminder_sent' => \App\Casts\PostgresCompatibleBoolean::class,
     ];
@@ -109,6 +111,10 @@ class Order extends Model
                 \Illuminate\Support\Facades\DB::table('order_deliveries')
                     ->where('order_id', $order->id)
                     ->delete();
+            }
+
+            if (in_array($order->status, ['Cancelled', 'Rejected'], true) && $order->id) {
+                rescue(fn () => app(\App\Services\VoucherService::class)->revertRedemptionsForOrder($order), report: false);
             }
         });
     }
@@ -148,6 +154,16 @@ class Order extends Model
     public function pickupLocation()
     {
         return $this->belongsTo(SellerLocation::class, 'pickup_location_id');
+    }
+
+    public function voucher()
+    {
+        return $this->belongsTo(Voucher::class, 'voucher_id')->withTrashed();
+    }
+
+    public function voucherRedemptions()
+    {
+        return $this->hasMany(VoucherRedemption::class);
     }
 
     /**
@@ -252,8 +268,9 @@ class Order extends Model
     public function getResolvedShippingFeeAmount(): float
     {
         $fee = (float) ($this->getAttribute('shipping_fee_amount') ?? 0);
-        if ($fee <= 0 && (float) $this->total_amount > (float) $this->merchandise_subtotal) {
-            $diff = (float) $this->total_amount - (float) $this->merchandise_subtotal - (float) ($this->convenience_fee_amount ?? 0);
+        $netMerchandise = max(0.0, (float) $this->merchandise_subtotal - (float) ($this->voucher_discount_amount ?? 0));
+        if ($fee <= 0 && (float) $this->total_amount > $netMerchandise) {
+            $diff = (float) $this->total_amount - $netMerchandise - (float) ($this->convenience_fee_amount ?? 0);
             if ($diff > 0) {
                 return round($diff, 2);
             }
