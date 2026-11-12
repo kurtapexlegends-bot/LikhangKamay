@@ -25,6 +25,7 @@ export default function VoucherModal({
     onClose,
     voucherToEdit = null,
     products = [],
+    canManage = true,
     storeRouteName = "vouchers.store",
     updateRouteName = "vouchers.update",
 }) {
@@ -65,22 +66,30 @@ export default function VoucherModal({
         clearErrors();
 
         if (voucherToEdit) {
+            const normalizedType = voucherToEdit.discount_type || "percentage";
+            const rawDiscountVal = Number(voucherToEdit.discount_value ?? 10);
+            const normalizedDiscountVal = normalizedType === "percentage"
+                ? String(Math.max(1, Math.min(90, Math.round(rawDiscountVal))))
+                : String(rawDiscountVal > 0 ? rawDiscountVal : "10");
+            const rawMinSpend = Number(voucherToEdit.min_spend || 0);
+            const rawMaxDiscount = Number(voucherToEdit.max_discount || 0);
+
             setData({
                 code: voucherToEdit.code || "",
                 name: voucherToEdit.name || "",
                 description: voucherToEdit.description || "",
-                discount_type: voucherToEdit.discount_type || "percentage",
-                discount_value: String(voucherToEdit.discount_value ?? "10"),
+                discount_type: normalizedType,
+                discount_value: normalizedDiscountVal,
                 scope_type: voucherToEdit.scope_type || "all",
                 applicable_products: Array.isArray(voucherToEdit.applicable_products)
                     ? voucherToEdit.applicable_products
                     : [],
                 applicable_category: voucherToEdit.applicable_category || "",
                 min_requirement_type: voucherToEdit.min_requirement_type || "spend",
-                min_spend: Number(voucherToEdit.min_spend || 0) > 0 ? String(voucherToEdit.min_spend) : "",
+                min_spend: rawMinSpend > 0 ? String(rawMinSpend) : "",
                 min_quantity: String(voucherToEdit.min_quantity || "1"),
-                max_discount: Number(voucherToEdit.max_discount || 0) > 0 ? String(voucherToEdit.max_discount) : "",
-                usage_limit_total: Number(voucherToEdit.usage_limit_total || 0) > 0 ? String(voucherToEdit.usage_limit_total) : "",
+                max_discount: rawMaxDiscount > 0 ? String(rawMaxDiscount) : "",
+                usage_limit_total: Number(voucherToEdit.usage_limit_total || 0) > 0 ? String(Number(voucherToEdit.usage_limit_total)) : "",
                 usage_limit_per_user: String(voucherToEdit.usage_limit_per_user ?? "1"),
                 target_audience: voucherToEdit.target_audience || "all",
                 is_public: Boolean(voucherToEdit.is_public ?? true),
@@ -232,6 +241,7 @@ export default function VoucherModal({
                                 data={data}
                                 setData={setData}
                                 errors={errors}
+                                showStatusToggle={canManage}
                             />
                         </div>
 
@@ -268,7 +278,15 @@ export default function VoucherModal({
                             className="inline-flex items-center gap-2 px-5 py-2 min-h-[44px] sm:min-h-[40px] text-xs font-bold text-white bg-clay-600 hover:bg-clay-700 rounded-xl shadow-xs transition active:scale-95 disabled:opacity-50 cursor-pointer"
                         >
                             <CheckCircle2 size={15} />
-                            <span>{processing ? "Saving..." : isEditing ? "Save Changes" : "Create Voucher"}</span>
+                            <span>
+                                {processing
+                                    ? "Saving..."
+                                    : isEditing
+                                    ? "Save Changes"
+                                    : canManage
+                                    ? "Create Voucher"
+                                    : "Submit for Approval"}
+                            </span>
                         </button>
                     </div>
                 </div>

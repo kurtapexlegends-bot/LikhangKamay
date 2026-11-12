@@ -38,12 +38,14 @@ export default function VoucherManagementPanel({
     quota = null,
     isPlatformMode = false,
     canEdit = true,
+    canManage,
     initialSearch = "",
     products = [],
     storeRouteName = "vouchers.store",
     updateRouteName = "vouchers.update",
     destroyRouteName = "vouchers.destroy",
 }) {
+    const canManageExisting = typeof canManage === "boolean" ? canManage : canEdit;
     const [statusTab, setStatusTab] = useState("ongoing");
     const [searchQuery, setSearchQuery] = useState(initialSearch || "");
     const [typeFilter, setTypeFilter] = useState("all");
@@ -95,7 +97,7 @@ export default function VoucherManagementPanel({
     };
 
     const handleOpenEdit = (voucher) => {
-        if (!canEdit) return;
+        if (!canManageExisting) return;
         setEditingVoucher(voucher);
         setIsModalOpen(true);
     };
@@ -235,7 +237,7 @@ export default function VoucherManagementPanel({
                 <div className="block lg:hidden p-3.5 sm:p-4 space-y-3.5 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4 bg-stone-50/40 rounded-b-3xl">
                     {filteredVouchers.length > 0 ? (
                         filteredVouchers.map((voucher) => {
-                            const isOngoing = voucher.status_label === "ongoing";
+                            const canDeactivate = Boolean(voucher.is_active) && ["ongoing", "upcoming"].includes(voucher.status_label);
                             return (
                                 <div
                                     key={voucher.id}
@@ -286,7 +288,7 @@ export default function VoucherManagementPanel({
                                             {voucher.is_public ? <Globe size={12} className="text-emerald-600" /> : <Lock size={12} className="text-amber-600" />}
                                             {voucher.is_public ? "Public Claimable" : "Code-Only"}
                                         </span>
-                                        {canEdit ? (
+                                        {canManageExisting ? (
                                             <div className="flex items-center gap-2">
                                                 <button
                                                     type="button"
@@ -296,7 +298,7 @@ export default function VoucherManagementPanel({
                                                 >
                                                     <Edit3 size={14} />
                                                 </button>
-                                                {isOngoing && (
+                                                {canDeactivate && (
                                                     <button
                                                         type="button"
                                                         onClick={() =>
@@ -314,7 +316,9 @@ export default function VoucherManagementPanel({
                                                 )}
                                             </div>
                                         ) : (
-                                            <span className="text-[11px] font-medium text-stone-400">Read-only</span>
+                                            <span className="text-[11px] font-medium text-stone-400">
+                                                {canEdit ? "Manager only" : "Read-only"}
+                                            </span>
                                         )}
                                     </div>
                                 </div>
@@ -350,7 +354,7 @@ export default function VoucherManagementPanel({
                         <tbody className="divide-y divide-stone-100">
                             {filteredVouchers.length > 0 ? (
                                 filteredVouchers.map((voucher) => {
-                                    const isOngoing = voucher.status_label === "ongoing";
+                                    const canDeactivate = Boolean(voucher.is_active) && ["ongoing", "upcoming"].includes(voucher.status_label);
                                     return (
                                         <tr key={voucher.id} className="hover:bg-stone-50/50 transition">
                                             <td className="py-3.5 px-5">
@@ -401,7 +405,7 @@ export default function VoucherManagementPanel({
                                                 <div>Until: <strong className="text-stone-800">{formatDate(voucher.expires_at)}</strong></div>
                                             </td>
                                             <td className="py-3.5 px-5 text-right whitespace-nowrap">
-                                                {canEdit ? (
+                                                {canManageExisting ? (
                                                     <div className="flex items-center justify-end gap-1.5">
                                                         <button
                                                             type="button"
@@ -411,7 +415,7 @@ export default function VoucherManagementPanel({
                                                         >
                                                             <Edit3 size={14} />
                                                         </button>
-                                                        {isOngoing && (
+                                                        {canDeactivate && (
                                                             <button
                                                                 type="button"
                                                                 onClick={() =>
@@ -430,7 +434,9 @@ export default function VoucherManagementPanel({
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <span className="text-[11px] font-medium text-stone-400">Read-only</span>
+                                                    <span className="text-[11px] font-medium text-stone-400">
+                                                        {canEdit ? "Manager only" : "Read-only"}
+                                                    </span>
                                                 )}
                                             </td>
                                         </tr>
@@ -475,6 +481,7 @@ export default function VoucherManagementPanel({
                 }}
                 voucherToEdit={editingVoucher}
                 products={products}
+                canManage={canManageExisting}
                 storeRouteName={storeRouteName}
                 updateRouteName={updateRouteName}
             />

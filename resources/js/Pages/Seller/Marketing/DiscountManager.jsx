@@ -25,14 +25,18 @@ export default function DiscountManager({
     canAccessCampaignDiscounts = true,
     canAccessVouchers,
     canEditVouchers,
+    canManageVouchers,
     canEditCampaignDiscounts,
     auth,
 }) {
-    const { openSidebar } = useSellerWorkspaceShell();
+    const { openSidebar, sellerSidebar } = useSellerWorkspaceShell();
     const { canAccess: moduleCanAccessVouchers, canEdit: moduleCanEditVouchers } = useSellerModuleAccess("vouchers");
     const { canEdit: moduleCanEditDiscounts } = useSellerModuleAccess("discounts");
     const resolvedCanAccessVouchers = typeof canAccessVouchers === "boolean" ? canAccessVouchers : moduleCanAccessVouchers;
     const resolvedCanEditVouchers = typeof canEditVouchers === "boolean" ? canEditVouchers : moduleCanEditVouchers;
+    const resolvedCanManageVouchers = typeof canManageVouchers === "boolean"
+        ? canManageVouchers
+        : resolvedCanEditVouchers && (sellerSidebar?.actorType !== "staff" || sellerSidebar?.staffUserLevel === "staff_manager");
     const resolvedCanEditDiscounts = typeof canEditCampaignDiscounts === "boolean" ? canEditCampaignDiscounts : moduleCanEditDiscounts;
 
     const [activeSection, setActiveSection] = useState(() => {
@@ -199,6 +203,7 @@ export default function DiscountManager({
                         products={products}
                         isPlatformMode={false}
                         canEdit={resolvedCanEditVouchers}
+                        canManage={resolvedCanManageVouchers}
                         initialSearch={filters?.search || ""}
                         storeRouteName="vouchers.store"
                         updateRouteName="vouchers.update"

@@ -50,6 +50,7 @@ class VoucherController extends Controller
 
         $canAccessDiscounts = $seller->canAccessDiscounts() && $actor->canAccessSellerModule('discounts');
         $canEditVouchers = $actor->isSellerOwner() || $actor->canEditSellerModule('vouchers');
+        $canManageVouchers = $actor->isSellerOwner() || ($actor->isStaffManager() && $actor->canEditSellerModule('vouchers'));
         $canEditCampaignDiscounts = $actor->isSellerOwner() || $actor->canEditSellerModule('discounts');
 
         return Inertia::render('Seller/Marketing/DiscountManager', [
@@ -72,6 +73,7 @@ class VoucherController extends Controller
             'canAccessCampaignDiscounts' => $canAccessDiscounts,
             'canAccessVouchers' => true,
             'canEditVouchers' => $canEditVouchers,
+            'canManageVouchers' => $canManageVouchers,
             'canEditCampaignDiscounts' => $canEditCampaignDiscounts,
         ]);
     }

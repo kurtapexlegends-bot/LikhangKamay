@@ -969,12 +969,15 @@ class VoucherEngineTest extends TestCase
             'usage_limit_per_user' => 1,
         ])->assertForbidden();
 
-        // 2. Read-only voucher staff can view index (canEditVouchers = false) but cannot POST/PUT/DELETE
+        // 2. Read-only voucher staff can view index (canEditVouchers = false, canManageVouchers = false) but cannot POST/PUT/DELETE
         $readOnlyStaff = $createStaff('custom', ['vouchers' => User::STAFF_ACCESS_PERMISSION_READ_ONLY]);
         $this->actingAs($readOnlyStaff)
             ->get(route('vouchers.index'))
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->where('canEditVouchers', false));
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('canEditVouchers', false)
+                ->where('canManageVouchers', false)
+            );
         $this->actingAs($readOnlyStaff)->post(route('vouchers.store'), [
             'code' => 'READONLY01',
             'name' => 'Should Fail',
@@ -983,8 +986,16 @@ class VoucherEngineTest extends TestCase
             'usage_limit_per_user' => 1,
         ])->assertForbidden();
 
-        // 3. Non-manager staff explicitly granted vouchers:can_edit routes through OwnerApproval::DOMAIN_DISCOUNT
+        // 3. Non-manager staff explicitly granted vouchers:can_edit gets canEditVouchers=true, canManageVouchers=false and routes through OwnerApproval::DOMAIN_DISCOUNT
         $voucherClerk = $createStaff('custom', ['vouchers' => User::STAFF_ACCESS_PERMISSION_CAN_EDIT]);
+        $this->actingAs($voucherClerk)
+            ->get(route('vouchers.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('canEditVouchers', true)
+                ->where('canManageVouchers', false)
+            );
+
         $this->actingAs($voucherClerk)
             ->from(route('vouchers.index'))
             ->post(route('vouchers.store'), [
@@ -1013,9 +1024,16 @@ class VoucherEngineTest extends TestCase
         $this->actingAs($owner)->post(route('seller.approvals.approve', $approval->id))->assertRedirect();
         $this->assertTrue((bool) $draftVoucher->fresh()->is_active);
 
-        // 4. SellerSearchService finds vouchers even on non-Elite accounts without discounts module
+        // 4. SellerSearchService finds vouchers even on non-Elite accounts without discounts module,
+        //    but blocks Elite stock_clerk who has products/discounts without vouchers permission!
         $searchResults = app(SellerSearchService::class)->search($owner, 'STAFFVCH01', 'like');
         $this->assertTrue(collect($searchResults)->contains(fn ($r) => $r['type'] === 'Voucher' && str_contains($r['title'], 'STAFFVCH01')));
+
+        $owner->premium_tier = 'super_premium';
+        $owner->save();
+        $eliteStockClerk = $createStaff('stock_clerk', ['products' => User::STAFF_ACCESS_PERMISSION_CAN_EDIT]);
+        $clerkSearchResults = app(SellerSearchService::class)->search($eliteStockClerk->fresh(), 'STAFFVCH01', 'like');
+        $this->assertFalse(collect($clerkSearchResults)->contains(fn ($r) => $r['type'] === 'Voucher'));
     }
 
     public function test_voucher_quota_bypass_soft_deleted_products_utc_dates_min_spend_null_and_rejected_orders(): void
@@ -1134,12 +1152,21 @@ class VoucherEngineTest extends TestCase
             ->assertOk()
             ->assertJsonPath('valid', true);
 
-        // 4. ValidateVoucherRequest rejects non-existent product IDs
+        // 4. ValidateVoucherRequest rejects non-existent and soft-deleted product IDs
         $this->actingAs($buyer)
             ->postJson(route('checkout.validate-voucher'), [
                 'code' => 'NEWONLY1',
                 'subtotals' => [(string) $standardSeller->id => 300.00],
                 'items' => [['id' => 99999999, 'qty' => 1]],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('items.0.id');
+
+        $this->actingAs($buyer)
+            ->postJson(route('checkout.validate-voucher'), [
+                'code' => 'NEWONLY1',
+                'subtotals' => [(string) $standardSeller->id => 300.00],
+                'items' => [['id' => $prodB->id, 'qty' => 1, 'price' => 9999]],
             ])
             ->assertStatus(422)
             ->assertJsonValidationErrors('items.0.id');
@@ -1160,6 +1187,7 @@ class VoucherEngineTest extends TestCase
                 ->where('canAccessCampaignDiscounts', true)
                 ->where('canAccessVouchers', true)
                 ->where('canEditVouchers', true)
+                ->where('canManageVouchers', true)
                 ->where('canEditCampaignDiscounts', true)
                 ->has('vouchers')
                 ->has('voucherStats')
@@ -1176,6 +1204,7 @@ class VoucherEngineTest extends TestCase
                 ->where('canAccessCampaignDiscounts', true)
                 ->where('canAccessVouchers', true)
                 ->where('canEditVouchers', true)
+                ->where('canManageVouchers', true)
                 ->where('canEditCampaignDiscounts', true)
             );
 
@@ -1196,6 +1225,7 @@ class VoucherEngineTest extends TestCase
                 ->where('canAccessCampaignDiscounts', true)
                 ->where('canAccessVouchers', true)
                 ->where('canEditVouchers', true)
+                ->where('canManageVouchers', true)
                 ->where('canEditCampaignDiscounts', true)
                 ->where('voucherQuota.is_elite', true)
                 ->where('vouchers', [])

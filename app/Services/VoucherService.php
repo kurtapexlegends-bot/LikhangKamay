@@ -246,7 +246,13 @@ class VoucherService
             $id = (int) ($it['id'] ?? $it['product_id'] ?? 0);
             $product = $products->get($id);
             if (!$product) {
-                return $it;
+                return [
+                    'id' => $id,
+                    'artisan_id' => null,
+                    'category' => null,
+                    'price' => 0.0,
+                    'qty' => 0,
+                ];
             }
 
             $qty = max(0, (int) ($it['qty'] ?? 1));
@@ -392,7 +398,8 @@ class VoucherService
             // Filter qualifying items if cart items passed
             $shopItems = array_values(array_filter($checkoutItems, function ($it) use ($voucher) {
                 $sellerId = $it['artisan_id'] ?? $it['seller_id'] ?? null;
-                return $sellerId === null || (int) $sellerId === (int) $voucher->shop_id;
+                $qty = (int) ($it['qty'] ?? 1);
+                return $qty > 0 && ($sellerId === null || (int) $sellerId === (int) $voucher->shop_id);
             }));
 
             $qualifyingItems = !empty($shopItems) ? $this->filterQualifyingItems($voucher, $shopItems) : [];

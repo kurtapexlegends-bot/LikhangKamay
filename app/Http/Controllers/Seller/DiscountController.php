@@ -94,6 +94,7 @@ class DiscountController extends Controller
             $actor = $request->user();
             $canAccessVouchers = $actor->canAccessSellerModule('vouchers');
             $canEditVouchers = $actor->isSellerOwner() || $actor->canEditSellerModule('vouchers');
+            $canManageVouchers = $actor->isSellerOwner() || ($actor->isStaffManager() && $actor->canEditSellerModule('vouchers'));
             $canEditCampaignDiscounts = $actor->isSellerOwner() || $actor->canEditSellerModule('discounts');
 
             $voucherData = $canAccessVouchers
@@ -118,6 +119,7 @@ class DiscountController extends Controller
                 'canAccessCampaignDiscounts' => true,
                 'canAccessVouchers' => $canAccessVouchers,
                 'canEditVouchers' => $canEditVouchers,
+                'canManageVouchers' => $canManageVouchers,
                 'canEditCampaignDiscounts' => $canEditCampaignDiscounts,
             ]);
         } catch (\Throwable $e) {
@@ -165,6 +167,7 @@ class DiscountController extends Controller
                 'canAccessCampaignDiscounts' => true,
                 'canAccessVouchers' => $canAccessVouchers,
                 'canEditVouchers' => $actor ? ($actor->isSellerOwner() || $actor->canEditSellerModule('vouchers')) : false,
+                'canManageVouchers' => $actor ? ($actor->isSellerOwner() || ($actor->isStaffManager() && $actor->canEditSellerModule('vouchers'))) : false,
                 'canEditCampaignDiscounts' => $actor ? ($actor->isSellerOwner() || $actor->canEditSellerModule('discounts')) : false,
                 'load_error' => 'Unable to load discounts at this moment.',
             ]);

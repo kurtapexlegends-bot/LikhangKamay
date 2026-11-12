@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Consumer;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ValidateVoucherRequest extends FormRequest
 {
@@ -16,14 +17,16 @@ class ValidateVoucherRequest extends FormRequest
      */
     public function rules(): array
     {
+        $activeProductRule = Rule::exists('products', 'id')->whereNull('deleted_at');
+
         return [
             'code' => 'required|string|max:50',
             'shop_id' => 'nullable|integer',
             'subtotals' => 'required|array|min:1',
             'subtotals.*' => 'required|numeric|min:0',
             'items' => 'nullable|array',
-            'items.*.id' => 'nullable|integer|min:1|exists:products,id',
-            'items.*.product_id' => 'nullable|integer|min:1|exists:products,id',
+            'items.*.id' => ['nullable', 'integer', 'min:1', $activeProductRule],
+            'items.*.product_id' => ['nullable', 'integer', 'min:1', $activeProductRule],
             'items.*.qty' => 'nullable|integer|min:1|max:10000',
         ];
     }

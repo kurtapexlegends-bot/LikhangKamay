@@ -50,8 +50,8 @@ This reference eliminates blind accessibility tree dumps by providing pre-verifi
 - **Payment Method COD Radio:** `input[value="COD"]`
 - **Payment Method GCash Radio:** `input[value="GCash"]`
 - **Payment Method Maya Radio:** `input[value="Maya"]`
-- **Shop Voucher Selector / Drawer Trigger:** `button:has-text("Select Voucher")`, `button:has-text("Change")`
-- **Shop Voucher Manual Code Input:** `input[placeholder*="voucher code" i]`
+- **Shop Voucher Selector / Drawer Trigger:** `button:has-text("Select Vouchers")`, `button:has-text("Browse Vouchers")`
+- **Shop Voucher Manual Code Input:** `input[placeholder*="promo code" i]`
 - **Shop Voucher Apply Button:** `button:has-text("Apply")`
 - **Place Order Button:** `button:has-text("Place Order")`
 - **Order Confirmation Number:** `span.font-mono`, `[data-order-number]`

@@ -46,7 +46,7 @@ class SellerSearchService
             $results = array_merge($results, $this->searchSellerDiscounts($sellerId, $query, $like));
         }
 
-        if ($user->canAccessSellerModule('vouchers') || $user->canAccessSellerModule('discounts')) {
+        if ($user->canAccessSellerModule('vouchers')) {
             $results = array_merge($results, $this->searchSellerVouchers($sellerId, $query, $like, $user->canAccessSellerModule('discounts')));
         }
 

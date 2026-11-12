@@ -6,7 +6,7 @@ import {
 } from "@/Components/Seller/Marketing/voucherInputGuards";
 import { Users, Heart, UserPlus, UserCheck, Globe, Lock } from "lucide-react";
 
-export default function VoucherAudienceAndTimingFields({ data, setData, errors }) {
+export default function VoucherAudienceAndTimingFields({ data, setData, errors, showStatusToggle = true }) {
     const totalPoolNum = data.usage_limit_total !== "" ? Number(data.usage_limit_total) : null;
     const perUserMax = totalPoolNum && totalPoolNum >= 1 ? Math.min(100, totalPoolNum) : 100;
     const invalidDateRange =
@@ -253,38 +253,40 @@ export default function VoucherAudienceAndTimingFields({ data, setData, errors }
             </div>
 
             {/* 8. Voucher Status */}
-            <div className="rounded-xl border border-stone-200/80 bg-white p-4 space-y-3 shadow-2xs">
-                <span className="block font-bold text-stone-900 text-xs uppercase tracking-wider">
-                    Voucher Status
-                </span>
-                <div className="grid grid-cols-2 gap-2.5">
-                    <button
-                        type="button"
-                        onClick={() => setData("is_active", true)}
-                        className={`flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition min-h-[44px] ${
-                            data.is_active
-                                ? "border-emerald-600 bg-emerald-50/60 text-emerald-900 shadow-2xs"
-                                : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
-                        }`}
-                    >
-                        <span className={`h-2 w-2 rounded-full ${data.is_active ? "bg-emerald-600" : "bg-stone-300"}`} />
-                        <span>Active</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setData("is_active", false)}
-                        className={`flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition min-h-[44px] ${
-                            !data.is_active
-                                ? "border-amber-600 bg-amber-50/70 text-amber-900 shadow-2xs"
-                                : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
-                        }`}
-                    >
-                        <span className={`h-2 w-2 rounded-full ${!data.is_active ? "bg-amber-600" : "bg-stone-300"}`} />
-                        <span>Paused</span>
-                    </button>
+            {showStatusToggle && (
+                <div className="rounded-xl border border-stone-200/80 bg-white p-4 space-y-3 shadow-2xs">
+                    <span className="block font-bold text-stone-900 text-xs uppercase tracking-wider">
+                        Voucher Status
+                    </span>
+                    <div className="grid grid-cols-2 gap-2.5">
+                        <button
+                            type="button"
+                            onClick={() => setData("is_active", true)}
+                            className={`flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition min-h-[44px] ${
+                                data.is_active
+                                    ? "border-emerald-600 bg-emerald-50/60 text-emerald-900 shadow-2xs"
+                                    : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                            }`}
+                        >
+                            <span className={`h-2 w-2 rounded-full ${data.is_active ? "bg-emerald-600" : "bg-stone-300"}`} />
+                            <span>Active</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setData("is_active", false)}
+                            className={`flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition min-h-[44px] ${
+                                !data.is_active
+                                    ? "border-amber-600 bg-amber-50/70 text-amber-900 shadow-2xs"
+                                    : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
+                            }`}
+                        >
+                            <span className={`h-2 w-2 rounded-full ${!data.is_active ? "bg-amber-600" : "bg-stone-300"}`} />
+                            <span>Paused</span>
+                        </button>
+                    </div>
+                    {errors.is_active && <p className="text-rose-600 text-[11px] font-medium">{errors.is_active}</p>}
                 </div>
-                {errors.is_active && <p className="text-rose-600 text-[11px] font-medium">{errors.is_active}</p>}
-            </div>
+            )}
         </>
     );
 }
