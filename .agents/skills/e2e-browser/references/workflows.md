@@ -179,8 +179,8 @@
 *Persona:* `test.admin@likhangkamay.local`
 
 1. **Authentication:** Log in as `test.admin@likhangkamay.local` (`/admin/dashboard`).
-2. **KYC Document Viewer, Biometric Telemetry & Targeted Revision (`/admin/users-manager?tab=approvals`):**
-   - Assert `KycVerificationSummaryCard.jsx` renders 100-point composite score, 1:1 face-match indicator, and forensics badges; assert document zoom viewer renders `Business Permit.png` and `DTI.png`. Test rejection using `RevisionChecklistSelector` (checking specific items like `Valid Government ID (Front)` with per-item notes + overall revision summary). If viewing a resubmission, assert top banner displays `Resubmitted Application Under Review` with the `Revision Addressed` badge, and updated documents display the green `[✓ Updated]` pill (`InlineRevisionCard.jsx`).
+2. **KYC Document Viewer, Biometric Telemetry, OCR Signals & Targeted Revision (`/admin/users-manager?tab=approvals`):**
+   - Assert `KycVerificationSummaryCard.jsx` renders 100-point composite score, 1:1 face-match indicator, and forensics badges; assert submitted document cards render automated OCR credential tags and extracted pills (`Mayor's Permit Verified`, `DTI Matched`, `TIN Detected`, `Gov ID Detected`); assert `DocumentMagnifierModal.jsx` opens with interactive pan/zoom and toggles the **OCR Signals** inspection bar with confidence score and one-click `Copy` action. Test rejection using `RevisionChecklistSelector` (checking specific items like `Valid Government ID (Front)` with per-item notes + overall revision summary). If viewing a resubmission, assert top banner displays `Resubmitted Application Under Review` with the `Revision Addressed` badge, and updated documents display the green `[✓ Updated]` pill (`InlineRevisionCard.jsx`).
 3. **Dispute Arbitration Desk (`/admin/disputes`) & Dynamic Policies (`/admin/settings/policies`):**
    - Verify policy checklist confirmation badges and resolved proof photo thumbnails render cleanly in `DisputeInspectorContent.jsx`. Issue arbitration ruling (`50% Partial Refund` / `Approve Full Refund` / `Decline Claim`). For `50% Partial Refund`, verify order status transitions to `Completed` (`payment_status = 'partially_refunded'`) and 50% seller net retention.
    - Open `/admin/settings/policies`: verify `Return & Refund Criteria` editor, legal policy tabs, and version history (`Publish` / `Activate`) work without dot-notation validation errors.
@@ -238,7 +238,7 @@
    - Submit test verification code `000000` (or `123456`). Assert redirect to setup wizard for artisans.
 2. **Artisan KYC Setup Wizard (`/artisan/setup`):**
    - **Step 1 (Workshop Profile):** Workshop Name `"Cavite Heritage Crafts"`, Bio `"Traditional weaving and ceramics from Alfonso, Cavite."`, Municipality `"Alfonso"`, Address `"Sitio Maligaya, Alfonso, Cavite"`.
-   - **Step 2 (Streamlined Legal KYC Documents & Face Check):** Assert clean header (zero redundant subtitle/security callout/required badges, compact 125px `FileUploadField` dropzones with `Cancel Upload` recovery). Bind defense files to exact semantic IDs:
+   - **Step 2 (Streamlined Legal KYC Documents, Client-Side OCR & Face Check):** Assert clean header (zero redundant subtitle/security callout/required badges, compact 125px `FileUploadField` dropzones with `Cancel Upload` recovery). Bind defense files to exact semantic IDs and verify instant client-side OCR verification pills (`Mayor's Permit Verified`, `DTI Matched`, `TIN Detected`, `Gov ID Detected`) before saving Step 2 (`POST /artisan/setup` preserves `kyc_verification_meta['ocr']` alongside biometrics):
      - `Business Permit.png` $\rightarrow$ `input#business_permit`
      - `DTI.png` $\rightarrow$ `input#dti_registration`
      - `Tin ID.png` $\rightarrow$ `input#tin_id`

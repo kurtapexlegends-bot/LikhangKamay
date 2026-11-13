@@ -18,6 +18,8 @@ This reference eliminates blind accessibility tree dumps by providing pre-verifi
 - **KYC Government ID Input:** `input#valid_id`
 - **KYC TIN Registration Input:** `input#tin_id`
 - **KYC Cancel Upload Trigger (`FileUploadField.jsx`):** `button:has-text("Cancel Upload")`
+- **KYC Client-Side OCR Verification Badges (`FileUploadField.jsx`):** `span:has-text("Mayor's Permit Verified")`, `span:has-text("DTI Matched")`, `span:has-text("TIN Detected")`, `span:has-text("Gov ID Detected")`, `span:has-text("Reading document text")`
+- **KYC Magnifier OCR Inspection Bar (`DocumentMagnifierModal.jsx`):** `button:has-text("OCR Signals")`, `button:has-text("Copy ")`
 - **KYC Locked Approved Document Badge (`FileUploadField.jsx`):** `span:has-text("Approved")`
 - **KYC Face Check Card Trigger:** `button:has-text("Start Quick Face Check")` / `button:has-text("Retake Face Check")`
 - **KYC Face Check Locked Badge (`KycFaceAndIdCheckCard.jsx`):** `span:has-text("Approved")`
