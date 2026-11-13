@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Store, Package, AlertTriangle, ShieldCheck, MessageCircle, Truck, Car, Bike, ChevronDown, ChevronUp, Plus, Minus, Trash2 } from 'lucide-react';
 import { resolveImageUrl } from '@/lib/media';
+import CheckoutPoliciesNotice from '@/Components/Consumer/Shop/Checkout/CheckoutPoliciesNotice';
 
 const peso = (value) => `PHP ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -23,6 +24,8 @@ export default function OrderPricingSummary({
     onRemoveItem,
     updatingItemId,
     removingItemId,
+    activeReturnWindow = '24 hours',
+    onOpenPolicy,
 }) {
     const [collapsedGroups, setCollapsedGroups] = useState({});
 
@@ -133,7 +136,7 @@ export default function OrderPricingSummary({
                                                         <button
                                                             type="button"
                                                             onClick={() => onUpdateQty(item, -1)}
-                                                            disabled={isRemoving}
+                                                            disabled={isRemoving || isUpdating}
                                                             className="flex h-5 w-5.5 items-center justify-center rounded-l-md text-stone-500 hover:bg-stone-100 hover:text-stone-800 disabled:opacity-40 transition active:scale-90"
                                                             title={item.qty <= minQty ? 'Remove item' : 'Decrease quantity'}
                                                         >
@@ -145,7 +148,7 @@ export default function OrderPricingSummary({
                                                         <button
                                                             type="button"
                                                             onClick={() => onUpdateQty(item, 1)}
-                                                            disabled={isRemoving}
+                                                            disabled={isRemoving || isUpdating}
                                                             className="flex h-5 w-5.5 items-center justify-center rounded-r-md text-stone-500 hover:bg-stone-100 hover:text-stone-800 disabled:opacity-40 transition active:scale-90"
                                                             title="Increase quantity"
                                                         >
@@ -292,10 +295,12 @@ export default function OrderPricingSummary({
         </div>
     );
 
+    const hasBreakdownContent = showAggregateBreakdown || totalSellers > 1 || (shippingMethod === 'Delivery' && shippingQuote.status !== 'ready') || shippingMethod === 'Pick Up';
+
     const renderBreakdown = () => (
-        <div className="space-y-2.5 border-t border-stone-100 pt-3 text-xs text-stone-600">
+        <div className={`text-xs text-stone-600 ${hasBreakdownContent ? 'space-y-2 border-t border-stone-100 pt-2' : 'pt-0.5'}`}>
             {showAggregateBreakdown && (
-                <>
+                <div className="space-y-2">
                     <div className="flex justify-between items-center gap-2">
                         <span>Items Subtotal</span>
                         <span className="font-semibold text-stone-900 shrink-0 text-right whitespace-nowrap">{peso(summary.merchandiseSubtotal)}</span>
@@ -319,7 +324,7 @@ export default function OrderPricingSummary({
                             {shippingFeeSummaryValue}
                         </span>
                     </div>
-                </>
+                </div>
             )}
             {totalSellers > 1 && (
                 <div className="flex items-start gap-2 rounded-lg border border-blue-100 bg-blue-50/50 p-2 text-[10.5px] text-blue-700">
@@ -330,8 +335,8 @@ export default function OrderPricingSummary({
                     </div>
                 </div>
             )}
-            {shippingMethod === 'Delivery' && shippingQuote.status === 'error' ? (
-                <div className="mt-3 rounded-xl border border-red-200 bg-red-50/40 p-3 text-xs">
+            {shippingMethod === 'Delivery' && shippingQuote.status === 'error' && (
+                <div className="rounded-xl border border-red-200 bg-red-50/40 p-2.5 text-xs">
                     <div className="flex gap-2 text-red-700">
                         <AlertTriangle size={14} className="shrink-0 mt-0.5" />
                         <div>
@@ -342,22 +347,24 @@ export default function OrderPricingSummary({
                     <button
                         type="button"
                         onClick={() => setQuoteRetryNonce((current) => current + 1)}
-                        className="mt-2 w-full rounded-lg border border-rose-200 bg-white px-3 py-2 text-center text-xs font-bold text-rose-700 hover:bg-rose-50 transition-colors shadow-xs"
+                        className="mt-2 w-full rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-center text-xs font-bold text-rose-700 hover:bg-rose-50 transition-colors shadow-xs"
                     >
                         Retry Quote Calculation
                     </button>
                 </div>
-            ) : (
-                <p className="text-center text-[10px] text-stone-400 mt-0.5">
-                    {shippingMethod === 'Pick Up'
-                        ? 'Pickup orders have no shipping charge.'
-                        : shippingQuote.status === 'ready'
-                            ? 'Shipping fee is already included in the total due now.'
-                            : 'Waiting for the delivery quote before enabling checkout.'}
+            )}
+            {shippingMethod === 'Delivery' && shippingQuote.status !== 'ready' && shippingQuote.status !== 'error' && (
+                <p className="text-center text-[10px] text-stone-400">
+                    Waiting for the delivery quote before enabling checkout.
+                </p>
+            )}
+            {shippingMethod === 'Pick Up' && (
+                <p className="text-center text-[10px] text-stone-400">
+                    Pickup orders have no shipping charge.
                 </p>
             )}
 
-            <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-stone-400 font-medium border-t border-stone-100">
+            <div className={`flex items-center justify-center gap-1.5 text-[10px] text-stone-400 font-medium ${hasBreakdownContent ? 'pt-1.5 border-t border-stone-100' : 'pt-0.5'}`}>
                 <span className="inline-block w-1 h-1 rounded-full bg-clay-400"></span>
                 <span>All listed retail prices are VAT-inclusive</span>
             </div>
@@ -377,7 +384,11 @@ export default function OrderPricingSummary({
     const renderSubmitButton = () => {
         if (hideSubmitButton) return null;
         return (
-            <div className="pt-0.5">
+            <div className="pt-0.5 space-y-2">
+                <CheckoutPoliciesNotice
+                    activeReturnWindow={activeReturnWindow}
+                    onOpenPolicy={onOpenPolicy}
+                />
                 <button
                     type="submit"
                     onClick={submitCheckout}

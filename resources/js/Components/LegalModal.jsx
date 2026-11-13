@@ -1,16 +1,57 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X, ChevronDown, ChevronUp, FileText, Shield, Store, Lock, Box, Check, AlertTriangle, ArrowRight, ArrowDown } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, FileText, Shield, Store, Lock, Box, Check, AlertTriangle, ArrowRight, ArrowDown, RotateCcw } from 'lucide-react';
 import Modal from '@/Components/Modal';
+
+const CONTENT_KEY_MAP = {
+    terms: 'terms',
+    terms_of_service: 'terms',
+    'terms-of-service': 'terms',
+    privacy: 'privacy',
+    privacy_policy: 'privacy',
+    'privacy-policy': 'privacy',
+    seller: 'seller',
+    seller_agreement: 'seller',
+    'seller-agreement': 'seller',
+    sellerPrivacy: 'sellerPrivacy',
+    seller_privacy: 'sellerPrivacy',
+    'seller-privacy': 'sellerPrivacy',
+    returns: 'returns',
+    return_refund: 'returns',
+    'return-refund': 'returns',
+    return_refund_policy: 'returns',
+    'return-refund-policy': 'returns',
+};
+
+const DB_POLICY_KEY_MAP = {
+    terms: 'terms_of_service',
+    terms_of_service: 'terms_of_service',
+    'terms-of-service': 'terms_of_service',
+    privacy: 'privacy_policy',
+    privacy_policy: 'privacy_policy',
+    'privacy-policy': 'privacy_policy',
+    seller: 'seller_agreement',
+    seller_agreement: 'seller_agreement',
+    'seller-agreement': 'seller_agreement',
+    sellerPrivacy: 'seller_privacy',
+    seller_privacy: 'seller_privacy',
+    'seller-privacy': 'seller_privacy',
+    returns: 'return_refund_policy',
+    return_refund: 'return_refund_policy',
+    'return-refund': 'return_refund_policy',
+    return_refund_policy: 'return_refund_policy',
+    'return-refund-policy': 'return_refund_policy',
+};
 
 export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = 'terms', step = null, totalSteps = null, hasNextStep = null, policies = null }) {
     const [expandedSections, setExpandedSections] = useState({});
     const [hasReachedBottom, setHasReachedBottom] = useState(false);
     const [isAutoAdvancing, setIsAutoAdvancing] = useState(false);
+    const [remotePolicy, setRemotePolicy] = useState(null);
     const autoAdvanceTimerRef = useRef(null);
     const contentRef = useRef(null);
 
-    const hasNext = hasNextStep !== null ? hasNextStep : (step ? step < totalSteps : type === 'terms');
-    const nextLabel = type === 'terms' ? 'Next: Privacy Policy' : (type === 'seller' ? 'Next: Seller Privacy' : (type === 'privacy' ? 'Next: Terms of Service' : 'Next: Seller Agreement'));
+    const hasNext = hasNextStep !== null ? hasNextStep : (step ? step < totalSteps : false);
+    const nextLabel = type === 'terms' ? 'Next: Privacy Policy' : (type === 'seller' ? 'Next: Seller Privacy' : (type === 'privacy' ? 'Next: Terms of Service' : 'Next'));
 
     const clearAutoAdvanceTimer = () => {
         if (autoAdvanceTimerRef.current) {
@@ -20,11 +61,20 @@ export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = '
         setIsAutoAdvancing(false);
     };
 
+    const isSectionExpanded = (index) => expandedSections[index] !== false;
+
     const toggleSection = (index) => {
-        setExpandedSections(prev => ({
+        setExpandedSections((prev) => ({
             ...prev,
-            [index]: !prev[index]
+            [index]: prev[index] !== false ? false : true,
         }));
+    };
+
+    const handleCloseModal = () => {
+        clearAutoAdvanceTimer();
+        setHasReachedBottom(false);
+        setExpandedSections({});
+        onClose?.({ accepted: false });
     };
 
     const handleAccept = () => {
@@ -133,17 +183,52 @@ export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = '
                 { title: "Data Breach Response", content: "We notify affected sellers within 72 hours and report to the National Privacy Commission." },
                 { title: "Contact", content: "Email: likhangkamaybusiness@gmail.com | NPC: complaints@privacy.gov.ph" }
             ]
+        },
+        returns: {
+            title: "Return, Refund & Replacement Policy",
+            icon: RotateCcw,
+            sections: [
+                { title: "Inspection & Return Window", content: "Delivered orders carry an inspection window from delivery and completion. Claims submitted after the order's recorded warranty expiration cannot be filed." },
+                { title: "Eligible Claim Reasons", content: "Returns, replacements, or refunds are eligible when an item arrives damaged or broken in transit, exhibits a structural defect, does not match the ordered item or variant, arrives with missing components, or is significantly different from the listing description." },
+                { title: "Mandatory Photographic Evidence", content: "Buyers must attach clear photographic evidence covering the required angles: (1) Item Defect / Damage Close-up and (2) Shipping Packaging & Waybill." },
+                { title: "Dispute Resolution Process", content: "Once submitted, the artisan shop may approve a refund, propose a replacement piece, or explain a decline. If unresolved, buyers may escalate the claim for platform review and arbitration." }
+            ]
         }
     };
 
-    const policyTypeKeyMap = {
-        terms: 'terms_of_service',
-        privacy: 'privacy_policy',
-        seller: 'seller_agreement',
-        sellerPrivacy: 'seller_privacy',
-    };
-    const baseDoc = content[type];
-    const dynamicPolicy = policies?.[policyTypeKeyMap[type]] || null;
+    useEffect(() => {
+        if (!isOpen) {
+            return undefined;
+        }
+
+        const policyKey = DB_POLICY_KEY_MAP[type] || type;
+        if (policies?.[policyKey] || policies?.[type]) {
+            return undefined;
+        }
+
+        let isMounted = true;
+        fetch(`/api/policies/${type}`)
+            .then((res) => (res.ok ? res.json() : null))
+            .then((payload) => {
+                if (isMounted && payload?.policy) {
+                    setRemotePolicy(payload.policy);
+                }
+            })
+            .catch(() => {
+                // Silently fallback to static baseDoc
+            });
+
+        return () => {
+            isMounted = false;
+            setRemotePolicy(null);
+        };
+    }, [isOpen, type, policies]);
+
+    const contentKey = CONTENT_KEY_MAP[type] || 'terms';
+    const dbPolicyKey = DB_POLICY_KEY_MAP[type] || type;
+
+    const baseDoc = content[contentKey] || content.terms;
+    const dynamicPolicy = policies?.[dbPolicyKey] || policies?.[contentKey] || policies?.[type] || remotePolicy || null;
     const doc = {
         ...baseDoc,
         title: dynamicPolicy?.title || baseDoc.title,
@@ -153,17 +238,11 @@ export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = '
             ? dynamicPolicy.sections
             : baseDoc.sections,
     };
-    const buildExpandedSections = (sections) =>
-        Object.fromEntries(sections.map((_, index) => [index, true]));
 
     useEffect(() => {
-        clearAutoAdvanceTimer();
         if (!isOpen) {
             return undefined;
         }
-
-        setExpandedSections(buildExpandedSections(doc.sections));
-        setHasReachedBottom(false);
 
         let nestedFrame = null;
         const frame = window.requestAnimationFrame(() => {
@@ -183,16 +262,19 @@ export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = '
         });
 
         return () => {
-            clearAutoAdvanceTimer();
+            if (autoAdvanceTimerRef.current) {
+                clearTimeout(autoAdvanceTimerRef.current);
+                autoAdvanceTimerRef.current = null;
+            }
             window.cancelAnimationFrame(frame);
             if (nestedFrame) {
                 window.cancelAnimationFrame(nestedFrame);
             }
         };
-    }, [isOpen, type]);
+    }, [isOpen, type, doc.sections]);
 
     return (
-        <Modal show={isOpen} onClose={() => onClose?.({ accepted: false })} maxWidth="2xl">
+        <Modal show={isOpen} onClose={handleCloseModal} maxWidth="2xl">
             {/* Modal Content */}
             <div className="bg-white h-[82vh] max-h-[82vh] flex flex-col overflow-hidden rounded-2xl">
                 {/* Header - Consistent earthy styling */}
@@ -218,8 +300,9 @@ export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = '
                         </div>
                     </div>
                     <button 
-                        onClick={() => onClose?.({ accepted: false })}
-                        className="text-stone-400 hover:text-stone-600 transition"
+                        onClick={handleCloseModal}
+                        className="text-stone-400 hover:text-stone-600 transition p-1 rounded-md touch-manipulation focus:outline-none focus:ring-1 focus:ring-clay-500"
+                        aria-label="Close modal"
                     >
                         <X size={20} />
                     </button>
@@ -248,7 +331,8 @@ export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = '
                         <div key={idx} className="border border-gray-200 rounded-xl overflow-hidden hover:border-clay-300 transition">
                             <button
                                 onClick={() => toggleSection(idx)}
-                                className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50 transition"
+                                className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-50 transition touch-manipulation"
+                                aria-expanded={isSectionExpanded(idx)}
                             >
                                 <span className="flex items-center gap-2">
                                     <span className="w-6 h-6 bg-clay-100 text-clay-700 rounded-lg flex items-center justify-center text-xs font-bold">
@@ -256,13 +340,13 @@ export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = '
                                     </span>
                                     <span className="font-medium text-gray-800 text-sm">{section.title}</span>
                                 </span>
-                                {expandedSections[idx] ? (
+                                {isSectionExpanded(idx) ? (
                                     <ChevronUp size={18} className="text-gray-400" />
                                 ) : (
                                     <ChevronDown size={18} className="text-gray-400" />
                                 )}
                             </button>
-                            {expandedSections[idx] && (
+                            {isSectionExpanded(idx) && (
                                 <div className="px-3 pb-3 text-gray-600 text-xs leading-relaxed border-t border-gray-100 bg-gray-50/50">
                                     <p className="pt-3 whitespace-pre-line">{section.content}</p>
                                 </div>
@@ -311,7 +395,7 @@ export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = '
                         {isAutoAdvancing ? (
                             <span className="flex items-center gap-1.5 text-clay-700 font-semibold animate-pulse">
                                 <Check size={14} className="text-emerald-600" />
-                                <span>{type === 'terms' ? 'Continuing to Privacy Policy...' : 'Continuing to Terms of Service...'}</span>
+                                <span>{type === 'terms' ? 'Continuing to Privacy Policy...' : (type === 'seller' ? 'Continuing to Seller Privacy...' : 'Continuing...')}</span>
                             </span>
                         ) : !hasReachedBottom ? (
                             <span className="flex items-center gap-1.5 text-stone-500">
@@ -333,8 +417,8 @@ export default function LegalModal({ isOpen, onClose, onAccept, onBack, type = '
                     <div className="flex items-center justify-end gap-3">
                         <button
                             type="button"
-                            onClick={() => onClose?.({ accepted: false })}
-                            className="px-4 py-2 bg-white border border-stone-300 rounded-lg text-stone-700 font-medium hover:bg-stone-50 transition text-sm"
+                            onClick={handleCloseModal}
+                            className="px-4 py-2 bg-white border border-stone-300 rounded-lg text-stone-700 font-medium hover:bg-stone-50 transition text-sm touch-manipulation"
                         >
                             Close
                         </button>

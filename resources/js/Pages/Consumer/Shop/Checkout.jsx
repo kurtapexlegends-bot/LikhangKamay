@@ -5,6 +5,8 @@ import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 import { formatStructuredAddress } from '@/lib/addressFormatting';
 import CheckoutFaceCheckModal from '@/Components/Consumer/Shop/Checkout/CheckoutFaceCheckModal';
+import LegalModal from '@/Components/LegalModal';
+import CheckoutPoliciesNotice from '@/Components/Consumer/Shop/Checkout/CheckoutPoliciesNotice';
 
 // Extracted Subcomponents & Hooks
 import ShippingMethodSelector from '@/Components/Consumer/Shop/Checkout/ShippingMethodSelector';
@@ -41,6 +43,9 @@ export default function Checkout({ auth, pricing }) {
         items: incomingItems = [],
         pickupConfigs = {},
         availableVouchers = { shops: {} },
+        policies = {},
+        policiesSummary = {},
+        returnWindowHours = 24,
     } = usePage().props;
     const { addToast } = useToast();
     const isArtisan = auth?.user?.role === 'artisan';
@@ -52,6 +57,15 @@ export default function Checkout({ auth, pricing }) {
     const requiresCheckoutFaceCheck = Boolean(auth?.requiresCheckoutFaceCheck);
     const [showNotes, setShowNotes] = useState(false);
     const [showFaceCheckModal, setShowFaceCheckModal] = useState(false);
+    const [activeLegalModal, setActiveLegalModal] = useState({ isOpen: false, type: 'terms' });
+
+    const handleOpenPolicy = (type) => setActiveLegalModal({ isOpen: true, type });
+    const handleClosePolicyModal = () => setActiveLegalModal((prev) => ({ ...prev, isOpen: false }));
+
+    const activeReturnWindow = useMemo(() => {
+        const hours = Number(policiesSummary?.return_window_hours || returnWindowHours || 24);
+        return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+    }, [policiesSummary, returnWindowHours]);
 
     const {
         checkoutItems,
@@ -534,6 +548,14 @@ export default function Checkout({ auth, pricing }) {
                             onlinePaymentDisabled={hasSubMinimumOrder}
                             errors={errors}
                         />
+
+                        {/* Mobile Checkout Compliance Notice */}
+                        <div className="md:hidden pt-1">
+                            <CheckoutPoliciesNotice
+                                activeReturnWindow={activeReturnWindow}
+                                onOpenPolicy={handleOpenPolicy}
+                            />
+                        </div>
                     </div>
 
                     {/* Order Summary Column (Sticky desktop) */}
@@ -554,6 +576,8 @@ export default function Checkout({ auth, pricing }) {
                             onRemoveItem={handleRemoveItem}
                             updatingItemId={updatingItemId}
                             removingItemId={removingItemId}
+                            activeReturnWindow={activeReturnWindow}
+                            onOpenPolicy={handleOpenPolicy}
                         />
                     </div>
                 </div>
@@ -576,6 +600,8 @@ export default function Checkout({ auth, pricing }) {
                 handleRemoveItem={handleRemoveItem}
                 updatingItemId={updatingItemId}
                 removingItemId={removingItemId}
+                activeReturnWindow={activeReturnWindow}
+                onOpenPolicy={handleOpenPolicy}
             />
 
             <CheckoutVoucherDrawer
@@ -604,6 +630,14 @@ export default function Checkout({ auth, pricing }) {
                     addToast('Quick face check verified. Placing your order...', 'success');
                     performOrderSubmission();
                 }}
+            />
+
+            <LegalModal
+                isOpen={activeLegalModal.isOpen}
+                type={activeLegalModal.type}
+                onClose={handleClosePolicyModal}
+                hasNextStep={false}
+                policies={policies}
             />
         </div>
     );
