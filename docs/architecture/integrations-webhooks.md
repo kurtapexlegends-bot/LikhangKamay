@@ -190,9 +190,10 @@ To support reliable offline fallback and accelerate heavy 3D craft model loading
     *   **Inertia State Protection**: All requests containing header `X-Inertia: true` or requesting HTML navigation (`mode === 'navigate'`) completely bypass the Service Worker cache. This ensures session-bound CSRF tokens and page props are never poisoned by stale cached HTML.
     *   **Dynamic API Exclusion**: Strict network bypass for `/api/*`, `/webhooks/*`, `/sanctum/*`, `/broadcasting/*`, `/auth/*`, `/login`, `/logout`, `/register`, and `/ping`.
     *   **Mutating Request Safety**: Non-GET requests (`POST`, `PUT`, `DELETE`, `PATCH`) bypass the worker unconditionally.
-*   **Edge CDN Cache-Control ([vercel.json](file:///c:/laragon/www/LikhangKamay/vercel.json))**:
+*   **Edge CDN Cache-Control & Lambda Bundle Exclusion ([vercel.json](file:///c:/laragon/www/LikhangKamay/vercel.json), [.vercelignore](file:///c:/laragon/www/LikhangKamay/.vercelignore))**:
     *   `/sw.js`: Configured with `cache-control: public, max-age=0, must-revalidate` and `Service-Worker-Allowed: /` to prevent browser caching of the worker script.
     *   `/draco/(.*)`: Configured with `cache-control: public, max-age=31536000, immutable` for 1-year edge CDN caching.
+    *   `functions["api/index.php"].excludeFiles` & `.vercelignore`: Strips CDN-served assets (`public/build/assets/**`, `public/draco/**`, `public/images/**`, `public/models/**`), build-only inputs (`resources/js/**`, `resources/css/**`), `node_modules/**`, and non-runtime directories (`tests/**`, `docs/**`, `.obsidian/**`, `.agents/**`, `.github/**`, `scripts/**`) from the PHP serverless lambda to remain safely under Vercel's 250 MB uncompressed function limit while preserving `public/build/manifest.json` for Laravel `@vite`.
 
 ### 3D Compression Pipeline ([threeLoaders.js](file:///c:/laragon/www/LikhangKamay/resources/js/Components/ThreeD/threeLoaders.js), [GLTFModel.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/ThreeD/GLTFModel.jsx))
 *   **Draco Mesh Decompression**:

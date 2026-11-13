@@ -1,0 +1,30 @@
+# Dependencies & build artifacts (installed/generated on Vercel during build)
+/node_modules
+/vendor
+/public/build
+/public/hot
+/public/storage
+/bootstrap/cache/*.php
+
+# Local env, logs, and databases
+.env
+.env.*
+!.env.example
+*.log
+*.db
+
+# Dev docs, tests, scripts, and editor/agent tooling (never needed at runtime or Vite build)
+/tests
+/docs
+/scripts
+/.github
+/.agents
+/.agent
+/.codex
+/.antigravitycli
+/.obsidian
+/.worktrees
+/graphify-out
+/scratch
+/CAPSTONE DOCX
+/PROJECT_GUIDELINES.md
