@@ -2,7 +2,9 @@
 
 namespace App\Actions\Consumer;
 
+use App\Models\PlatformPolicy;
 use App\Models\Product;
+use App\Services\PolicyService;
 use App\Services\StorageUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
@@ -124,5 +126,69 @@ class PrepareCheckout
         }
 
         return $items;
+    }
+
+    /**
+     * Retrieve active platform policies summary and return inspection window for checkout compliance.
+     *
+     * @return array<string, mixed>
+     */
+    public function getPoliciesSummary(): array
+    {
+        return rescue(function () {
+            $policyService = app(PolicyService::class);
+            $returnWindowHours = $policyService->getReturnWindowHours();
+            $serializedPolicies = $policyService->getSerializedActivePolicies([
+                PlatformPolicy::TYPE_TERMS_OF_SERVICE,
+                PlatformPolicy::TYPE_PRIVACY_POLICY,
+                PlatformPolicy::TYPE_RETURN_REFUND,
+            ]);
+
+            $returnWindowSummary = "{$returnWindowHours}-hour return inspection window";
+
+            return [
+                'policies' => $serializedPolicies,
+                'return_window_hours' => $returnWindowHours,
+                'return_window_summary' => $returnWindowSummary,
+                'terms_of_service' => [
+                    'type' => PlatformPolicy::TYPE_TERMS_OF_SERVICE,
+                    'title' => $serializedPolicies[PlatformPolicy::TYPE_TERMS_OF_SERVICE]['title'] ?? 'Terms of Service',
+                    'version' => $serializedPolicies[PlatformPolicy::TYPE_TERMS_OF_SERVICE]['version'] ?? '1.0',
+                ],
+                'privacy_policy' => [
+                    'type' => PlatformPolicy::TYPE_PRIVACY_POLICY,
+                    'title' => $serializedPolicies[PlatformPolicy::TYPE_PRIVACY_POLICY]['title'] ?? 'Privacy Policy',
+                    'version' => $serializedPolicies[PlatformPolicy::TYPE_PRIVACY_POLICY]['version'] ?? '1.0',
+                ],
+                'return_refund_policy' => [
+                    'type' => PlatformPolicy::TYPE_RETURN_REFUND,
+                    'title' => $serializedPolicies[PlatformPolicy::TYPE_RETURN_REFUND]['title'] ?? 'Return, Refund & Replacement Policy',
+                    'version' => $serializedPolicies[PlatformPolicy::TYPE_RETURN_REFUND]['version'] ?? '1.0',
+                    'return_window_hours' => $returnWindowHours,
+                    'return_window_summary' => $returnWindowSummary,
+                ],
+            ];
+        }, [
+            'policies' => [],
+            'return_window_hours' => 24,
+            'return_window_summary' => '24-hour return inspection window',
+            'terms_of_service' => [
+                'type' => PlatformPolicy::TYPE_TERMS_OF_SERVICE,
+                'title' => 'Terms of Service',
+                'version' => '1.0',
+            ],
+            'privacy_policy' => [
+                'type' => PlatformPolicy::TYPE_PRIVACY_POLICY,
+                'title' => 'Privacy Policy',
+                'version' => '1.0',
+            ],
+            'return_refund_policy' => [
+                'type' => PlatformPolicy::TYPE_RETURN_REFUND,
+                'title' => 'Return, Refund & Replacement Policy',
+                'version' => '1.0',
+                'return_window_hours' => 24,
+                'return_window_summary' => '24-hour return inspection window',
+            ],
+        ], report: false);
     }
 }

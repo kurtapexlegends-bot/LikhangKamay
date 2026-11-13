@@ -140,6 +140,7 @@ Route::get('/terms', [\App\Http\Controllers\Core\LegalPolicyController::class, '
 Route::get('/privacy', [\App\Http\Controllers\Core\LegalPolicyController::class, 'privacy'])->name('privacy');
 Route::get('/seller-agreement', [\App\Http\Controllers\Core\LegalPolicyController::class, 'sellerAgreement'])->name('seller.agreement');
 Route::get('/seller-privacy', [\App\Http\Controllers\Core\LegalPolicyController::class, 'sellerPrivacy'])->name('seller.privacy');
+Route::get('/api/policies/{type}', [\App\Http\Controllers\Core\LegalPolicyController::class, 'show'])->name('api.policies.show');
 
 
 // --- SOCIAL AUTH (Google/Facebook) ---

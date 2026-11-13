@@ -3,6 +3,7 @@
 namespace App\Actions\Consumer;
 
 use App\Models\Order;
+use App\Models\PlatformPolicy;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Discount;
@@ -12,6 +13,7 @@ use App\Models\PlatformActivity;
 use App\Mail\OrderPlaced;
 use App\Mail\BuyerOrderConfirmationMail;
 use App\Support\OrderWorkflowHelper;
+use App\Services\PolicyService;
 use App\Services\SponsorshipAnalyticsService;
 use App\Services\OrderFinanceService;
 use App\Services\CheckoutShippingService;
@@ -32,19 +34,22 @@ class PlaceOrder
     private CheckoutShippingService $checkoutShippingService;
     private PickupScheduleService $pickupScheduleService;
     private VoucherService $voucherService;
+    private PolicyService $policyService;
 
     public function __construct(
         SponsorshipAnalyticsService $sponsorshipAnalytics,
         OrderFinanceService $orderFinanceService,
         CheckoutShippingService $checkoutShippingService,
         PickupScheduleService $pickupScheduleService,
-        ?VoucherService $voucherService = null
+        ?VoucherService $voucherService = null,
+        ?PolicyService $policyService = null
     ) {
         $this->sponsorshipAnalytics = $sponsorshipAnalytics;
         $this->orderFinanceService = $orderFinanceService;
         $this->checkoutShippingService = $checkoutShippingService;
         $this->pickupScheduleService = $pickupScheduleService;
         $this->voucherService = $voucherService ?? app(VoucherService::class);
+        $this->policyService = $policyService ?? app(PolicyService::class);
     }
 
     /**
@@ -563,6 +568,8 @@ class PlaceOrder
                 'description' => 'A buyer placed an order (#' . $order->order_number . ').',
                 'metadata' => ['order_id' => $order->id]
             ]);
+
+            $this->recordCheckoutPolicyConsents($buyer, $order, $request);
         }
 
         foreach ($lowStockNotifications as $notif) {
@@ -586,6 +593,40 @@ class PlaceOrder
             }
         }
         Session::put('cart', $cart);
+    }
+
+    private function recordCheckoutPolicyConsents(User $buyer, Order $order, Request $request): void
+    {
+        rescue(function () use ($buyer, $order, $request) {
+            $recordConsents = function () use ($buyer, $order, $request) {
+                $policyTypes = [
+                    PlatformPolicy::TYPE_TERMS_OF_SERVICE,
+                    PlatformPolicy::TYPE_PRIVACY_POLICY,
+                    PlatformPolicy::TYPE_RETURN_REFUND,
+                ];
+
+                foreach ($policyTypes as $type) {
+                    $criteria = ($type === PlatformPolicy::TYPE_RETURN_REFUND)
+                        ? ['return_window_hours' => $this->policyService->getReturnWindowHours()]
+                        : null;
+
+                    $this->policyService->recordUserConsent(
+                        user: $buyer,
+                        type: $type,
+                        context: 'checkout',
+                        request: $request,
+                        orderId: $order->id,
+                        criteriaAcknowledged: $criteria
+                    );
+                }
+            };
+
+            if (DB::transactionLevel() > 0) {
+                DB::afterCommit($recordConsents);
+            } else {
+                $recordConsents();
+            }
+        }, report: false);
     }
 
     private function sendMailSilently(string $recipient, \Illuminate\Mail\Mailable $mailable, string $context, array $extraContext = []): void

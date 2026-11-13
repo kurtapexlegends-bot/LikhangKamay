@@ -80,11 +80,18 @@ class BuyerOrderController extends Controller
             ['shops' => []]
         );
 
+        $policiesSummary = $prepareCheckout->getPoliciesSummary();
+
         return Inertia::render('Consumer/Shop/Checkout', [
             'items' => $items,
             'pricing' => OrderFinanceService::getPricingData(),
             'pickupConfigs' => $pickupConfigs,
             'availableVouchers' => $availableVouchers,
+            'policies' => $policiesSummary['policies'] ?? [],
+            'policiesSummary' => $policiesSummary,
+            'compliance' => $policiesSummary,
+            'returnWindowSummary' => $policiesSummary['return_window_summary'] ?? '24-hour return inspection window',
+            'returnWindowHours' => $policiesSummary['return_window_hours'] ?? 24,
             'auth' => [
                 'user' => rescue(fn() => $user?->load('addresses'), $user),
             ]
