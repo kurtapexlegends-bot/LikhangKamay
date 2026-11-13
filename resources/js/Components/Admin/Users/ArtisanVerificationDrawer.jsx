@@ -331,6 +331,33 @@ export default function ArtisanVerificationDrawer({
                                             ) : (
                                                 <div className="h-24 w-full rounded-lg border border-dashed border-stone-200 bg-stone-50 flex items-center justify-center"><X size={14} className="text-stone-300" /></div>
                                             )}
+
+                                            {doc.ocr && (
+                                                <div
+                                                    className={`px-2 py-1 rounded-md text-[10px] font-semibold border flex items-center justify-between gap-1.5 ${
+                                                        (doc.ocr.badge_tone || doc.ocr.badgeTone) === 'emerald'
+                                                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                                            : (doc.ocr.badge_tone || doc.ocr.badgeTone) === 'amber'
+                                                            ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                                            : 'bg-stone-50 text-stone-700 border-stone-200'
+                                                    }`}
+                                                    title={doc.ocr.summary_text || doc.ocr.summaryText || doc.ocr.badge_text || doc.ocr.badgeText}
+                                                >
+                                                    <div className="flex items-center gap-1 truncate">
+                                                        {(doc.ocr.badge_tone || doc.ocr.badgeTone) === 'emerald' ? (
+                                                            <CheckCircle size={10} className="text-emerald-600 shrink-0" />
+                                                        ) : (
+                                                            <AlertTriangle size={10} className="text-amber-600 shrink-0" />
+                                                        )}
+                                                        <span className="truncate">{doc.ocr.badge_text || doc.ocr.badgeText}</span>
+                                                    </div>
+                                                    {(doc.ocr.extracted_value || doc.ocr.extractedValue) && (
+                                                        <span className="font-mono text-[9px] font-bold bg-white/80 px-1 py-0.5 rounded border border-stone-200/60 shrink-0">
+                                                            {doc.ocr.extracted_value || doc.ocr.extractedValue}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </InlineRevisionCard>
                                 ))}

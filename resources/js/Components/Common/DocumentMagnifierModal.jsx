@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Maximize2, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { Download, Maximize2, X, ZoomIn, ZoomOut, ScanText, CheckCircle2, Copy, Check } from 'lucide-react';
 import Modal from '@/Components/Modal';
 
 export default function DocumentMagnifierModal({
@@ -12,6 +12,21 @@ export default function DocumentMagnifierModal({
     const [docPosition, setDocPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [showOcrDetails, setShowOcrDetails] = useState(true);
+    const [copiedValue, setCopiedValue] = useState(false);
+
+    const ocrData = viewingDoc?.ocr || viewingDoc?.ocr_data || null;
+
+    const handleCopyExtracted = (val) => {
+        if (!val) return;
+        try {
+            navigator.clipboard?.writeText(String(val))?.catch?.(() => {});
+        } catch {
+            // Safe fallback if clipboard API unavailable
+        }
+        setCopiedValue(true);
+        setTimeout(() => setCopiedValue(false), 2000);
+    };
 
     const activeKey = viewingDoc?.key || viewingDoc?.url || null;
     if (activeKey !== prevKey) {
@@ -105,6 +120,21 @@ export default function DocumentMagnifierModal({
                         )}
 
                         <div className="flex items-center gap-2">
+                            {ocrData && (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowOcrDetails((prev) => !prev)}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition cursor-pointer ${
+                                        showOcrDetails
+                                            ? 'bg-clay-600 text-white border-clay-500 shadow-xs'
+                                            : 'bg-stone-800 text-stone-300 border-stone-700 hover:bg-stone-700 hover:text-white'
+                                    }`}
+                                    title="Toggle Automated OCR Inspection Panel"
+                                >
+                                    <ScanText size={14} />
+                                    <span>OCR Signals</span>
+                                </button>
+                            )}
                             <a
                                 href={viewingDoc.url}
                                 download
@@ -128,6 +158,48 @@ export default function DocumentMagnifierModal({
                             </button>
                         </div>
                     </div>
+
+                    {/* Collapsible Automated OCR Findings Inspector */}
+                    {ocrData && showOcrDetails && (
+                        <div className="bg-stone-900/95 border-b border-stone-800 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2.5 text-xs text-stone-300 transition-all">
+                            <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-bold text-[11px] border ${
+                                    (ocrData.badge_tone || ocrData.badgeTone) === 'emerald'
+                                        ? 'bg-emerald-950/70 text-emerald-300 border-emerald-700/80'
+                                        : (ocrData.badge_tone || ocrData.badgeTone) === 'amber'
+                                        ? 'bg-amber-950/70 text-amber-300 border-amber-700/80'
+                                        : 'bg-stone-800 text-stone-300 border-stone-700'
+                                }`}>
+                                    <CheckCircle2 size={12} className={(ocrData.badge_tone || ocrData.badgeTone) === 'emerald' ? 'text-emerald-400' : 'text-amber-400'} />
+                                    <span>{ocrData.badge_text || ocrData.badgeText}</span>
+                                </span>
+
+                                {ocrData.confidence !== null && ocrData.confidence !== undefined && (
+                                    <span className="text-[11px] text-stone-400">
+                                        Confidence: <strong className="text-white">{ocrData.confidence}%</strong>
+                                    </span>
+                                )}
+
+                                {Array.isArray(ocrData.signals) && ocrData.signals.length > 0 && (
+                                    <span className="text-[11px] text-stone-400 hidden sm:inline truncate max-w-md">
+                                        Signals: {ocrData.signals.join(' • ')}
+                                    </span>
+                                )}
+                            </div>
+
+                            {(ocrData.extracted_value || ocrData.extractedValue) && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleCopyExtracted(ocrData.extracted_value || ocrData.extractedValue)}
+                                    className="inline-flex items-center gap-1.5 rounded-md bg-stone-800 hover:bg-stone-700 px-2.5 py-1 text-[11px] font-mono text-stone-200 border border-stone-700 transition cursor-pointer shrink-0"
+                                    title="Copy extracted number"
+                                >
+                                    {copiedValue ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                                    <span>{copiedValue ? 'Copied!' : `Copy #${ocrData.extracted_value || ocrData.extractedValue}`}</span>
+                                </button>
+                            )}
+                        </div>
+                    )}
 
                     <div
                         className="flex-1 overflow-hidden relative flex items-center justify-center bg-stone-950 p-4"

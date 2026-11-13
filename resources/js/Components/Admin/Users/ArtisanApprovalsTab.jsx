@@ -62,6 +62,7 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
             url: artisan?.[document.key] ?? null,
             viewed: (viewedDocumentsByArtisan[artisan?.id] ?? []).includes(document.key),
             flags: artisan?.document_flags?.[document.key] ?? [],
+            ocr: artisan?.kyc_verification_meta?.ocr?.[document.key] ?? null,
         }));
 
     const openReviewModal = (artisan) => {
