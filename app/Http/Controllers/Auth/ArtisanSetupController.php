@@ -234,6 +234,17 @@ class ArtisanSetupController extends Controller
         ];
 
         $biometricUpdates = $this->evaluateAndPersistKycBiometrics($user, $request, $validIdFile, $validIdCameraCaptured);
+
+        if ($request->filled('ocr_metadata')) {
+            $rawOcrMeta = $request->input('ocr_metadata');
+            $postedOcr = is_string($rawOcrMeta) ? json_decode($rawOcrMeta, true) : (array) $rawOcrMeta;
+            if (is_array($postedOcr) && !empty($postedOcr)) {
+                $meta = $biometricUpdates['kyc_verification_meta'] ?? $user->kyc_verification_meta ?? [];
+                $meta['ocr'] = array_merge($meta['ocr'] ?? [], $postedOcr);
+                $biometricUpdates['kyc_verification_meta'] = $meta;
+            }
+        }
+
         $user->update(array_merge($updatePayload, $biometricUpdates));
 
         return back();
@@ -429,8 +440,16 @@ class ArtisanSetupController extends Controller
         
         if ($user->{$type}) {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($user->{$type});
+            $meta = $user->kyc_verification_meta ?? [];
+            if (isset($meta['ocr'][$type])) {
+                unset($meta['ocr'][$type]);
+            }
+            $flags = $user->document_flags ?? [];
+            unset($flags[$type]);
             $user->update([
                 $type => null,
+                'kyc_verification_meta' => $meta,
+                'document_flags' => $flags,
             ]);
         }
         
@@ -456,6 +475,8 @@ class ArtisanSetupController extends Controller
             return back()->withErrors([$type => 'This document has already been approved and is locked.']);
         }
 
+        $ocrUpdates = $this->processOcrMetadata($request, $type, $user);
+
         if ($request->filled('document_key')) {
             $request->validate([
                 'document_key' => ['required', 'string', 'max:255'],
@@ -463,10 +484,22 @@ class ArtisanSetupController extends Controller
 
             $path = $request->input('document_key');
             if (!str_starts_with($path, 'legal_docs/')) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => 'Invalid document storage path.',
+                        'errors' => [$type => ['Invalid document storage path.']],
+                    ], 422);
+                }
                 return back()->withErrors([$type => 'Invalid document storage path.']);
             }
 
             if (!Storage::disk('public')->exists($path)) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => 'Uploaded document not found in storage.',
+                        'errors' => [$type => ['Uploaded document not found in storage.']],
+                    ], 422);
+                }
                 return back()->withErrors([$type => 'Uploaded document not found in storage.']);
             }
 
@@ -475,7 +508,7 @@ class ArtisanSetupController extends Controller
                 Storage::disk('public')->delete($user->{$type});
             }
 
-            $updateData = [$type => $path];
+            $updateData = array_merge([$type => $path], $ocrUpdates);
             if ($type === 'valid_id') {
                 $ext = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
                 $forensics = $ext === 'pdf'
@@ -490,7 +523,14 @@ class ArtisanSetupController extends Controller
                         }
                     }, null, report: false);
 
-                $updateData = array_merge($updateData, $this->evaluateAndPersistKycBiometrics($user, $request, null, $request->boolean('camera_captured'), $forensics));
+                $bioUpdates = $this->evaluateAndPersistKycBiometrics($user, $request, null, $request->boolean('camera_captured'), $forensics);
+                if (isset($ocrUpdates['kyc_verification_meta']['ocr']) && isset($bioUpdates['kyc_verification_meta'])) {
+                    $bioUpdates['kyc_verification_meta']['ocr'] = array_merge(
+                        $bioUpdates['kyc_verification_meta']['ocr'] ?? [],
+                        $ocrUpdates['kyc_verification_meta']['ocr']
+                    );
+                }
+                $updateData = array_merge($updateData, $bioUpdates);
             }
 
             $user->update($updateData);
@@ -546,12 +586,25 @@ class ArtisanSetupController extends Controller
         $path = $file->store('legal_docs', 'public');
         
         // Update document flags array
-        $documentFlags = $user->document_flags ?? [];
-        $documentFlags[$type] = $flags;
+        $documentFlags = $ocrUpdates['document_flags'] ?? ($user->document_flags ?? []);
+        $documentFlags[$type] = array_values(array_unique(array_merge($documentFlags[$type] ?? [], $flags)));
+
+        $mergedMeta = $user->kyc_verification_meta ?? [];
+        if (isset($ocrUpdates['kyc_verification_meta']['ocr'])) {
+            $mergedMeta['ocr'] = array_merge($mergedMeta['ocr'] ?? [], $ocrUpdates['kyc_verification_meta']['ocr']);
+        }
+        if (isset($extraBiometrics['kyc_verification_meta'])) {
+            $mergedMeta = array_merge($mergedMeta, $extraBiometrics['kyc_verification_meta']);
+            if (isset($ocrUpdates['kyc_verification_meta']['ocr'])) {
+                $mergedMeta['ocr'] = array_merge($mergedMeta['ocr'] ?? [], $ocrUpdates['kyc_verification_meta']['ocr']);
+            }
+            unset($extraBiometrics['kyc_verification_meta']);
+        }
 
         $user->update(array_merge([
             $type => $path,
             'document_flags' => $documentFlags,
+            'kyc_verification_meta' => $mergedMeta,
         ], $extraBiometrics));
 
         if ($request->expectsJson()) {
@@ -651,6 +704,9 @@ class ArtisanSetupController extends Controller
         if ($idDescriptor) {
             $composite['id_face_descriptor'] = $idDescriptor;
         }
+        if (!empty($user->kyc_verification_meta['ocr'])) {
+            $composite['ocr'] = $user->kyc_verification_meta['ocr'];
+        }
         $updates['kyc_verification_meta'] = $composite;
 
         return $updates;
@@ -681,6 +737,62 @@ class ArtisanSetupController extends Controller
         }
 
         return !empty($user->{$fieldKey});
+    }
+
+    /**
+     * Process incoming client-side OCR extraction metadata, update document flags,
+     * and persist to user's kyc_verification_meta['ocr'].
+     */
+    private function processOcrMetadata(Request $request, string $type, UserModel $user): array
+    {
+        $rawOcr = $request->input('ocr_data');
+        if (empty($rawOcr)) {
+            return [];
+        }
+
+        $ocrData = is_string($rawOcr) ? json_decode($rawOcr, true) : (array) $rawOcr;
+        if (!is_array($ocrData) || empty($ocrData)) {
+            return [];
+        }
+
+        $meta = $user->kyc_verification_meta ?? [];
+        $ocrRegistry = $meta['ocr'] ?? [];
+        $ocrRegistry[$type] = [
+            'status' => $ocrData['status'] ?? ($request->input('ocr_status') ?? 'scanned'),
+            'matched' => (bool) ($ocrData['matched'] ?? false),
+            'badge_text' => $ocrData['badgeText'] ?? ($request->input('ocr_summary') ?? null),
+            'badge_tone' => $ocrData['badgeTone'] ?? 'stone',
+            'extracted_value' => $ocrData['extractedValue'] ?? ($request->input('ocr_extracted_value') ?? null),
+            'shop_matched' => isset($ocrData['shopMatched']) ? (bool) $ocrData['shopMatched'] : null,
+            'confidence' => isset($ocrData['confidence']) ? (int) $ocrData['confidence'] : null,
+            'signals' => is_array($ocrData['signals'] ?? null) ? $ocrData['signals'] : [],
+            'summary_text' => $ocrData['summaryText'] ?? null,
+            'scanned_at' => now()->toIso8601String(),
+        ];
+        $meta['ocr'] = $ocrRegistry;
+
+        $documentFlags = $user->document_flags ?? [];
+        $typeFlags = $documentFlags[$type] ?? [];
+
+        if (!empty($ocrData['matched'])) {
+            $flagKey = match ($type) {
+                'business_permit' => 'ocr_permit_verified',
+                'dti_registration' => 'ocr_dti_matched',
+                'tin_id' => 'ocr_tin_matched',
+                'valid_id' => 'ocr_id_detected',
+                default => 'ocr_verified',
+            };
+            if (!in_array($flagKey, $typeFlags, true)) {
+                $typeFlags[] = $flagKey;
+            }
+        }
+
+        $documentFlags[$type] = array_values(array_unique($typeFlags));
+
+        return [
+            'kyc_verification_meta' => $meta,
+            'document_flags' => $documentFlags,
+        ];
     }
 
     /**

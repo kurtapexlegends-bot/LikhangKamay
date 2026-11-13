@@ -4,6 +4,7 @@ import DocumentViewerModal from '@/Components/Seller/Approvals/DocumentViewerMod
 import { compareSelfieToId, computeDistance, distanceToMatchPercentage } from '@/lib/faceVerification';
 import FileUploadField from '@/Pages/Auth/Partials/FileUploadField';
 import KycFaceAndIdCheckCard from '@/Pages/Auth/Partials/KycFaceAndIdCheckCard';
+import { terminateTesseractWorker } from '@/utils/ocrWorker';
 
 export default function DocumentsStep({
     data = {},
@@ -26,6 +27,17 @@ export default function DocumentsStep({
     kycVerificationMeta = null,
 }) {
     const [viewingDoc, setViewingDoc] = useState(null);
+
+    React.useEffect(() => {
+        return () => {
+            terminateTesseractWorker().catch(() => {});
+        };
+    }, []);
+
+    const shopName = data?.shop_name || auth?.user?.shop_name || '';
+    const ownerName = auth?.user?.name || `${data?.first_name || ''} ${data?.last_name || ''}`.trim();
+    const expectedTin = data?.tin || auth?.user?.tin || '';
+    const ocrMeta = kycVerificationMeta?.ocr || existingDocuments?.ocr_meta || {};
 
     const handleSelfieCaptured = async (payload) => {
         const selfieDescriptor = payload?.descriptor || null;
@@ -97,6 +109,10 @@ export default function DocumentsStep({
                         isHighlighted={highlightedKey === 'business_permit'}
                         revisionNote={revisionNotes.business_permit}
                         isVerifiedClean={hasActiveRevision && !flaggedKeys.has('business_permit')}
+                        shopName={shopName}
+                        ownerName={ownerName}
+                        expectedTin={expectedTin}
+                        existingOcrResult={ocrMeta?.business_permit}
                         onUploaded={onDocumentUploaded}
                         onRemoved={onDocumentRemoved}
                         onView={(doc) => setViewingDoc(doc)}
@@ -111,6 +127,10 @@ export default function DocumentsStep({
                         isHighlighted={highlightedKey === 'dti_registration'}
                         revisionNote={revisionNotes.dti_registration}
                         isVerifiedClean={hasActiveRevision && !flaggedKeys.has('dti_registration')}
+                        shopName={shopName}
+                        ownerName={ownerName}
+                        expectedTin={expectedTin}
+                        existingOcrResult={ocrMeta?.dti_registration}
                         onUploaded={onDocumentUploaded}
                         onRemoved={onDocumentRemoved}
                         onView={(doc) => setViewingDoc(doc)}
@@ -129,6 +149,10 @@ export default function DocumentsStep({
                         isHighlighted={highlightedKey === 'valid_id'}
                         revisionNote={revisionNotes.valid_id}
                         isVerifiedClean={hasActiveRevision && !flaggedKeys.has('valid_id')}
+                        shopName={shopName}
+                        ownerName={ownerName}
+                        expectedTin={expectedTin}
+                        existingOcrResult={ocrMeta?.valid_id}
                         onUploaded={onDocumentUploaded}
                         onRemoved={onDocumentRemoved}
                         onView={(doc) => setViewingDoc(doc)}
@@ -144,6 +168,10 @@ export default function DocumentsStep({
                         isHighlighted={highlightedKey === 'tin_id'}
                         revisionNote={revisionNotes.tin_id}
                         isVerifiedClean={hasActiveRevision && !flaggedKeys.has('tin_id')}
+                        shopName={shopName}
+                        ownerName={ownerName}
+                        expectedTin={expectedTin}
+                        existingOcrResult={ocrMeta?.tin_id}
                         onUploaded={onDocumentUploaded}
                         onRemoved={onDocumentRemoved}
                         onView={(doc) => setViewingDoc(doc)}

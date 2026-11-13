@@ -1,11 +1,12 @@
 /* global route, AbortController */
 import React, { useRef, useState, useEffect } from 'react';
-import { UploadCloud, Eye, Trash2, Loader2, XCircle, FileText, Camera, AlertTriangle, CheckCircle2, Lock } from 'lucide-react';
+import { UploadCloud, Eye, Trash2, Loader2, XCircle, FileText, Camera, AlertTriangle, CheckCircle2, Lock, ScanText } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
 import InputError from '@/Components/InputError';
 import { compressImage } from '@/utils/imageCompressor';
 import { compareSelfieToId, extractImageFaceDescriptor } from '@/lib/faceVerification';
+import { runDocumentOcr } from '@/utils/ocrWorker';
 
 const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
@@ -26,6 +27,11 @@ const FileUploadField = React.memo(({
     isVerifiedClean = false,
     onUploaded = null,
     onRemoved = null,
+    shopName = '',
+    ownerName = '',
+    expectedTin = '',
+    existingOcrResult = null,
+    onOcrAnalyzed = null,
 }) => {
     const inputRef = useRef(null);
     const cameraInputRef = useRef(null);
@@ -37,8 +43,16 @@ const FileUploadField = React.memo(({
     const [canCancel, setCanCancel] = useState(false);
     const [uploadError, setUploadError] = useState(null);
     const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+    const [ocrProgress, setOcrProgress] = useState(null);
+    const [ocrResult, setOcrResult] = useState(existingOcrResult || null);
 
     const effectiveFileUrl = uploadedUrl || existingFileUrl;
+
+    useEffect(() => {
+        if (existingOcrResult) {
+            setOcrResult(existingOcrResult);
+        }
+    }, [existingOcrResult]);
 
     useEffect(() => {
         setUploadedUrl(null);
@@ -117,6 +131,33 @@ const FileUploadField = React.memo(({
                 }
             }
 
+            let ocrExtras = {};
+            if (!isPdf) {
+                try {
+                    setOcrProgress('Reading document text...');
+                    const ocrAnalysis = await runDocumentOcr(
+                        fileToUpload,
+                        id,
+                        { shopName, ownerName, expectedTin },
+                        (progressMsg) => setOcrProgress(progressMsg)
+                    );
+                    if (ocrAnalysis) {
+                        setOcrResult(ocrAnalysis);
+                        onOcrAnalyzed?.(id, ocrAnalysis);
+                        ocrExtras = {
+                            ocr_status: ocrAnalysis.status || 'manual_review',
+                            ocr_extracted_value: ocrAnalysis.extractedValue || null,
+                            ocr_summary: ocrAnalysis.badgeText || null,
+                            ocr_data: JSON.stringify(ocrAnalysis),
+                        };
+                    }
+                } catch (ocrErr) {
+                    console.warn('OCR processing skipped, continuing upload:', ocrErr);
+                } finally {
+                    setOcrProgress(null);
+                }
+            }
+
             const abortController = new AbortController();
             abortControllerRef.current = abortController;
 
@@ -147,6 +188,7 @@ const FileUploadField = React.memo(({
                 const res = await axios.post(route('artisan.setup.upload-document', { type: id }), {
                     document_key: key,
                     ...biometricExtras,
+                    ...ocrExtras,
                 }, {
                     signal: abortController.signal,
                     headers: { Accept: 'application/json' },
@@ -155,7 +197,7 @@ const FileUploadField = React.memo(({
             } else {
                 const formData = new FormData();
                 formData.append('document', fileToUpload);
-                Object.entries(biometricExtras).forEach(([k, v]) => {
+                Object.entries({ ...biometricExtras, ...ocrExtras }).forEach(([k, v]) => {
                     if (v !== undefined && v !== null) {
                         formData.append(k, String(v));
                     }
@@ -172,6 +214,9 @@ const FileUploadField = React.memo(({
                 setUploadedUrl(responseData.url);
                 const returnedIsPdf = isPdf || String(responseData.url).toLowerCase().includes('.pdf');
                 setPreviewUrl(returnedIsPdf ? null : responseData.url);
+                if (responseData?.kyc_verification_meta?.ocr?.[id]) {
+                    setOcrResult(responseData.kyc_verification_meta.ocr[id]);
+                }
                 onUploaded?.(id, responseData.url);
             } else {
                 onUploaded?.(id, null);
@@ -228,6 +273,8 @@ const FileUploadField = React.memo(({
                 onSuccess: () => {
                     setUploadedUrl(null);
                     setPreviewUrl(null);
+                    setOcrResult(null);
+                    setOcrProgress(null);
                     onRemoved?.(id);
                 },
                 onFinish: () => setUploading(false),
@@ -247,6 +294,7 @@ const FileUploadField = React.memo(({
                 url: targetUrl,
                 title: label,
                 type: isPdf ? 'pdf' : 'image',
+                ocr_data: ocrResult,
             });
         } else {
             window.open(targetUrl, '_blank');
@@ -255,6 +303,47 @@ const FileUploadField = React.memo(({
 
     const hasFile = Boolean(effectiveFileUrl);
     const isLocked = Boolean(isVerifiedClean && hasFile && !isFlagged);
+
+    const renderOcrPill = () => {
+        if (ocrProgress) {
+            return (
+                <div className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] font-semibold text-clay-800 bg-clay-50/90 border border-clay-200/80 px-2 py-0.5 rounded-md animate-pulse max-w-full">
+                    <Loader2 size={11} className="animate-spin text-clay-600 shrink-0" />
+                    <span className="truncate">{ocrProgress}</span>
+                </div>
+            );
+        }
+
+        if (!ocrResult) return null;
+
+        const badgeTone = ocrResult.badge_tone || ocrResult.badgeTone || 'emerald';
+        const badgeText = ocrResult.badge_text || ocrResult.badgeText || 'Verified';
+        const summaryText = ocrResult.summary_text || ocrResult.summaryText || badgeText;
+        const isEmerald = badgeTone === 'emerald';
+        const isAmber = badgeTone === 'amber';
+
+        return (
+            <div
+                className={`mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md border max-w-full truncate shadow-2xs ${
+                    isEmerald
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        : isAmber
+                        ? 'bg-amber-50 text-amber-800 border-amber-200'
+                        : 'bg-stone-50 text-stone-700 border-stone-200'
+                }`}
+                title={summaryText}
+            >
+                {isEmerald ? (
+                    <CheckCircle2 size={11} className="text-emerald-600 shrink-0" />
+                ) : isAmber ? (
+                    <AlertTriangle size={11} className="text-amber-600 shrink-0" />
+                ) : (
+                    <ScanText size={11} className="text-stone-500 shrink-0" />
+                )}
+                <span className="truncate">{badgeText}</span>
+            </div>
+        );
+    };
 
     const renderFileActions = () => (
         <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
@@ -362,7 +451,9 @@ const FileUploadField = React.memo(({
                     <div className="flex flex-col items-center justify-center text-center" onClick={(e) => e.stopPropagation()}>
                         <Loader2 size={28} className="mb-2 text-clay-600 animate-spin" />
                         <p className="text-sm font-semibold text-stone-900">Processing document...</p>
-                        <p className="text-xs text-stone-500 mb-3">Uploading to secure storage</p>
+                        <p className="text-xs text-stone-500 mb-3">
+                            {ocrProgress || 'Uploading to secure storage'}
+                        </p>
                         {canCancel && (
                             <button
                                 type="button"
@@ -411,6 +502,7 @@ const FileUploadField = React.memo(({
                         <p className="max-w-full truncate text-xs font-semibold text-stone-800">
                             Document on File (Photo)
                         </p>
+                        {renderOcrPill()}
                         {renderFileActions()}
                     </div>
                 ) : hasFile ? (
@@ -421,6 +513,7 @@ const FileUploadField = React.memo(({
                         <p className="max-w-full truncate text-xs font-semibold text-stone-800">
                             Document on File (PDF)
                         </p>
+                        {renderOcrPill()}
                         {renderFileActions()}
                     </div>
                 ) : (
