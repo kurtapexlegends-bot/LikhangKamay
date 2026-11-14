@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, CalendarDays, Users } from 'lucide-react';
+import { ChevronRight, CalendarDays, Users, FolderOpen } from 'lucide-react';
 import {
     formatPeso,
     getAttendanceStatus,
@@ -79,8 +79,14 @@ export default function StaffRosterList({
                                             {attendanceMeta.label}
                                         </span>
                                     </div>
-                                    <div className="text-xs text-stone-500 truncate mt-0.5">
-                                        {emp.role || 'Studio Artisan'} • ID: {emp.employee_id || 'LK-STAFF'}
+                                    <div className="text-xs text-stone-500 truncate mt-0.5 flex flex-wrap items-center gap-x-2">
+                                        <span>{emp.role || 'Studio Artisan'} • ID: {emp.employee_id || 'LK-STAFF'}</span>
+                                        {Number(emp.documents_count || 0) > 0 && (
+                                            <span className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-[10px] font-semibold text-stone-600">
+                                                <FolderOpen size={10} className="text-clay-600" />
+                                                {emp.documents_count} {emp.documents_count === 1 ? 'doc' : 'docs'}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             </div>

@@ -110,7 +110,7 @@ export default function StaffRowItem({
                             <Link
                                 href={route('hr.employees.time-card', emp.id)}
                                 className="p-2.5 text-sky-600 hover:text-sky-800 hover:bg-sky-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center bg-white shadow-2xs active:scale-95"
-                                title="Time-Card Audit Logs"
+                                title="Employee Records & Shifts"
                             >
                                 <Clock3 size={15} />
                             </Link>
@@ -221,7 +221,7 @@ export default function StaffRowItem({
                         <Link
                             href={route('hr.employees.time-card', emp.id)}
                             className="p-2 text-sky-600 hover:text-sky-800 hover:bg-sky-50/60 border border-stone-200/60 rounded-xl transition-all duration-200 min-w-[36px] min-h-[36px] flex items-center justify-center bg-white shadow-2xs"
-                            title="Time-Card Audit Logs"
+                            title="Employee Records & Shifts"
                         >
                             <Clock3 size={14} />
                         </Link>

@@ -15,7 +15,7 @@ const entitlementLabels = {
     accounting: 'Accounting',
     orders: 'Orders',
     procurement: 'Procurement',
-    hr: 'People & Payroll',
+    hr: 'Employees & Payroll',
     catalog: 'Catalog',
 };
 
@@ -152,7 +152,7 @@ export default function StaffFilterToolbar({
                         <option value="accounting">Finance & Accounting Access</option>
                         <option value="orders">Orders & Fulfillment Access</option>
                         <option value="procurement">Procurement & Inventory Access</option>
-                        <option value="hr">People & Payroll Access</option>
+                        <option value="hr">Employees & Payroll Access</option>
                         <option value="catalog">Catalog & Products Access</option>
                     </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={14} />

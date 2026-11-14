@@ -1,6 +1,7 @@
 import React from 'react';
 import EmployeeIdentityCard from '@/Components/Seller/HR/EmployeeForm/EmployeeIdentityCard';
 import EmployeeDriverLogisticsCard from '@/Components/Seller/HR/EmployeeForm/EmployeeDriverLogisticsCard';
+import EmployeeDocumentsVaultCard from '@/Components/Seller/HR/EmployeeForm/EmployeeDocumentsVaultCard';
 import EmployeeSchedulePolicyCard from '@/Components/Seller/HR/EmployeeForm/EmployeeSchedulePolicyCard';
 import EmployeeAttendanceLocationCard from '@/Components/Seller/HR/EmployeeForm/EmployeeAttendanceLocationCard';
 
@@ -16,6 +17,15 @@ export default function BasicEmployeeInfoSection({
     sellerLocations = [],
     sellerSettings = {},
     driverLicensePhotoUrl = null,
+    employeeId = null,
+    documents = [],
+    isDocumentsLoading = false,
+    onDocumentsMutated = null,
+    stagedDocuments = [],
+    onAddStagedDocument = null,
+    onRemoveStagedDocument = null,
+    documentTypes = {},
+    canEditHrRecords = true,
 }) {
     const isDriver = data.role === 'Logistics & Driver' || data.role === 'Logistics / Driver' || data.role === 'Driver' || data.staff_role_preset_key === 'driver';
 
@@ -43,14 +53,27 @@ export default function BasicEmployeeInfoSection({
                 />
             )}
 
-            {/* 3. Work Schedule & Shift Policy */}
+            {/* 3. Employee Documents Vault */}
+            <EmployeeDocumentsVaultCard
+                employeeId={employeeId}
+                documents={documents}
+                isLoading={isDocumentsLoading}
+                onDocumentsMutated={onDocumentsMutated}
+                stagedDocuments={stagedDocuments}
+                onAddStagedDocument={onAddStagedDocument}
+                onRemoveStagedDocument={onRemoveStagedDocument}
+                documentTypes={documentTypes}
+                canEdit={canEditHrRecords}
+            />
+
+            {/* 4. Work Schedule & Shift Policy */}
             <EmployeeSchedulePolicyCard
                 data={data}
                 setData={setData}
                 sellerSettings={sellerSettings}
             />
 
-            {/* 4. Attendance & Location */}
+            {/* 5. Attendance & Location */}
             <EmployeeAttendanceLocationCard
                 data={data}
                 setData={setData}

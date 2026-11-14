@@ -24,7 +24,7 @@ import StaffRosterList from '@/Components/Seller/HR/StaffRosterList';
 import StaffCardMatrix from '@/Components/Seller/HR/StaffCardMatrix';
 import StaffDirectoryToolbar from '@/Components/Seller/HR/StaffDirectoryToolbar';
 
-export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {}, staffProvisioning = {}, staffAccessAudits = [], locations = [] }) {
+export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {}, staffProvisioning = {}, staffAccessAudits = [], locations = [], documentTypes = {} }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState(null);
@@ -43,6 +43,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
         if (!selectedEmployee) return null;
         return (staff || []).find(e => e.id === selectedEmployee.id) || selectedEmployee;
     }, [selectedEmployee, staff]);
+
+    const activeEditingEmployee = useMemo(() => {
+        if (!editingEmployee) return null;
+        return (staff || []).find(e => e.id === editingEmployee.id) || editingEmployee;
+    }, [editingEmployee, staff]);
 
     const activeAttendanceEmployee = useMemo(() => 
         attendanceCalendarEmployee 
@@ -134,7 +139,11 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
             } else {
                 url.searchParams.set('tab', newTab);
             }
-            window.history.replaceState({}, '', url.toString());
+            const currentState = window.history.state;
+            const nextState = currentState && typeof currentState === 'object'
+                ? { ...currentState, url: `${url.pathname}${url.search}${url.hash}` }
+                : currentState;
+            window.history.replaceState(nextState, '', url.toString());
         }
     }, []);
 
@@ -254,9 +263,9 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
 
     return (
         <>
-            <Head title="People & Payroll" />
+            <Head title="Employees & Payroll" />
             <SellerHeader
-                title="People & Payroll"
+                title="Employees & Payroll"
                 subtitle="Manage staff profiles, payroll runs, and account access."
                 auth={auth}
                 onMenuClick={openSidebar}
@@ -336,7 +345,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                     onEdit={openEditModal}
                                                     onToggleSuspension={toggleSuspension}
                                                     onOpenCalendar={setAttendanceCalendarEmployee}
-                                                    onOpenTimeCard={(emp) => router.visit(route('hr.employees.time-card', emp.id))}
+                                                    onOpenTimeCard={(emp, tab) => router.visit(route('hr.employees.time-card', tab ? { employee: emp.id, tab } : emp.id))}
                                                     canEditHrRecords={canEditHrRecords}
                                                     canManageStaffAccounts={canManageStaffAccounts}
                                                     presetLabelByKey={presetLabelByKey}
@@ -375,7 +384,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                                                 onEdit={openEditModal}
                                                 onToggleSuspension={toggleSuspension}
                                                 onOpenCalendar={setAttendanceCalendarEmployee}
-                                                onOpenTimeCard={(emp) => router.visit(route('hr.employees.time-card', emp.id))}
+                                                onOpenTimeCard={(emp, tab) => router.visit(route('hr.employees.time-card', tab ? { employee: emp.id, tab } : emp.id))}
                                                 canEditHrRecords={canEditHrRecords}
                                                 canManageStaffAccounts={canManageStaffAccounts}
                                                 presetLabelByKey={presetLabelByKey}
@@ -439,14 +448,15 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                 canEditHrRecords={canEditHrRecords}
                 sellerLocations={locations}
                 sellerSettings={sellerSettings}
+                documentTypes={documentTypes}
             />
 
-            {editingEmployee && (
+            {activeEditingEmployee && (
                 <EmployeeFormModal
                     isOpen={isEditModalOpen}
                     onClose={closeEditModal}
                     mode="edit"
-                    employee={editingEmployee}
+                    employee={activeEditingEmployee}
                     rolePresets={rolePresets}
                     availableModules={availableModules}
                     canProvisionStaffAccounts={canProvisionStaffAccounts}
@@ -456,6 +466,7 @@ export default function HR({ auth, staff = [], payrolls = [], sellerSettings = {
                     canEditHrRecords={canEditHrRecords}
                     sellerLocations={locations}
                     sellerSettings={sellerSettings}
+                    documentTypes={documentTypes}
                     onDelete={deleteEmployee}
                 />
             )}

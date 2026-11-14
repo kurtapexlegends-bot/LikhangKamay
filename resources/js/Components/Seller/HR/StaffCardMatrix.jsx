@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Clock, Edit3, UserPlus, Users, MapPin } from 'lucide-react';
+import { Calendar, Clock, Edit3, UserPlus, Users, MapPin, FolderOpen } from 'lucide-react';
 import {
     formatPeso,
     getAttendanceStatus,
@@ -87,8 +87,16 @@ export default function StaffCardMatrix({
                             <div>
                                 <h4 className="font-bold text-sm text-stone-900 truncate">{emp.name}</h4>
                                 <p className="text-xs text-stone-500 truncate">{emp.role || 'Studio Artisan'}</p>
-                                <div className="mt-1.5 inline-flex items-center gap-1 text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-md font-medium">
-                                    ID: {emp.employee_id || 'LK-STAFF'}
+                                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                    <div className="inline-flex items-center gap-1 text-[11px] bg-stone-100 text-stone-700 px-2 py-0.5 rounded-md font-medium">
+                                        ID: {emp.employee_id || 'LK-STAFF'}
+                                    </div>
+                                    {Number(emp.documents_count || 0) > 0 && (
+                                        <span className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-stone-50 px-2 py-0.5 text-[10px] font-semibold text-stone-600">
+                                            <FolderOpen size={10} className="text-clay-600" />
+                                            {emp.documents_count} {emp.documents_count === 1 ? 'doc' : 'docs'}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 
@@ -144,7 +152,7 @@ export default function StaffCardMatrix({
                                 className="flex-1 py-2 px-2.5 rounded-xl bg-stone-900 text-white text-xs font-bold hover:bg-stone-800 transition flex items-center justify-center gap-1 min-h-[38px]"
                             >
                                 <Clock size={13} />
-                                <span>Time Card</span>
+                                <span>Records</span>
                             </button>
                         </div>
                     </div>

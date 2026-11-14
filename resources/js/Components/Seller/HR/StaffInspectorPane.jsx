@@ -7,9 +7,8 @@ import {
     Calendar,
     Clock,
     MapPin,
-    Briefcase,
-    Shield,
-    ExternalLink
+    FolderOpen,
+    ChevronRight
 } from 'lucide-react';
 import {
     formatPeso,
@@ -28,7 +27,7 @@ export default function StaffInspectorPane({
     onOpenTimeCard,
     canEditHrRecords,
     canManageStaffAccounts,
-    presetLabelByKey = {}
+    presetLabelByKey = {},
 }) {
     if (!employee) return null;
 
@@ -40,6 +39,7 @@ export default function StaffInspectorPane({
     const estimatedNet = semiMonthlySalary - estimatedDeductions;
     const initials = employee.name ? employee.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'LK';
     const rolePresetLabel = employee.login_account?.role_preset_key ? (presetLabelByKey[employee.login_account.role_preset_key] || employee.login_account.role_preset_key) : null;
+    const docCount = Number(employee.documents_count ?? employee.documents?.length ?? 0);
 
     return (
         <aside
@@ -199,6 +199,21 @@ export default function StaffInspectorPane({
                                 </span>
                             </div>
                         )}
+
+                        <div className="flex items-center justify-between text-xs pt-1 border-t border-stone-100">
+                            <span className="text-stone-500 inline-flex items-center gap-1.5">
+                                <FolderOpen size={13} className="text-clay-600" />
+                                Employee Documents
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => onOpenTimeCard && onOpenTimeCard(employee, 'documents')}
+                                className="inline-flex items-center gap-1 font-bold text-clay-700 hover:text-clay-900 transition cursor-pointer"
+                            >
+                                <span>{docCount} {docCount === 1 ? 'file' : 'files'}</span>
+                                <ChevronRight size={13} />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -222,7 +237,7 @@ export default function StaffInspectorPane({
                     className="flex-1 py-2.5 px-3 rounded-xl bg-stone-900 text-white text-xs font-bold hover:bg-stone-800 transition flex items-center justify-center gap-1.5 min-h-[44px]"
                 >
                     <Clock size={14} />
-                    <span>Time Card Audit</span>
+                    <span>Employee Records</span>
                 </button>
             </div>
         </aside>

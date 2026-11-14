@@ -1,3 +1,4 @@
+/* global route AbortController */
 import React, { useState } from 'react';
 import { X, UserPlus, Pencil, ShieldAlert, RefreshCw } from 'lucide-react';
 import { useForm } from '@inertiajs/react';
@@ -9,6 +10,7 @@ import PortalCredentialsSection from './PortalCredentialsSection';
 import FormErrorSummary from '@/Components/Common/FormErrorSummary';
 import useConstraintValidation from '@/hooks/useConstraintValidation';
 import { useToast } from '@/Components/ToastContext';
+import { uploadEmployeeDocumentToPresign } from '@/utils/employeeDocumentUpload';
 import {
     DEFAULT_EMPLOYEE_ROLE,
     buildModuleSelection,
@@ -31,15 +33,81 @@ export default function EmployeeFormModal({
     canEditHrRecords,
     sellerLocations = [],
     sellerSettings = {},
+    documentTypes = {},
     onDelete = null,
 }) {
     const { addToast } = useToast();
     const [showPassword, setShowPassword] = useState(false);
+    const [stagedDocuments, setStagedDocuments] = useState([]);
+    const [loadedDocuments, setLoadedDocuments] = useState([]);
+    const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
+    const [isUploadingStaged, setIsUploadingStaged] = useState(false);
+    const stagedObjectUrlsRef = React.useRef([]);
+    const documentsAbortControllerRef = React.useRef(null);
+
+    const fetchEmployeeDocuments = React.useCallback(async (targetEmployeeId) => {
+        if (!targetEmployeeId) return;
+        if (documentsAbortControllerRef.current) {
+            documentsAbortControllerRef.current.abort();
+        }
+        const controller = new AbortController();
+        documentsAbortControllerRef.current = controller;
+        setIsLoadingDocuments(true);
+        try {
+            const response = await window.axios.get(route('hr.employees.documents.index', targetEmployeeId), { signal: controller.signal });
+            if (!controller.signal.aborted) {
+                setLoadedDocuments(Array.isArray(response?.data?.documents) ? response.data.documents : []);
+            }
+        } catch (err) {
+            if (err?.name !== 'CanceledError' && err?.code !== 'ERR_CANCELED' && !controller.signal.aborted) {
+                setLoadedDocuments([]);
+            }
+        } finally {
+            if (!controller.signal.aborted) {
+                setIsLoadingDocuments(false);
+            }
+            if (documentsAbortControllerRef.current === controller) {
+                documentsAbortControllerRef.current = null;
+            }
+        }
+    }, []);
+
+    React.useEffect(() => {
+        if (!isOpen || mode !== 'edit' || !employee?.id) {
+            if (documentsAbortControllerRef.current) {
+                documentsAbortControllerRef.current.abort();
+                documentsAbortControllerRef.current = null;
+            }
+            setLoadedDocuments([]);
+            setIsLoadingDocuments(false);
+            return undefined;
+        }
+        fetchEmployeeDocuments(employee.id);
+        return () => {
+            if (documentsAbortControllerRef.current) {
+                documentsAbortControllerRef.current.abort();
+                documentsAbortControllerRef.current = null;
+            }
+        };
+    }, [isOpen, mode, employee?.id, employee?.documents_count, fetchEmployeeDocuments]);
+
+    const clearStagedDocuments = React.useCallback(() => {
+        stagedObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+        stagedObjectUrlsRef.current = [];
+        setStagedDocuments([]);
+    }, []);
+
+    React.useEffect(() => {
+        return () => {
+            stagedObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+            stagedObjectUrlsRef.current = [];
+        };
+    }, []);
     
     const initialPresetKey = rolePresets[0]?.key || 'hr';
     const defaultWorkingDays = ['mon', 'tue', 'wed', 'thu', 'fri'];
     
-    const { data, setData, post, patch, processing, errors } = useForm({
+    const { data, setData, post, patch, transform, processing, errors } = useForm({
         employee_id: '',
         name: '',
         role: DEFAULT_EMPLOYEE_ROLE,
@@ -68,11 +136,16 @@ export default function EmployeeFormModal({
     const [manualEmployeeRole, setManualEmployeeRole] = useState(data.role || DEFAULT_EMPLOYEE_ROLE);
 
     React.useEffect(() => {
-        if (isOpen) {
-            setShowPassword(false);
-            
-            if (mode === 'add') {
-                const newEmpId = generateRandomEmployeeId();
+        if (!isOpen) {
+            clearStagedDocuments();
+            return;
+        }
+
+        setShowPassword(false);
+
+        if (mode === 'add') {
+            clearStagedDocuments();
+            const newEmpId = generateRandomEmployeeId();
                 setManualEmployeeRole(DEFAULT_EMPLOYEE_ROLE);
                 setData({
                     employee_id: newEmpId,
@@ -140,8 +213,33 @@ export default function EmployeeFormModal({
                     module_overrides: moduleOverrides,
                 });
             }
+    }, [isOpen, mode, employee?.id, rolePresets, availableModules, clearStagedDocuments]);
+
+    const handleAddStagedDocument = (doc) => {
+        const objectUrl = doc.file ? URL.createObjectURL(doc.file) : null;
+        if (objectUrl) {
+            stagedObjectUrlsRef.current.push(objectUrl);
         }
-    }, [isOpen, mode, employee, rolePresets, availableModules]);
+        setStagedDocuments((prev) => [
+            ...prev,
+            {
+                ...doc,
+                local_id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                file_url: objectUrl,
+            },
+        ]);
+    };
+
+    const handleRemoveStagedDocument = (localId) => {
+        setStagedDocuments((prev) => {
+            const target = prev.find((item) => item.local_id === localId);
+            if (target?.file_url) {
+                URL.revokeObjectURL(target.file_url);
+                stagedObjectUrlsRef.current = stagedObjectUrlsRef.current.filter((u) => u !== target.file_url);
+            }
+            return prev.filter((item) => item.local_id !== localId);
+        });
+    };
 
     const shouldValidateEmployeeId = isOpen && data.employee_id && (mode === 'add' || data.employee_id !== employee?.employee_id);
     const shouldValidateEmail = isOpen && data.create_login_account && data.email && (mode === 'add' || !employee?.login_account || data.email !== employee.login_account.email);
@@ -236,15 +334,65 @@ export default function EmployeeFormModal({
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!canEditHrRecords) return;
+        if (!canEditHrRecords || processing || isUploadingStaged) return;
 
         if (mode === 'add') {
             const isProvisioningLogin = data.create_login_account;
+            let resolvedStagedDocs = stagedDocuments;
+
+            if (stagedDocuments.length > 0) {
+                setIsUploadingStaged(true);
+                try {
+                    const updatedDocs = [];
+                    for (const doc of stagedDocuments) {
+                        if (doc.document_key) {
+                            updatedDocs.push(doc);
+                            continue;
+                        }
+                        const { key, originalFilename } = await uploadEmployeeDocumentToPresign(doc.file);
+                        updatedDocs.push({
+                            ...doc,
+                            document_key: key,
+                            original_filename: originalFilename,
+                        });
+                    }
+                    resolvedStagedDocs = updatedDocs;
+                    setStagedDocuments(updatedDocs);
+                } catch (err) {
+                    const errMsg = err?.response?.data?.error || err?.message || 'Failed to upload attached employee document.';
+                    addToast(String(errMsg), 'error');
+                    return;
+                } finally {
+                    setIsUploadingStaged(false);
+                }
+            }
+
+            const hasStagedDocs = resolvedStagedDocs.length > 0;
+            transform((curr) => (
+                hasStagedDocs
+                    ? {
+                        ...curr,
+                        staged_documents: resolvedStagedDocs.map((doc) => ({
+                            document_type: doc.document_type,
+                            title: doc.title,
+                            expires_at: doc.expires_at || '',
+                            notes: doc.notes || '',
+                            document_key: doc.document_key,
+                            original_filename: doc.original_filename || doc.file?.name || '',
+                        })),
+                    }
+                    : curr
+            ));
             post(route('hr.store'), {
                 preserveScroll: true,
                 onSuccess: (page) => {
+                    if (page?.props?.flash?.error) {
+                        addToast(page.props.flash.error, 'error');
+                        return;
+                    }
+                    clearStagedDocuments();
                     onClose();
                     addToast(page?.props?.flash?.success || (isProvisioningLogin ? 'Employee and staff login created. Verification code sent.' : 'Employee added.'), 'success');
                 },
@@ -254,9 +402,14 @@ export default function EmployeeFormModal({
             });
         } else {
             if (!employee) return;
+            transform((curr) => curr);
             patch(route('hr.update', employee.id), {
                 preserveScroll: true,
                 onSuccess: (page) => {
+                    if (page?.props?.flash?.error) {
+                        addToast(page.props.flash.error, 'error');
+                        return;
+                    }
                     onClose();
                     addToast(page?.props?.flash?.success || 'Employee details updated.', 'success');
                 },
@@ -336,6 +489,15 @@ export default function EmployeeFormModal({
                         sellerLocations={sellerLocations}
                         sellerSettings={sellerSettings}
                         driverLicensePhotoUrl={employee?.driver_license_photo_url}
+                        employeeId={mode === 'edit' ? employee?.id : null}
+                        documents={mode === 'edit' ? loadedDocuments : []}
+                        isDocumentsLoading={isLoadingDocuments}
+                        onDocumentsMutated={() => employee?.id && fetchEmployeeDocuments(employee.id)}
+                        stagedDocuments={stagedDocuments}
+                        onAddStagedDocument={handleAddStagedDocument}
+                        onRemoveStagedDocument={handleRemoveStagedDocument}
+                        documentTypes={documentTypes}
+                        canEditHrRecords={canEditHrRecords}
                     />
 
                     {/* Section 4: Seller Portal Access & Permissions */}
@@ -383,13 +545,13 @@ export default function EmployeeFormModal({
 
                         {mode === 'add' && !requiresStaffSchemaUpdate && !canProvisionStaffAccounts && (
                             <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-3.5 py-2.5 text-xs font-medium text-amber-800">
-                                Only the shop owner or a user with editable People &amp; Payroll access can create seller login accounts.
+                                Only the shop owner or a user with editable Employees &amp; Payroll access can create seller login accounts.
                             </div>
                         )}
 
                         {mode === 'edit' && !requiresStaffSchemaUpdate && !canUpdateStaffAccounts && (
                             <div className="rounded-xl border border-amber-200 bg-[#FFFBF0] px-3.5 py-2.5 text-xs font-medium text-amber-800">
-                                Only the shop owner or a user with editable People &amp; Payroll access can change seller login access.
+                                Only the shop owner or a user with editable Employees &amp; Payroll access can change seller login access.
                             </div>
                         )}
 
@@ -478,7 +640,7 @@ export default function EmployeeFormModal({
                     onDelete={onDelete}
                     employee={employee}
                     onClose={onClose}
-                    processing={processing}
+                    processing={processing || isUploadingStaged}
                     canEditHrRecords={canEditHrRecords}
                     canDeleteStaffAccounts={canDeleteStaffAccounts}
                 />

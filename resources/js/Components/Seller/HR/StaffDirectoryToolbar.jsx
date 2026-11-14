@@ -187,7 +187,7 @@ export default function StaffDirectoryToolbar({
                                     <option value="orders">Orders & Fulfillment Access</option>
                                     <option value="accounting">Finance & Accounting Access</option>
                                     <option value="procurement">Procurement & Inventory Access</option>
-                                    <option value="hr">People & Payroll Access</option>
+                                    <option value="hr">Employees & Payroll Access</option>
                                     <option value="catalog">Catalog & Products Access</option>
                                 </select>
                             </div>

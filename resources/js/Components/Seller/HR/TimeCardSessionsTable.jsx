@@ -6,7 +6,9 @@ import {
     Check,
     Ban,
     Sparkles,
+    Clock,
 } from 'lucide-react';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 
 export default function TimeCardSessionsTable({
     sessions = [],
@@ -20,8 +22,13 @@ export default function TimeCardSessionsTable({
 }) {
     if (sessions.length === 0) {
         return (
-            <div className="p-12 text-center text-stone-400 text-xs font-medium">
-                No attendance shifts found.
+            <div className="p-4 sm:p-6">
+                <WorkspaceEmptyState
+                    icon={Clock}
+                    title="No attendance shifts recorded"
+                    description="No clocked shifts matched the selected period or filters."
+                    compact
+                />
             </div>
         );
     }

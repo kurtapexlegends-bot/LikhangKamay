@@ -82,7 +82,10 @@ export default function PayrollHistoryTable({
                     </div>
                 }
                 onApplyFilters={() => {}}
-                onResetFilters={() => setSearch('')}
+                onResetFilters={() => {
+                    setStatusFilter('all');
+                    setSearch('');
+                }}
                 activeFilterTags={
                     statusFilter !== 'all'
                         ? [
@@ -249,6 +252,21 @@ export default function PayrollHistoryTable({
                                 const isExpanded = expandedRowId === payroll.id;
                                 const isPaid = payroll.status === 'Paid';
                                 const isRejected = payroll.status === 'Rejected';
+                                const computedGross = Array.isArray(payroll.items) && payroll.items.length > 0
+                                    ? payroll.items.reduce((sum, item) => {
+                                        const explicitGross = Number(item.gross_pay);
+                                        if (Number.isFinite(explicitGross) && item.gross_pay !== null && item.gross_pay !== undefined) {
+                                            return sum + explicitGross;
+                                        }
+
+                                        return sum
+                                            + Number(item.base_salary || 0)
+                                            + Number(item.overtime_pay || 0)
+                                            + Number(item.rest_day_ot_pay || 0)
+                                            + Number(item.holiday_ot_pay || 0);
+                                    }, 0)
+                                    : Number(payroll.total_amount || 0);
+                                const grossPay = computedGross > 0 ? computedGross : Number(payroll.total_amount || 0);
 
                                 return (
                                     <React.Fragment key={payroll.id}>
@@ -275,7 +293,7 @@ export default function PayrollHistoryTable({
                                                 {payroll.employee_count}
                                             </td>
                                             <td className="px-4 py-4 text-right font-medium text-stone-600">
-                                                {formatPeso(payroll.total_amount)}
+                                                {formatPeso(grossPay)}
                                             </td>
                                             <td className="px-4 py-4 text-right font-black text-stone-900 text-sm">
                                                 {formatPeso(payroll.total_amount)}
@@ -371,7 +389,12 @@ export default function PayrollHistoryTable({
                                                                                     {Number(item.deductions || 0) > 0 ? `-${formatPeso(item.deductions)}` : '₱0.00'}
                                                                                 </td>
                                                                                 <td className="px-3 py-2.5 text-right font-medium text-emerald-700">
-                                                                                    {Number(item.overtime_pay || 0) > 0 ? `+${formatPeso(item.overtime_pay)}` : '₱0.00'}
+                                                                                    {(() => {
+                                                                                        const totalOt = Number(item.overtime_pay || 0)
+                                                                                            + Number(item.rest_day_ot_pay || 0)
+                                                                                            + Number(item.holiday_ot_pay || 0);
+                                                                                        return totalOt > 0 ? `+${formatPeso(totalOt)}` : '₱0.00';
+                                                                                    })()}
                                                                                 </td>
                                                                                 <td className="px-3 py-2.5 text-right font-black text-stone-900">
                                                                                     {formatPeso(item.net_pay || item.base_salary)}
@@ -428,7 +451,7 @@ export default function PayrollHistoryTable({
                     totalPages={payrolls.last_page}
                     totalItems={payrolls.total}
                     itemsPerPage={payrolls.per_page}
-                    onPageChange={(page) => router.get(route('hr.index'), { page }, { preserveState: true, preserveScroll: true, replace: true })}
+                    onPageChange={(page) => router.get(route('hr.index'), { tab: 'payroll', page }, { preserveState: true, preserveScroll: true, replace: true })}
                     itemLabel="payrolls"
                 />
             )}
