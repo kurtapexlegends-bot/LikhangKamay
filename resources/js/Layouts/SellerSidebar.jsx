@@ -4,7 +4,7 @@ import StaffAttendanceMonitor from '@/Components/StaffAttendanceMonitor';
 import { 
     LayoutDashboard, Package, ShoppingBag, BarChart3, Box, 
     Users, MessageCircle, X, ChevronLeft,
-    ClipboardList, Warehouse, FileQuestion, Banknote, Star, Award, Tag, ShieldCheck, Truck
+    ClipboardList, Warehouse, FileQuestion, Banknote, Star, Award, Tag, ShieldCheck, Truck, Store
 } from 'lucide-react';
 import SidebarSettingsPopover from '@/Components/Seller/Sidebar/SidebarSettingsPopover';
 import SidebarPlanPromo from '@/Components/Seller/Sidebar/SidebarPlanPromo';
@@ -20,7 +20,7 @@ const GEAR_HINT_STORAGE_KEY = 'seller_sidebar_gear_hint_seen_v1';
 const resolveActiveGroup = (active) => {
     if (['staff-dashboard', 'deliveries'].includes(active)) return 'workspace';
     if (['overview', 'products', 'analytics', '3d', 'approvals'].includes(active)) return 'core';
-    if (['orders', 'chat', 'team-messages', 'reviews'].includes(active)) return 'crm';
+    if (['pos', 'orders', 'chat', 'team-messages', 'reviews'].includes(active)) return 'crm';
     if (['sponsorships', 'discounts'].includes(active)) return 'marketing';
     if (['hr', 'accounting', 'procurement', 'stock-requests', 'supply-hub', 'audit-log'].includes(active)) return 'advanced';
 
@@ -429,6 +429,9 @@ export default function SellerSidebar({
                                 onToggle={() => toggleGroup('crm')}
                                 isCollapsed={isCollapsed}
                             >
+                                {!isDriverStaff && visibleModulesSet.has('orders') && (
+                                    <NavItem href={route('seller.pos.index')} icon={Store} active={active === 'pos'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Walk-In POS')} onMouseLeave={handleTooltipLeave}>Walk-In POS</NavItem>
+                                )}
                                 {!isDriverStaff && visibleModulesSet.has('orders') && (
                                     <NavItem href={route('orders.index')} icon={ShoppingBag} active={active === 'orders' || (!isStaffActor && active === 'deliveries')} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Orders')} onMouseLeave={handleTooltipLeave}>Orders</NavItem>
                                 )}

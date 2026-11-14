@@ -114,6 +114,9 @@ export const useRealtime = () => {
             if (path.includes('/products')) {
                 reloadKeys.push('products', 'metrics');
             }
+            if (path.includes('/seller/pos')) {
+                reloadKeys.push('products', 'recentOrders', 'historySummary');
+            }
             if (path.includes('/orders') || path.includes('/my-orders')) {
                 reloadKeys.push('orders', 'tabCounts');
             }
@@ -133,7 +136,7 @@ export const useRealtime = () => {
                 reloadKeys.push('supplies', 'requests', 'finances', 'totalItems', 'lowStockItems', 'totalValue');
             }
             if (path.includes('/accounting')) {
-                reloadKeys.push('pendingRequests', 'history', 'finances');
+                reloadKeys.push('pendingRequests', 'history', 'finances', 'channelBreakdown');
             }
             if (path.includes('/reviews')) {
                 reloadKeys.push('reviews');
@@ -340,13 +343,21 @@ export const useRealtime = () => {
                             filter: `artisan_id=eq.${sellerIdForOrders}`,
                         },
                         (payload) => {
-                            if (payload.eventType === 'INSERT') {
+                            if (payload.eventType === 'INSERT' && payload.new?.order_type !== 'pos_walkin') {
                                 addToast(`New Order Received! #${payload.new.order_number}`, 'success', 8000);
                                 window.dispatchEvent(new CustomEvent('new-order', { detail: payload.new }));
                             }
 
+                            const currentPath = window.location.pathname;
+                            let posOnlyKeys = ['orders', 'metrics', 'stats', 'recentOrders', 'tabCounts'];
+                            if (currentPath.includes('/seller/pos')) {
+                                posOnlyKeys = [...posOnlyKeys, 'products', 'historySummary'];
+                            } else if (currentPath.includes('/accounting')) {
+                                posOnlyKeys = ['pendingRequests', 'history', 'finances', 'channelBreakdown'];
+                            }
+
                             router.reload({
-                                only: ['orders', 'metrics', 'stats', 'recentOrders', 'tabCounts'],
+                                only: posOnlyKeys,
                                 preserveScroll: true,
                             });
                         }

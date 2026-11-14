@@ -4,7 +4,7 @@ import {
     ClipboardList, Star, Award, ShoppingBag, FolderTree, Users, 
     TrendingUp, BarChart2, ShieldAlert, RotateCcw, Shield, 
     LayoutDashboard, MessageSquare, Settings, MapPin, 
-    Clock, Tag, Mail, AlertCircle
+    Clock, Tag, Mail, AlertCircle, Store
 } from 'lucide-react';
 
 export const getSafeRoute = (name, params = {}) => {
@@ -42,6 +42,7 @@ export function getGlobalSearchCommands(effectiveScope, visibleModules = [], use
             { label: 'Go to Product Catalog', cmd: '> products', url: getSafeRoute('products.index'), icon: Package, color: 'text-rose-600 bg-rose-50', module: 'products' },
             { label: 'Go to Marketing Discounts', cmd: '> discounts', url: getSafeRoute('discounts.index'), icon: Tag, color: 'text-amber-600 bg-amber-50', module: 'discounts' },
             { label: 'Go to 3D Model Manager', cmd: '> 3d', url: getSafeRoute('3d.index'), icon: Box, color: 'text-indigo-600 bg-indigo-50', module: '3d' },
+            { label: 'Go to Walk-In POS', cmd: '> pos', url: getSafeRoute('seller.pos.index'), icon: Store, color: 'text-clay-600 bg-clay-50', module: 'orders' },
             { label: 'Go to Order Manager', cmd: '> orders', url: getSafeRoute('orders.index'), icon: ShoppingBag, color: 'text-emerald-600 bg-emerald-50', module: 'orders' },
             { label: 'Go to Materials Inventory & Supplies', cmd: '> inventory', url: getSafeRoute('procurement.index'), icon: Box, color: 'text-blue-600 bg-blue-50', module: 'procurement' },
             { label: 'Go to Stock Requests Queue', cmd: '> stock-requests', url: getSafeRoute('stock-requests.index'), icon: ClipboardList, color: 'text-clay-600 bg-clay-50', module: 'stock_requests' },

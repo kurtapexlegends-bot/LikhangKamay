@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Head, usePage } from '@inertiajs/react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import AdminLayout from '@/Layouts/AdminLayout';
@@ -6,13 +6,23 @@ import SellerHeader from '@/Layouts/SellerHeader';
 import { User, Shield, MapPin, AlertTriangle } from 'lucide-react';
 import DeleteUserForm from '@/Pages/Consumer/Profile/Partials/DeleteUserForm';
 import UpdatePasswordForm from '@/Pages/Consumer/Profile/Partials/UpdatePasswordForm';
+import UpdatePosVoidPinForm from './Partials/UpdatePosVoidPinForm';
 import UpdateAddressForm from '@/Pages/Consumer/Profile/Partials/UpdateAddressForm';
 import UpdateProfileInformationForm from '@/Pages/Consumer/Profile/Partials/UpdateProfileInformationForm';
 import SellerUpdateProfileInformationForm from './Partials/SellerUpdateProfileInformationForm';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
 
-export default function Edit({ mustVerifyEmail, status, addresses, profileMode = 'owner', workspaceShell = 'seller' }) {
+export default function Edit({
+    mustVerifyEmail,
+    status,
+    addresses,
+    profileMode = 'owner',
+    workspaceShell = 'seller',
+    canManagePosVoidPin = false,
+    hasPosVoidPin = false,
+    posVoidPinUpdatedAt = null,
+}) {
     const { auth, flash } = usePage().props;
     const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
@@ -55,8 +65,17 @@ export default function Edit({ mustVerifyEmail, status, addresses, profileMode =
                         <h3 className="text-base font-bold text-stone-900">Security</h3>
                     </div>
                 </div>
-                <div className="p-6">
+                <div className="p-6 space-y-8">
                     <UpdatePasswordForm className="max-w-2xl" />
+                    {canManagePosVoidPin && (
+                        <div className="border-t border-stone-100 pt-8">
+                            <UpdatePosVoidPinForm
+                                hasPosVoidPin={hasPosVoidPin}
+                                posVoidPinUpdatedAt={posVoidPinUpdatedAt}
+                                className="max-w-2xl"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
