@@ -31,6 +31,14 @@ class UploadPresignController extends Controller
         'jpg', 'jpeg', 'png', 'webp', 'pdf',
     ];
 
+    private const PRIVATE_DOCUMENT_CONTENT_TYPES = [
+        'image/jpeg' => 'image/jpeg',
+        'image/jpg' => 'image/jpeg',
+        'image/png' => 'image/png',
+        'image/webp' => 'image/webp',
+        'application/pdf' => 'application/pdf',
+    ];
+
     private const MAX_PRIVATE_DOCUMENT_BYTES = 4 * 1024 * 1024;
 
     /**
@@ -73,7 +81,15 @@ class UploadPresignController extends Controller
         }
 
         $contentType = $validated['contentType'];
-        if ($extension === 'glb') {
+        if ($isPrivateDocument) {
+            $normalizedMime = self::PRIVATE_DOCUMENT_CONTENT_TYPES[strtolower(trim($contentType))] ?? null;
+            if (!$normalizedMime) {
+                return response()->json([
+                    'error' => 'Employee documents only allow JPEG, PNG, WEBP, or PDF content types.',
+                ], 422);
+            }
+            $contentType = $normalizedMime;
+        } elseif ($extension === 'glb') {
             $contentType = 'model/gltf-binary';
         } elseif ($extension === 'gltf') {
             $contentType = 'model/gltf+json';

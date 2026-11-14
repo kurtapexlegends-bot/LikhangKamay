@@ -113,8 +113,12 @@ class EmployeeDocumentService
         Employee $employee,
         array $stagedDocuments
     ): void {
-        if (!self::supportsSchema() || empty($stagedDocuments)) {
+        if (empty($stagedDocuments)) {
             return;
+        }
+
+        if (!self::supportsSchema()) {
+            throw new \RuntimeException('Employee document storage is pending migration.');
         }
 
         $preparedPayloads = [];
@@ -433,12 +437,51 @@ class EmployeeDocumentService
 
     private function resolveStoredObjectMimeType(\Illuminate\Contracts\Filesystem\Filesystem $disk, string $key): ?string
     {
+        $magicMime = $this->sniffStoredMagicMime($disk, $key);
+        if ($magicMime !== null) {
+            return $magicMime;
+        }
+
         $mime = rescue(fn () => $disk->mimeType($key), null, report: false);
         if (is_string($mime) && $mime !== '' && !in_array($mime, ['application/x-empty', 'inode/x-empty', 'application/octet-stream'], true)) {
             return $mime;
         }
 
         return null;
+    }
+
+    private function sniffStoredMagicMime(\Illuminate\Contracts\Filesystem\Filesystem $disk, string $key): ?string
+    {
+        $head = rescue(function () use ($disk, $key) {
+            $stream = $disk->readStream($key);
+            if (is_resource($stream)) {
+                $bytes = fread($stream, 16);
+                fclose($stream);
+                return is_string($bytes) ? $bytes : '';
+            }
+
+            $contents = $disk->get($key);
+            return is_string($contents) ? substr($contents, 0, 16) : '';
+        }, '', report: false);
+
+        if ($head === '') {
+            return null;
+        }
+
+        if (str_starts_with($head, '%PDF-')) {
+            return 'application/pdf';
+        }
+        if (str_starts_with($head, "\x89PNG\r\n\x1a\n")) {
+            return 'image/png';
+        }
+        if (str_starts_with($head, "\xFF\xD8\xFF")) {
+            return 'image/jpeg';
+        }
+        if (strlen($head) >= 12 && substr($head, 0, 4) === 'RIFF' && substr($head, 8, 4) === 'WEBP') {
+            return 'image/webp';
+        }
+
+        return 'application/octet-stream';
     }
 
     private function fallbackMimeForExtension(string $extension): string
