@@ -65,10 +65,10 @@ description: >-
   - Audits Philippine statutory deductions toggle (`enable_statutory_deductions`) and interactive Live Wage Simulator (`/shop/settings?tab=payroll`).
   - Audits secondary workshop locations (`/shop-locations`) with Cavite GPS geofencing toggles (`enforce_strict_geofence: true`).
   - Audits monthly BIR 2307 withholding settlement statement export (`GET /accounting/settlement/export`).
-- Audits Accounting ledger, FundMetrics KPI cards, `SalesChannelBreakdown` (`System Online` vs `Walk-In POS` split across Cash/GCash/Maya/COD), statutory summary banner in pending payroll review drawers, and CSV ledger export with employer contribution liabilities.
+- Audits Accounting ledger, FundMetrics KPI cards, `AccountingFilterPanel` sales channel filters (`Online Store` vs `Walk-In POS` across Cash/GCash/Maya/COD), statutory summary banner in pending payroll review drawers, and CSV ledger export with employer contribution liabilities.
 - **Walk-In POS Terminal & Supervisor Void PIN (`/seller/pos`):** Audits tier-universal walk-in POS access (`standard` through `super_premium`), atomic promo-stock split pricing & BOM raw-material deduction (`POST /seller/pos/checkout`), paginated filterable history (`GET /seller/pos/history` with `All Payments`, `Today`/`Yesterday`/`Specific Date`/`Custom Range`, and branch-scoped isolation for managers/accounting vs global visibility for owners), printable 80mm thermal receipts (`/seller/pos/{order}/receipt`), 6-digit per-supervisor Void PIN authorization (`PUT /profile/pos-void-pin` + `POST /seller/pos/{order}/void`), and `/orders?status=Walk-In` filtering.
 - Audits Orders Fulfillment Center, bulk label controls, and interactive road route previews (`/orders/{id}/route-preview`) with Nominatim geocoding & Leaflet road routing.
-- Audits HR & People portal, including Staff Directory, Employee Form Modal, attendance heatmaps, real-time statutory deduction calculation inspector, and the Payroll Run Show desk (`hr.payroll.show`).
+- Audits Employees & Payroll portal, including Staff Directory, Employee Form Modal, private Employee Document vault (`api.uploads.presign` folder `employee_documents` + authenticated `/hr/employees/{employee}/documents/{document}/file` streaming), attendance heatmaps, real-time statutory deduction calculation inspector, and the Payroll Run Show desk (`hr.payroll.show`).
 - Validates Customer Reviews desk master-detail layout (`/reviews`) and team messaging.
 
 ### Phase 4: Staff Attendance, Provisioning & In-House Logistics

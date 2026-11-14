@@ -9,6 +9,11 @@ This document details the employee payroll formulas, clock-in/clock-out lifecycl
 *   **Employee Model**: [Employee.php](file:///c:/laragon/www/LikhangKamay/app/Models/Employee.php)
     *   Tracks physical team members working under a seller owner.
     *   Fields: `employee_id`, `name`, `role`, `salary` (basic daily or hourly wage), `status`, `join_date`.
+*   **Employee Document Model & Vault Service**: [EmployeeDocument.php](file:///c:/laragon/www/LikhangKamay/app/Models/EmployeeDocument.php) | [EmployeeDocumentService.php](file:///c:/laragon/www/LikhangKamay/app/Services/HR/EmployeeDocumentService.php)
+    *   Stores employee KYC, IDs, clearances, medical certificates, and contracts on the private storage disk (`StorageUrl::privateDisk()` -> `private` / `s3_private`, never `/object/public/`).
+    *   Serves files exclusively through the authenticated, seller- & HR-module-scoped streaming endpoint `GET /hr/employees/{employee}/documents/{document}/file` (`hr.employees.documents.file`, supporting inline preview and `?download=1` attachment download).
+    *   Client uploads compress images (`<400KB` target) and enforce `<=4MB` per-file limits via [`employeeDocumentUpload.js`](file:///c:/laragon/www/LikhangKamay/resources/js/utils/employeeDocumentUpload.js), uploading directly via `api.uploads.presign` (`employee_documents/{seller_id}/...`) before persisting metadata atomically (with batch rollback on failure and full DB + file cleanup on [`TerminateEmployeeAction.php`](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/HR/TerminateEmployeeAction.php)).
+    *   [`SecurityHeaders.php`](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/SecurityHeaders.php) includes `frame-src 'self' blob: https:;` so local `blob:` PDF previews work cleanly inside [`EmployeeDocumentPreviewModal.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/EmployeeForm/EmployeeDocumentPreviewModal.jsx) before employee creation.
 *   **Staff Attendance Session**: [StaffAttendanceSession.php](file:///c:/laragon/www/LikhangKamay/app/Models/StaffAttendanceSession.php)
     *   Represents a continuous period of active work.
     *   Fields: `clock_in_at`, `clock_out_at`, `worked_minutes`, `close_mode`, `close_reason`, `last_heartbeat_at`, `last_activity_at`.
@@ -162,11 +167,10 @@ Formula logic is orchestrated by [HRController.php](file:///c:/laragon/www/Likha
 
 ---
 
-## 7. Payroll History, Runway & Detailed Audit Architecture
+## 7. Payroll History & Detailed Audit Architecture
 
-*   **Payroll Runway & History Ledger**:
-    *   [`PayrollRunwayHeader.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/PayrollRunwayHeader.jsx): High-level runway banner tracking active cycle gross, estimated deductions, and net payable before disbursement.
-    *   [`PayrollHistoryTable.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/PayrollHistoryTable.jsx): Master-detail historical payroll runs with expandable in-place item allocation breakdown, soft draft cancellation, and friendly accounting terminology.
+*   **Payroll History Ledger**:
+    *   [`PayrollHistoryTable.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/PayrollHistoryTable.jsx): Master-detail historical payroll runs with expandable in-place item allocation breakdown (including base salary, regular OT, rest day OT, and holiday OT in both desktop `Gross Pay` and nested breakdown totals), soft draft cancellation, and friendly accounting terminology.
 *   **Payroll Run Detail Page & Modular Breakdown**:
     *   [`PayrollRunShow.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Seller/HR/PayrollRunShow.jsx): Slim orchestrator page component (<50 lines) rendering the dedicated payroll disbursement record.
     *   [`PayrollHeroHeader.jsx`](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/PayrollHeroHeader.jsx): Navigation header featuring single-page back handling (`window.history.back()` with fallback), status badges (`Disbursed`, `Pending Approval`, `Draft`, `Declined`), and full breadcrumb pathing.

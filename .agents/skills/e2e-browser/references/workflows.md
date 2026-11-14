@@ -124,7 +124,7 @@
    - Add catalog product (verify promo stock & split-tier pricing if discounted), select `Cash` / `GCash` / `Maya`, click `Charge` -> `Complete Sale` (`POST /seller/pos/checkout`), verify BOM deduction & 80mm receipt modal (`/seller/pos/{order}/receipt`).
    - Open `History` drawer (`PosRecentSalesDrawer.jsx`), assert paginated server fetch (`GET /seller/pos/history`) across `All Payments` (`POS Cash`, `POS GCash`, `POS Maya`), flexible dates (`Yesterday`, `Specific Date`, `Custom Range`), and location isolation (`All Branches` owner-only; branch-scoped for managers/accounting).
    - Authorize void (`POST /seller/pos/{order}/void`) with supervisor dropdown + 6-digit PIN + min 5-char reason; verify stock reversal and `'owner'`/`'artisan'` actor attribution.
-   - Verify `/orders` `Walk-In` tab filter (`status=Walk-In` / `payment_method=pos`) and `/accounting` `SalesChannelBreakdown` (`System Online:` vs `Walk-In POS:`) + settlement inclusion.
+   - Verify `/orders` `Walk-In` tab filter (`status=Walk-In` / `payment_method=pos`) and `/accounting` `AccountingFilterPanel` sales channel filters (`Online Store (All)`, `Walk-In POS (All)`, `POS Cash`, `POS GCash`, `POS Maya`) + settlement inclusion.
 9. **Session Evacuation:** Execute Session Evacuation Protocol.
 
 ---
@@ -257,9 +257,9 @@
 ### Step 11: Staff Provisioning, Attendance Exceptions & Maker-Checker Sign-off (`/hr`, `/accounting`)
 *Personas:* `test.artisan` $\rightarrow$ `test.staff` $\rightarrow$ `test.artisan`
 
-1. **Staff Provisioning & Atomic Cleanup (`/hr`):**
-   - Create apprentice seat (`Test Apprentice Potter`, `test.apprentice.lk@gmail.com`) with granular permissions (`Orders: can_view`, `Products: can_edit`, `HR: no_access`).
-   - Test Suspend (`POST /hr/employees/{id}/toggle-suspension`), Reactivate, and **Terminate Seat** (`DELETE /hr/employees/{id}`).
+1. **Staff Provisioning, Private Employee Documents & Atomic Cleanup (`/hr`):**
+   - Create apprentice seat (`Test Apprentice Potter`, `test.apprentice.lk@gmail.com`) with granular permissions (`Orders: can_view`, `Products: can_edit`, `HR: no_access`) and staged document attachment (compressed client-side `<400KB` / presigned via `POST /api/uploads/presign` folder `employee_documents`).
+   - Verify private document streaming (`GET /hr/employees/{employee}/documents/{document}/file`), inline preview (`blob:` / authenticated URL), attachment download (`?download=1`), and clean document + private storage cleanup upon **Terminate Seat** (`DELETE /hr/employees/{id}`).
 2. **Staff Password Reset & Atomic Reversion (`/staff/password`):** Update to `TempPass2026!`, then **immediately revert to `LikhangKamayTest2026!`**.
 3. **Team Messages Channels & Threads (`/team-messages`):** Create channel `pottery-kiln-qc`, post message, add emoji reaction, reply in `ThreadSidebar.jsx`.
 4. **HR Attendance Approval & Timecard (`/hr`):** Approve flagged off-site attendance session (`POST /hr/attendance-sessions/{id}/approve`). Audit employee timecard (`/hr/employees/{employee}/time-card`).

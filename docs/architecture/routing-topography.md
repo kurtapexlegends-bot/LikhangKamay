@@ -85,7 +85,7 @@ Protected under `seller.workspace` and feature-toggled via `seller.module`:
 *   **Product Markdowns (Elite)**: `/discounts` (Module: `discounts`, `discounts.*`)
 *   **Shop Vouchers**: `/seller/vouchers` (Module: `vouchers`, `vouchers.*`; staff prefix `'vouchers.'` allowed in [EnsureStaffSecurityGate.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/EnsureStaffSecurityGate.php))
 *   **3D Assets Manager**: `/3d-manager` (Module: `3d`)
-*   **Human Resources & Payroll**: `/hr` (Module: `hr`)
+*   **Employees & Payroll (HR)**: `/hr` (`hr.index`, Module: `hr`), employee records/timecards `/hr/employees/{employee}/time-card` (`hr.employees.time-card`), and private employee document vault routes `GET/POST /hr/employees/{employee}/documents`, `GET /hr/employees/{employee}/documents/{document}/file` (`hr.employees.documents.file`), `DELETE /hr/employees/{employee}/documents/{document}` (paired with `api.uploads.presign` private folder `employee_documents`).
 *   **Procurement / Restocking**: `/procurement` (Module: `procurement`)
 
 ---

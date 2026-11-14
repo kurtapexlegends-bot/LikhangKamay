@@ -91,7 +91,12 @@ This reference eliminates blind accessibility tree dumps by providing pre-verifi
 - **Supervisor Void Authorization Box (`PosVoidAuthorizationBox.jsx`):** `button:has-text("Void")`, `input[placeholder="••••••"]`, `input[placeholder*="Min 5 chars"]`, `a[href*="/profile"]` (`Set up Void PIN in Profile Settings`)
 - **Profile 6-Digit Void PIN Setup (`UpdatePosVoidPinForm.jsx`):** Section `"Walk-In POS Void PIN"`, `put(route('profile.pos-void-pin.update'))`
 - **Orders Walk-In Tab & 80mm Receipt (`OrderManager.jsx`, `OrderHeader.jsx`):** `button:has-text("Walk-In")`, `select` option `"Walk-In POS (Cash, GCash, Maya)"`, `a:has-text("80mm")`
-- **Accounting Sales Channel Breakdown (`SalesChannelBreakdown.jsx`):** `button:has-text("System Online:")`, `button:has-text("Walk-In POS:")`
+- **Accounting Sales Channel Filter (`AccountingFilterPanel.jsx`):** `select` (`Online Store (All)`, `Walk-In POS (All)`, `POS Cash`, `POS GCash`, `POS Maya`)
+
+### Employees & Payroll Document Vault (`/hr`, `/hr/employees/{employee}/time-card?tab=documents`)
+- **Employee Form Vault (`EmployeeDocumentsVaultCard.jsx`):** `button:has-text("Add Document")`, `input[type="file"][accept=".jpg,.jpeg,.png,.webp,.pdf"]`, `button:has-text("Attach to Employee")` / `button:has-text("Upload Document")`
+- **TimeCard Records Documents Tab (`EmployeeDocumentsTable.jsx`, `EmployeeDocumentUploadModal.jsx`):** `button:has-text("Employee Documents")`, `button:has-text("Upload Document")`, `button[title="Preview document"]`, `a[title="Download document"]`
+- **Document Preview Modal (`EmployeeDocumentPreviewModal.jsx`):** `a:has-text("Open")`, `a:has-text("Download")`
 
 ### Dispute, Return Criteria & Review Operations
 - **Buyer Request Return Button:** `button:has-text("Return")`
