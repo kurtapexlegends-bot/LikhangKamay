@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Head, router, Link, usePage } from '@inertiajs/react';
+import React, { useMemo, useState } from 'react';
+import { Head, router, usePage } from '@inertiajs/react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import SellerHeader from '@/Layouts/SellerHeader';
 import KPICard from '@/Components/KPICard';
@@ -9,22 +9,32 @@ import CompactPagination from '@/Components/CompactPagination';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import ApprovalDiffCard from '@/Components/Seller/Approvals/ApprovalDiffCard';
 import ApprovalDetailsDrawer from '@/Components/Seller/Approvals/ApprovalDetailsDrawer';
-import RevisionChecklistSelector from '@/Components/Common/RevisionChecklistSelector';
+import ApprovalDeclineModal from '@/Components/Seller/Approvals/ApprovalDeclineModal';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
-import { 
-    Clock, CheckCircle2, XCircle, Users, Zap, 
-    ShieldCheck, Sparkles, CheckCheck
+import {
+    Clock, CheckCircle2, XCircle, Users, Zap,
+    ShieldCheck, PhilippinePeso
 } from 'lucide-react';
 
-export default function ApprovalManager({ 
-    auth, 
-    approvals, 
-    stats = {}, 
-    pendingCount = 0, 
-    filters = {}, 
-    isElite = false, 
-    isPremium = false 
+const DOMAIN_OPTIONS = [
+    { key: 'hr_payroll', label: 'Payroll Runs' },
+    { key: 'procurement', label: 'Materials & Restocks' },
+    { key: 'staff_rate', label: 'Pay Rates' },
+    { key: 'refund', label: 'Cash Refunds' },
+    { key: 'discount', label: 'Promos & Vouchers' },
+    { key: 'product_draft', label: 'Product Drafts' },
+];
+
+export default function ApprovalManager({
+    auth,
+    approvals,
+    stats = {},
+    pendingCount = 0,
+    filters = {},
+    isElite = false,
+    isOwnerReviewer = true,
+    allowedDomains = [],
 }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const { addToast } = useToast();
@@ -33,6 +43,7 @@ export default function ApprovalManager({
 
     const [searchQuery, setSearchQuery] = useState(filters?.search || '');
     const [domainFilter, setDomainFilter] = useState(filters?.domain || '');
+    const [selectedIds, setSelectedIds] = useState([]);
     const activeTab = filters?.status || 'pending';
 
     const [processingId, setProcessingId] = useState(null);
@@ -42,24 +53,48 @@ export default function ApprovalManager({
     const [inspectModal, setInspectModal] = useState({ isOpen: false, approval: null });
     const [approveModal, setApproveModal] = useState({ isOpen: false, approval: null });
     const [declineModal, setDeclineModal] = useState({ isOpen: false, approval: null, reason: '', revisionItems: [] });
-    const [batchModal, setBatchModal] = useState({ isOpen: false, count: 0 });
+    const [batchModal, setBatchModal] = useState({ isOpen: false, ids: [] });
 
     const pendingTotal = stats?.pending_count ?? pendingCount ?? 0;
     const approvedTotal = stats?.approved_count ?? 0;
     const declinedTotal = stats?.declined_count ?? 0;
     const activeStaffTotal = stats?.active_staff_count ?? 0;
+    const pendingExposure = Number(stats?.pending_exposure_amount ?? 0);
+    const domainCounts = stats?.domain_counts || {};
 
-    const handleTabChange = (statusKey) => {
+    const visibleDomainOptions = useMemo(() => {
+        if (!Array.isArray(allowedDomains) || allowedDomains.length === 0) {
+            return DOMAIN_OPTIONS;
+        }
+        return DOMAIN_OPTIONS.filter((opt) => allowedDomains.includes(opt.key));
+    }, [allowedDomains]);
+
+    const visitApprovals = (nextParams) => {
+        setSelectedIds([]);
         router.get(
             route('seller.approvals.index'),
-            {
-                status: statusKey,
-                domain: domainFilter || undefined,
-                search: searchQuery || undefined,
-                page: 1,
-            },
+            nextParams,
             { preserveState: true, preserveScroll: true }
         );
+    };
+
+    const handleTabChange = (statusKey) => {
+        visitApprovals({
+            status: statusKey,
+            domain: domainFilter || undefined,
+            search: searchQuery || undefined,
+            page: 1,
+        });
+    };
+
+    const handleDomainPillSelect = (nextDomain) => {
+        setDomainFilter(nextDomain);
+        visitApprovals({
+            status: activeTab,
+            domain: nextDomain || undefined,
+            search: searchQuery || undefined,
+            page: 1,
+        });
     };
 
     const handleSearch = (query) => {
@@ -67,25 +102,25 @@ export default function ApprovalManager({
     };
 
     const handleApplyFilters = () => {
-        router.get(
-            route('seller.approvals.index'),
-            {
-                status: activeTab,
-                domain: domainFilter || undefined,
-                search: searchQuery || undefined,
-                page: 1,
-            },
-            { preserveState: true, preserveScroll: true }
-        );
+        visitApprovals({
+            status: activeTab,
+            domain: domainFilter || undefined,
+            search: searchQuery || undefined,
+            page: 1,
+        });
     };
 
     const handleResetFilters = () => {
         setDomainFilter('');
         setSearchQuery('');
-        router.get(
-            route('seller.approvals.index'),
-            { status: activeTab, page: 1 },
-            { preserveState: true, preserveScroll: true }
+        visitApprovals({ status: activeTab, page: 1 });
+    };
+
+    const toggleSelectCard = (approvalId) => {
+        setSelectedIds((prev) =>
+            prev.includes(approvalId)
+                ? prev.filter((id) => id !== approvalId)
+                : [...prev, approvalId]
         );
     };
 
@@ -140,29 +175,35 @@ export default function ApprovalManager({
     // Open Batch Modal
     const handleOpenBatchModal = () => {
         if (!isElite || !approvals?.data) return;
-        const pendingItems = approvals.data.filter((item) => item.status === 'pending');
-        if (pendingItems.length === 0) return;
-        setBatchModal({ isOpen: true, count: pendingItems.length });
-    };
-
-    const handleConfirmBatchApprove = () => {
-        if (!isElite || !approvals?.data) return;
         const pendingIds = approvals.data
             .filter((item) => item.status === 'pending')
             .map((item) => item.id);
 
-        if (pendingIds.length === 0) return;
+        const targetIds = selectedIds.length > 0
+            ? pendingIds.filter((id) => selectedIds.includes(id))
+            : pendingIds;
 
-        setBatchModal({ isOpen: false, count: 0 });
+        if (targetIds.length === 0) return;
+        setBatchModal({ isOpen: true, ids: targetIds });
+    };
+
+    const handleConfirmBatchApprove = () => {
+        if (!isElite || !batchModal.ids?.length) return;
+        const idsToApprove = batchModal.ids;
+
+        setBatchModal({ isOpen: false, ids: [] });
         setIsBatchProcessing(true);
 
-        router.post(route('seller.approvals.batch-approve'), { approval_ids: pendingIds }, {
+        router.post(route('seller.approvals.batch-approve'), { approval_ids: idsToApprove }, {
             preserveScroll: true,
+            onSuccess: () => setSelectedIds([]),
             onFinish: () => setIsBatchProcessing(false),
         });
     };
 
     const approvalList = approvals?.data || [];
+    const pendingOnPage = approvalList.filter((item) => item.status === 'pending');
+    const selectedPendingCount = pendingOnPage.filter((item) => selectedIds.includes(item.id)).length;
 
     return (
         <>
@@ -170,7 +211,11 @@ export default function ApprovalManager({
 
             <SellerHeader
                 title="Team Requests"
-                subtitle="Review staff requests, salary rate updates, purchase orders, and payroll."
+                subtitle={
+                    isOwnerReviewer
+                        ? "Review and approve operational requests, payroll, restocks, and pricing from your workshop team."
+                        : "Review and approve assigned marketing campaigns, vouchers, and product drafts."
+                }
                 auth={auth}
                 onMenuClick={openSidebar}
             />
@@ -186,6 +231,25 @@ export default function ApprovalManager({
                             color="text-amber-600"
                             bg="bg-amber-50"
                         />
+                    </div>
+                    <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
+                        {isOwnerReviewer ? (
+                            <KPICard
+                                title="Pending Value"
+                                value={`₱${pendingExposure.toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
+                                icon={PhilippinePeso}
+                                color="text-clay-600"
+                                bg="bg-clay-50"
+                            />
+                        ) : (
+                            <KPICard
+                                title="Active Team"
+                                value={activeStaffTotal}
+                                icon={Users}
+                                color="text-clay-600"
+                                bg="bg-clay-50"
+                            />
+                        )}
                     </div>
                     <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
                         <KPICard
@@ -205,37 +269,15 @@ export default function ApprovalManager({
                             bg="bg-rose-50"
                         />
                     </div>
-                    <div className="w-[82vw] max-w-[260px] shrink-0 snap-center sm:w-auto">
-                        <KPICard
-                            title="Active Team Members"
-                            value={activeStaffTotal}
-                            icon={Users}
-                            color="text-clay-600"
-                            bg="bg-clay-50"
-                        />
-                    </div>
                 </div>
 
-                {/* Plan Upgrade Prompt for Standard Tier */}
-                {!isPremium && !isElite && (
-                    <div className="rounded-3xl border border-clay-200 bg-[#FAF7F2] p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div className="flex gap-3.5 items-center">
-                            <div className="p-3 bg-clay-100 rounded-2xl text-clay-700 shrink-0">
-                                <Users size={22} />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-bold text-stone-900">Delegate Operations to Workshop Staff</h3>
-                                <p className="text-xs text-stone-600 mt-0.5 font-medium">
-                                    Upgrade to <strong>Premium</strong> or <strong>Elite</strong> to invite staff members (HR, Finance, Supplies) and review their actions here.
-                                </p>
-                            </div>
-                        </div>
-                        <Link
-                            href={route('seller.subscription')}
-                            className="px-4 py-2 bg-clay-600 hover:bg-clay-700 text-white rounded-xl text-xs font-bold shrink-0 shadow-sm transition flex items-center gap-1.5 min-h-[40px]"
-                        >
-                            <Sparkles size={14} /> Upgrade Plan
-                        </Link>
+                {/* Role Scope Strip for Delegated Shop Managers */}
+                {!isOwnerReviewer && (
+                    <div className="rounded-2xl border border-stone-200 bg-[#FAF7F2] px-4 py-3 flex items-center gap-3 text-xs text-stone-700">
+                        <ShieldCheck size={16} className="text-clay-600 shrink-0" />
+                        <span className="font-medium">
+                            Showing <strong>Promos &amp; Vouchers</strong> and <strong>Product Drafts</strong> assigned for manager review. Payroll, restocks, pay rates, and cash refunds stay with the Shop Owner.
+                        </span>
                     </div>
                 )}
 
@@ -251,33 +293,30 @@ export default function ApprovalManager({
                         onTabChange={handleTabChange}
                         searchQuery={searchQuery}
                         onSearchChange={handleSearch}
-                        searchPlaceholder="Search by title, employee, or reason..."
+                        searchPlaceholder="Search by title, employee, or summary..."
                         activeFiltersCount={domainFilter !== '' ? 1 : 0}
-                        filterPopoverTitle="Filter by Domain"
+                        filterPopoverTitle="Filter by Category"
                         filterPopoverFields={
                             <div>
                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
-                                    Business Domain
+                                    Category
                                 </label>
                                 <select
                                     value={domainFilter}
                                     onChange={(e) => setDomainFilter(e.target.value)}
-                                    className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-800 outline-none focus:border-clay-500 bg-white"
+                                    className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold text-stone-800 outline-none focus:border-clay-500 bg-white min-h-[44px] sm:min-h-[38px]"
                                 >
-                                    <option value="">All Business Domains</option>
-                                    <option value="hr_payroll">Payroll Runs</option>
-                                    <option value="staff_rate">Salary &amp; Rate Updates</option>
-                                    <option value="procurement">Materials &amp; Supplies</option>
-                                    <option value="discount">Promotions &amp; Discounts</option>
-                                    <option value="refund">Disputes &amp; Refunds</option>
-                                    <option value="product_draft">Product Listings</option>
+                                    <option value="">All Categories</option>
+                                    {visibleDomainOptions.map((opt) => (
+                                        <option key={opt.key} value={opt.key}>{opt.label}</option>
+                                    ))}
                                 </select>
                             </div>
                         }
                         onApplyFilters={handleApplyFilters}
                         onResetFilters={handleResetFilters}
                         extraActions={
-                            isElite && activeTab === 'pending' && approvalList.length > 0 ? (
+                            isElite && activeTab === 'pending' && pendingOnPage.length > 0 ? (
                                 <button
                                     type="button"
                                     onClick={handleOpenBatchModal}
@@ -285,12 +324,66 @@ export default function ApprovalManager({
                                     className="inline-flex items-center justify-center gap-1.5 px-3.5 h-11 sm:h-[38px] min-h-[44px] sm:min-h-[38px] rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 shadow-2xs transition active:scale-95 disabled:opacity-50 shrink-0"
                                 >
                                     <Zap size={14} />
-                                    <span className="hidden sm:inline">Batch Approve ({approvalList.length})</span>
-                                    <span className="sm:hidden">Approve All</span>
+                                    <span className="hidden sm:inline">
+                                        {selectedPendingCount > 0
+                                            ? `Approve Selected (${selectedPendingCount})`
+                                            : `Batch Approve (${pendingOnPage.length})`}
+                                    </span>
+                                    <span className="sm:hidden">
+                                        {selectedPendingCount > 0 ? `Approve (${selectedPendingCount})` : 'Approve All'}
+                                    </span>
                                 </button>
                             ) : null
                         }
                     />
+
+                    {/* Scannable Category Pills */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                        <button
+                            type="button"
+                            onClick={() => handleDomainPillSelect('')}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition shrink-0 min-h-[36px] flex items-center gap-1.5 ${
+                                domainFilter === ''
+                                    ? 'bg-clay-600 text-white border-clay-600'
+                                    : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
+                            }`}
+                        >
+                            <span>All</span>
+                            {activeTab === 'pending' && pendingTotal > 0 && (
+                                <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-extrabold ${
+                                    domainFilter === '' ? 'bg-white/20 text-white' : 'bg-stone-200/80 text-stone-700'
+                                }`}>
+                                    {pendingTotal}
+                                </span>
+                            )}
+                        </button>
+
+                        {visibleDomainOptions.map((opt) => {
+                            const count = Number(domainCounts[opt.key] || 0);
+                            const active = domainFilter === opt.key;
+                            return (
+                                <button
+                                    key={opt.key}
+                                    type="button"
+                                    onClick={() => handleDomainPillSelect(opt.key)}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition shrink-0 min-h-[36px] flex items-center gap-1.5 ${
+                                        active
+                                            ? 'bg-clay-600 text-white border-clay-600'
+                                            : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
+                                    }`}
+                                >
+                                    <span>{opt.label}</span>
+                                    {activeTab === 'pending' && count > 0 && (
+                                        <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-extrabold ${
+                                            active ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'
+                                        }`}>
+                                            {count}
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
 
                     {/* Records List or Empty State */}
                     {approvalList.length > 0 ? (
@@ -304,6 +397,9 @@ export default function ApprovalManager({
                                         onApprove={handleOpenApproveModal}
                                         onReject={handleOpenDeclineModal}
                                         processing={processingId === approval.id}
+                                        selectable={isElite && activeTab === 'pending' && approval.status === 'pending'}
+                                        selected={selectedIds.includes(approval.id)}
+                                        onToggleSelect={() => toggleSelectCard(approval.id)}
                                     />
                                 ))}
                             </div>
@@ -317,16 +413,12 @@ export default function ApprovalManager({
                                     itemsPerPage={approvals.per_page}
                                     itemLabel="requests"
                                     onPageChange={(page) => {
-                                        router.get(
-                                            route('seller.approvals.index'),
-                                            {
-                                                status: activeTab,
-                                                domain: domainFilter || undefined,
-                                                search: searchQuery || undefined,
-                                                page,
-                                            },
-                                            { preserveState: true, preserveScroll: true }
-                                        );
+                                        visitApprovals({
+                                            status: activeTab,
+                                            domain: domainFilter || undefined,
+                                            search: searchQuery || undefined,
+                                            page,
+                                        });
                                     }}
                                 />
                             )}
@@ -337,8 +429,8 @@ export default function ApprovalManager({
                             title={activeTab === 'pending' ? 'No Pending Approvals' : 'No Approval History'}
                             description={
                                 activeTab === 'pending'
-                                    ? 'All caught up! There are currently no staff changes, salary updates, or purchase requests awaiting review.'
-                                    : 'Reviewed actions, approved pay runs, and staff requests will be recorded here.'
+                                    ? 'All caught up. No staff submissions are waiting for review right now.'
+                                    : 'Approved and declined requests will appear here.'
                             }
                         />
                     )}
@@ -351,7 +443,7 @@ export default function ApprovalManager({
                 onClose={() => setApproveModal({ isOpen: false, approval: null })}
                 onConfirm={handleConfirmApprove}
                 title={`Approve "${approveModal.approval?.title}"?`}
-                message="Are you sure you want to approve this request? The changes will be immediately applied and recorded in your shop operations."
+                message="Changes will be applied immediately to your shop operations."
                 icon={CheckCircle2}
                 iconBg="bg-emerald-50 text-emerald-600"
                 confirmText="Approve Request"
@@ -362,63 +454,23 @@ export default function ApprovalManager({
             {/* Standardize Batch Approve Confirmation Modal (Elite) */}
             <ConfirmationModal
                 isOpen={batchModal.isOpen}
-                onClose={() => setBatchModal({ isOpen: false, count: 0 })}
+                onClose={() => setBatchModal({ isOpen: false, ids: [] })}
                 onConfirm={handleConfirmBatchApprove}
-                title={`Batch Approve ${batchModal.count} Pending Requests?`}
-                message={`This will instantly approve all ${batchModal.count} pending staff submissions and apply their respective changes across your workshop workspace.`}
+                title={`Approve ${batchModal.ids?.length || 0} Pending Requests?`}
+                message={`This will approve ${batchModal.ids?.length || 0} selected request(s) and apply their changes across your workshop.`}
                 icon={Zap}
                 iconBg="bg-emerald-50 text-emerald-600"
-                confirmText="Approve All Requests"
+                confirmText="Approve Requests"
                 confirmColor="bg-emerald-600 hover:bg-emerald-700"
                 processing={isBatchProcessing}
             />
 
-            {/* Decline Request Modal with Targeted Revision Checklist */}
-            {declineModal.isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-xs">
-                    <div className="bg-[#FDFBF9] rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-xl border border-stone-200 space-y-4">
-                        <div className="flex items-center gap-2.5 text-stone-900 font-bold">
-                            <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100">
-                                <XCircle size={20} />
-                            </div>
-                            <div>
-                                <h4 className="text-base font-bold text-stone-900">Decline &amp; Request Revision</h4>
-                                <p className="text-[11px] text-stone-500 font-medium truncate max-w-[300px]">
-                                    {declineModal.approval?.title}
-                                </p>
-                            </div>
-                        </div>
-
-                        <RevisionChecklistSelector
-                            schemaKey="owner_approval"
-                            selectedItems={declineModal.revisionItems || []}
-                            onChangeItems={(revisionItems) => setDeclineModal((prev) => ({ ...prev, revisionItems }))}
-                            reason={declineModal.reason}
-                            onChangeReason={(reason) => setDeclineModal((prev) => ({ ...prev, reason }))}
-                            reasonLabel="Decline Feedback (Optional if items selected)"
-                            reasonPlaceholder="e.g. Please verify the overtime hours first or adjust the restock quantity..."
-                            compact
-                        />
-
-                        <div className="flex justify-end gap-2 pt-2">
-                            <button
-                                type="button"
-                                onClick={() => setDeclineModal({ isOpen: false, approval: null, reason: '', revisionItems: [] })}
-                                className="px-4 py-2 rounded-xl text-xs font-bold text-stone-600 hover:bg-stone-100 transition min-h-[44px] sm:min-h-[38px]"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleConfirmDecline}
-                                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm transition min-h-[44px] sm:min-h-[38px]"
-                            >
-                                Confirm Decline
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ApprovalDeclineModal
+                declineModal={declineModal}
+                setDeclineModal={setDeclineModal}
+                onConfirm={handleConfirmDecline}
+                processing={processingId !== null}
+            />
 
             {/* Deep-Dive Inspection Slide-Over Drawer */}
             <ApprovalDetailsDrawer

@@ -15,31 +15,37 @@ const DOMAIN_CONFIG = {
         label: 'Payroll Run',
         icon: Banknote,
         badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200/80',
+        ownerOnly: true,
     },
     staff_rate: {
-        label: 'Salary & Rate Update',
+        label: 'Pay Rate Update',
         icon: User,
         badgeClass: 'bg-clay-50 text-clay-800 border-clay-200/80',
+        ownerOnly: true,
     },
     procurement: {
-        label: 'Materials & Supplies',
+        label: 'Materials & Restock',
         icon: ShoppingBag,
         badgeClass: 'bg-amber-50 text-amber-800 border-amber-200/80',
+        ownerOnly: true,
     },
     discount: {
-        label: 'Promotions & Discounts',
+        label: 'Promo & Voucher',
         icon: Tag,
         badgeClass: 'bg-rose-50 text-rose-800 border-rose-200/80',
+        ownerOnly: false,
     },
     refund: {
-        label: 'Customer Dispute & Refund',
+        label: 'Cash Refund',
         icon: AlertCircle,
         badgeClass: 'bg-orange-50 text-orange-800 border-orange-200/80',
+        ownerOnly: true,
     },
     product_draft: {
-        label: 'Product Listing',
+        label: 'Product Draft',
         icon: FileText,
         badgeClass: 'bg-stone-100 text-stone-800 border-stone-200/80',
+        ownerOnly: false,
     },
 };
 
@@ -99,26 +105,35 @@ export default function ApprovalDetailsDrawer({
                 <div className="space-y-6">
                     {/* Header Meta */}
                     <div>
-                        <div className="flex items-center justify-between gap-3 mb-2.5">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${domainInfo.badgeClass}`}>
-                                <IconComponent size={14} />
-                                {domainInfo.label}
-                            </span>
+                        <div className="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border whitespace-nowrap shrink-0 ${domainInfo.badgeClass}`}>
+                                    <IconComponent size={14} className="shrink-0" />
+                                    <span>{domainInfo.label}</span>
+                                </span>
+                                <span className={`inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap shrink-0 ${
+                                    domainInfo.ownerOnly
+                                        ? 'bg-stone-900 text-white border-stone-900'
+                                        : 'bg-white text-stone-600 border-stone-200'
+                                }`}>
+                                    {domainInfo.ownerOnly ? 'Owner Only' : 'Owner / Manager'}
+                                </span>
+                            </div>
 
                             <div>
                                 {isPending && (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                        <Clock size={12} /> Awaiting Review
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 whitespace-nowrap">
+                                        <Clock size={12} className="shrink-0" /> Awaiting Review
                                     </span>
                                 )}
                                 {isApproved && (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                        <CheckCircle2 size={12} /> Approved
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 whitespace-nowrap">
+                                        <CheckCircle2 size={12} className="shrink-0" /> Approved
                                     </span>
                                 )}
                                 {isRejected && (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200">
-                                        <XCircle size={12} /> Declined
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200 whitespace-nowrap">
+                                        <XCircle size={12} className="shrink-0" /> Declined
                                     </span>
                                 )}
                             </div>
@@ -134,24 +149,47 @@ export default function ApprovalDetailsDrawer({
                         )}
                     </div>
 
-                    {/* Requester & Submission Timestamp */}
-                    <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/80 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                            <UserAvatar user={approval.requester} className="w-8 h-8 rounded-xl shadow-2xs shrink-0" />
-                            <div className="min-w-0">
-                                <span className="text-[10px] uppercase font-bold text-stone-400 block">Submitted By</span>
-                                <span className="text-xs font-bold text-stone-800 truncate block">
-                                    {approval.requester?.name || 'Staff Member'}
+                    {/* Requester & Reviewer Attribution */}
+                    <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <UserAvatar user={approval.requester} className="w-8 h-8 rounded-xl shadow-2xs shrink-0" />
+                                <div className="min-w-0">
+                                    <span className="text-[10px] uppercase font-bold text-stone-400 block">Submitted By</span>
+                                    <span className="text-xs font-bold text-stone-800 truncate block">
+                                        {approval.requester?.name || 'Staff Member'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                                <span className="text-[10px] uppercase font-bold text-stone-400 block">Date Submitted</span>
+                                <span className="text-xs font-medium text-stone-600">
+                                    {formatDate(approval.created_at)}
                                 </span>
                             </div>
                         </div>
 
-                        <div className="text-right shrink-0">
-                            <span className="text-[10px] uppercase font-bold text-stone-400 block">Date Submitted</span>
-                            <span className="text-xs font-medium text-stone-600">
-                                {formatDate(approval.created_at)}
-                            </span>
-                        </div>
+                        {!isPending && (approval.reviewer || approval.reviewed_at) && (
+                            <div className="pt-2.5 border-t border-stone-200/70 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <UserAvatar user={approval.reviewer} className="w-7 h-7 rounded-lg shadow-2xs shrink-0" />
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] uppercase font-bold text-stone-400 block">Reviewed By</span>
+                                        <span className="text-xs font-bold text-stone-800 truncate block">
+                                            {approval.reviewer?.name || 'Shop Reviewer'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="text-right shrink-0">
+                                    <span className="text-[10px] uppercase font-bold text-stone-400 block">Decision Date</span>
+                                    <span className="text-xs font-medium text-stone-600">
+                                        {formatDate(approval.reviewed_at || approval.updated_at)}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Rejection Note (If Rejected) */}

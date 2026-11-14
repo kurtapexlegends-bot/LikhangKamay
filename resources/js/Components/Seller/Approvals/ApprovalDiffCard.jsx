@@ -1,8 +1,8 @@
 import React from 'react';
-import { 
-    CheckCircle2, XCircle, Clock, User, ArrowRight, 
-    AlertCircle, FileText, Banknote, ShoppingBag, Tag, 
-    Calendar, Receipt, Box, Percent, Eye
+import {
+    CheckCircle2, XCircle, Clock, User, ArrowRight,
+    AlertCircle, FileText, Banknote, ShoppingBag, Tag,
+    Eye, ShieldCheck
 } from 'lucide-react';
 
 const DOMAIN_CONFIG = {
@@ -10,39 +10,55 @@ const DOMAIN_CONFIG = {
         label: 'Payroll Run',
         icon: Banknote,
         badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200/80',
+        ownerOnly: true,
     },
     staff_rate: {
-        label: 'Salary & Rate Update',
+        label: 'Pay Rate Update',
         icon: User,
         badgeClass: 'bg-clay-50 text-clay-800 border-clay-200/80',
+        ownerOnly: true,
     },
     procurement: {
-        label: 'Materials & Supplies',
+        label: 'Materials & Restock',
         icon: ShoppingBag,
         badgeClass: 'bg-amber-50 text-amber-800 border-amber-200/80',
+        ownerOnly: true,
     },
     discount: {
-        label: 'Promotions & Discounts',
+        label: 'Promo & Voucher',
         icon: Tag,
         badgeClass: 'bg-rose-50 text-rose-800 border-rose-200/80',
+        ownerOnly: false,
     },
     refund: {
-        label: 'Customer Dispute & Refund',
+        label: 'Cash Refund',
         icon: AlertCircle,
         badgeClass: 'bg-orange-50 text-orange-800 border-orange-200/80',
+        ownerOnly: true,
     },
     product_draft: {
-        label: 'Product Listing',
+        label: 'Product Draft',
         icon: FileText,
         badgeClass: 'bg-stone-100 text-stone-800 border-stone-200/80',
+        ownerOnly: false,
     },
 };
 
-export default function ApprovalDiffCard({ approval, onApprove, onReject, onInspect, processing = false }) {
+export default function ApprovalDiffCard({
+    approval,
+    onApprove,
+    onReject,
+    onInspect,
+    processing = false,
+    selectable = false,
+    selected = false,
+    onToggleSelect,
+}) {
     const domainInfo = DOMAIN_CONFIG[approval.domain] || {
         label: approval.domain,
         icon: FileText,
         badgeClass: 'bg-stone-100 text-stone-800 border-stone-200/80',
+        ownerOnly: true,
     };
     const IconComponent = domainInfo.icon;
     const isPending = approval.status === 'pending';
@@ -50,54 +66,78 @@ export default function ApprovalDiffCard({ approval, onApprove, onReject, onInsp
     const isRejected = approval.status === 'rejected';
     const payload = approval.changes_payload || {};
 
+    const oldRate = Number(payload.old_rate ?? 0);
+    const newRate = Number(payload.new_rate ?? 0);
+    const rateDeltaPercent = oldRate > 0 ? Math.round(((newRate - oldRate) / oldRate) * 100) : null;
+
     return (
         <div className={`rounded-2xl border transition-all duration-200 flex flex-col justify-between ${
-            isPending 
-                ? 'border-stone-200 bg-white shadow-xs hover:border-clay-300' 
-                : 'border-stone-200/70 bg-stone-50/70'
+            selected
+                ? 'border-clay-500 bg-[#FCF7F2] ring-2 ring-clay-500/20'
+                : isPending
+                    ? 'border-stone-200 bg-white shadow-xs hover:border-clay-300'
+                    : 'border-stone-200/70 bg-stone-50/70'
         }`}>
             {/* Main Header & Body */}
             <div className="p-4 sm:p-5 space-y-3.5">
                 {/* Header Meta */}
-                <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border ${domainInfo.badgeClass}`}>
-                            <IconComponent size={13} />
-                            {domainInfo.label}
+                <div className="flex items-start justify-between gap-2.5">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        {selectable && (
+                            <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={onToggleSelect}
+                                aria-label={`Select ${approval.title}`}
+                                className="w-4 h-4 rounded border-stone-300 text-clay-600 focus:ring-clay-500 cursor-pointer shrink-0"
+                            />
+                        )}
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border whitespace-nowrap shrink-0 ${domainInfo.badgeClass}`}>
+                            <IconComponent size={13} className="shrink-0" />
+                            <span>{domainInfo.label}</span>
                         </span>
 
-                        <span className="text-xs text-stone-500 font-medium">
-                            Requested by <strong className="text-stone-800 font-semibold">{approval.requester?.name || 'Staff Member'}</strong>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border whitespace-nowrap shrink-0 ${
+                            domainInfo.ownerOnly
+                                ? 'bg-stone-100 text-stone-700 border-stone-200'
+                                : 'bg-clay-50 text-clay-700 border-clay-200/80'
+                        }`}>
+                            <ShieldCheck size={10} className="shrink-0" />
+                            <span>{domainInfo.ownerOnly ? 'Owner Only' : 'Owner / Manager'}</span>
                         </span>
                     </div>
 
                     {/* Status Badge */}
                     <div className="shrink-0">
                         {isPending && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                <Clock size={11} /> Awaiting Review
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 whitespace-nowrap">
+                                <Clock size={11} className="shrink-0" /> Awaiting Review
                             </span>
                         )}
                         {isApproved && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                                <CheckCircle2 size={11} /> Approved
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 whitespace-nowrap">
+                                <CheckCircle2 size={11} className="shrink-0" /> Approved
                             </span>
                         )}
                         {isRejected && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
-                                <XCircle size={11} /> Declined
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-rose-50 text-rose-800 border border-rose-200 whitespace-nowrap">
+                                <XCircle size={11} className="shrink-0" /> Declined
                             </span>
                         )}
                     </div>
                 </div>
 
-                {/* Title & Summary */}
+                {/* Title, Requester & Summary */}
                 <div>
                     <h3 className="text-sm sm:text-base font-bold text-stone-900 tracking-tight">
                         {approval.title}
                     </h3>
+                    <p className="text-[11px] text-stone-500 font-medium mt-0.5">
+                        Requested by <strong className="text-stone-800 font-semibold">{approval.requester?.name || 'Staff Member'}</strong>
+                        {!isPending && approval.reviewer?.name ? ` • Reviewed by ${approval.reviewer.name}` : ''}
+                    </p>
                     {approval.summary && (
-                        <p className="text-xs text-stone-600 mt-1 leading-relaxed font-medium">
+                        <p className="text-xs text-stone-600 mt-1.5 leading-relaxed font-medium">
                             {approval.summary}
                         </p>
                     )}
@@ -114,12 +154,19 @@ export default function ApprovalDiffCard({ approval, onApprove, onReject, onInsp
                             </div>
                         )}
                         {payload.old_rate !== undefined && payload.new_rate !== undefined && (
-                            <div className="flex items-center justify-between">
-                                <span className="text-stone-500 font-medium">Daily Rate:</span>
-                                <div className="flex items-center gap-2 font-semibold">
-                                    <span className="text-stone-400 line-through">₱{Number(payload.old_rate).toLocaleString()}</span>
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-stone-500 font-medium">{payload.compensation_label || 'Monthly Salary'}:</span>
+                                <div className="flex items-center gap-1.5 font-semibold flex-wrap justify-end">
+                                    <span className="text-stone-400 line-through">₱{oldRate.toLocaleString()}</span>
                                     <ArrowRight size={12} className="text-stone-400" />
-                                    <span className="font-black text-emerald-700">₱{Number(payload.new_rate).toLocaleString()}</span>
+                                    <span className="font-black text-emerald-700">₱{newRate.toLocaleString()}</span>
+                                    {rateDeltaPercent !== null && (
+                                        <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+                                            rateDeltaPercent >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                                        }`}>
+                                            {rateDeltaPercent >= 0 ? `+${rateDeltaPercent}%` : `${rateDeltaPercent}%`}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -166,9 +213,15 @@ export default function ApprovalDiffCard({ approval, onApprove, onReject, onInsp
 
                         {/* Promotions & Discounts */}
                         {payload.campaign_name && (
-                            <div className="flex items-center justify-between text-stone-600">
+                            <div className="flex items-center justify-between text-stone-600 gap-2">
                                 <span className="font-medium">Campaign:</span>
-                                <strong className="text-stone-900 font-bold">{payload.campaign_name}</strong>
+                                <strong className="text-stone-900 font-bold text-right">{payload.campaign_name}</strong>
+                            </div>
+                        )}
+                        {payload.voucher_code && (
+                            <div className="flex items-center justify-between text-stone-600">
+                                <span className="font-medium">Voucher Code:</span>
+                                <span className="font-mono font-bold px-2 py-0.5 rounded bg-white border border-stone-200 text-stone-800">{payload.voucher_code}</span>
                             </div>
                         )}
                         {payload.discount_rate && (
@@ -191,10 +244,16 @@ export default function ApprovalDiffCard({ approval, onApprove, onReject, onInsp
                                 <strong className="text-stone-900 font-bold">{payload.order_number}</strong>
                             </div>
                         )}
+                        {payload.refund_amount !== undefined && approval.domain === 'refund' && (
+                            <div className="flex items-center justify-between">
+                                <span className="text-stone-500 font-medium">Refund Amount:</span>
+                                <span className="font-black text-orange-700 text-sm">₱{Number(payload.refund_amount).toLocaleString()}</span>
+                            </div>
+                        )}
                         {payload.buyer_claim && (
                             <div className="flex items-start justify-between gap-2 text-stone-600">
                                 <span className="font-medium shrink-0">Buyer Claim:</span>
-                                <span className="text-stone-900 font-medium text-right">{payload.buyer_claim}</span>
+                                <span className="text-stone-900 font-medium text-right line-clamp-2">{payload.buyer_claim}</span>
                             </div>
                         )}
                         {payload.proposed_resolution && (
@@ -206,15 +265,30 @@ export default function ApprovalDiffCard({ approval, onApprove, onReject, onInsp
 
                         {/* Product Listings / Drafts */}
                         {payload.product_name && (
-                            <div className="flex items-center justify-between text-stone-600">
+                            <div className="flex items-center justify-between gap-2 text-stone-600">
                                 <span className="font-medium">Item Name:</span>
-                                <strong className="text-stone-900 font-bold">{payload.product_name}</strong>
+                                <strong className="text-stone-900 font-bold text-right">{payload.product_name}</strong>
                             </div>
                         )}
-                        {payload.proposed_price && (
+                        {payload.old_price !== undefined && payload.proposed_price !== undefined && Number(payload.old_price) !== Number(payload.proposed_price) ? (
+                            <div className="flex items-center justify-between">
+                                <span className="text-stone-500 font-medium">Selling Price:</span>
+                                <div className="flex items-center gap-1.5 font-semibold">
+                                    <span className="text-stone-400 line-through">₱{Number(payload.old_price).toLocaleString()}</span>
+                                    <ArrowRight size={12} className="text-stone-400" />
+                                    <span className="font-black text-emerald-700 text-sm">₱{Number(payload.proposed_price).toLocaleString()}</span>
+                                </div>
+                            </div>
+                        ) : payload.proposed_price !== undefined && (
                             <div className="flex items-center justify-between">
                                 <span className="text-stone-500 font-medium">Proposed Price:</span>
                                 <span className="font-black text-emerald-700 text-sm">₱{Number(payload.proposed_price).toLocaleString()}</span>
+                            </div>
+                        )}
+                        {payload.new_status && payload.old_status && payload.old_status !== payload.new_status && (
+                            <div className="flex items-center justify-between text-stone-600">
+                                <span className="font-medium">Listing Status:</span>
+                                <span className="font-bold text-stone-900">{payload.old_status} → {payload.new_status}</span>
                             </div>
                         )}
                         {payload.cost_margin && (

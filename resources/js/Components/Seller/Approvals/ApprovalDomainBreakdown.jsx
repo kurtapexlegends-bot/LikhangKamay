@@ -1,9 +1,10 @@
 import React from 'react';
-import { 
-    ShoppingBag, Tag, AlertCircle, 
-    FileText, ArrowRight, Package 
+import {
+    ShoppingBag, Tag, AlertCircle,
+    ArrowRight, Package
 } from 'lucide-react';
 import ApprovalPayrollBreakdown from './ApprovalPayrollBreakdown';
+import ApprovalProductDraftBreakdown from './ApprovalProductDraftBreakdown';
 
 const formatMoney = (amount) => {
     if (amount === undefined || amount === null || isNaN(amount)) return '₱0.00';
@@ -100,6 +101,7 @@ export default function ApprovalDomainBreakdown({
         const newRate = Number(payload.new_rate || 0);
         const diff = newRate - oldRate;
         const percentChange = oldRate > 0 ? ((diff / oldRate) * 100).toFixed(1) : null;
+        const compensationLabel = payload.compensation_label || 'Monthly Salary';
 
         return (
             <div className="space-y-4">
@@ -117,12 +119,12 @@ export default function ApprovalDomainBreakdown({
                 {/* Before / After Comparison */}
                 <div className="p-4 rounded-2xl border border-stone-200 bg-white space-y-3">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block">
-                        Rate Adjustment Proposal
+                        {compensationLabel} Adjustment Proposal
                     </span>
 
                     <div className="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-stone-100">
                         <div>
-                            <span className="text-[10px] text-stone-400 uppercase font-bold block">Current Rate</span>
+                            <span className="text-[10px] text-stone-400 uppercase font-bold block">Current {compensationLabel}</span>
                             <span className="text-sm font-bold text-stone-500 line-through">
                                 {formatMoney(oldRate)}
                             </span>
@@ -138,7 +140,7 @@ export default function ApprovalDomainBreakdown({
                         </div>
 
                         <div className="text-right">
-                            <span className="text-[10px] text-stone-400 uppercase font-bold block">New Proposed Rate</span>
+                            <span className="text-[10px] text-stone-400 uppercase font-bold block">Proposed {compensationLabel}</span>
                             <span className="text-base font-black text-emerald-700">
                                 {formatMoney(newRate)}
                             </span>
@@ -184,6 +186,24 @@ export default function ApprovalDomainBreakdown({
                         <span className="text-stone-500 font-medium">Order Number:</span>
                         <strong className="text-stone-900 font-bold">{payload.order_number || '#ORD-LK'}</strong>
                     </div>
+
+                    {(payload.payment_method || payload.payment_status) && (
+                        <div className="flex items-center justify-between gap-2">
+                            <span className="text-stone-500 font-medium">Payment Channel:</span>
+                            <div className="flex items-center gap-1.5">
+                                {payload.payment_method && (
+                                    <span className="font-bold uppercase text-stone-800 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
+                                        {payload.payment_method}
+                                    </span>
+                                )}
+                                {payload.payment_status && (
+                                    <span className="font-semibold capitalize text-stone-600">
+                                        ({payload.payment_status})
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {payload.buyer_claim && (
                         <div>
@@ -262,10 +282,39 @@ export default function ApprovalDomainBreakdown({
                 </div>
 
                 <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-2.5 text-xs">
-                    <div className="flex items-center justify-between pb-2 border-b border-stone-100">
+                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-stone-100">
                         <span className="text-stone-500 font-medium">Campaign Title:</span>
-                        <strong className="text-stone-900 font-bold">{payload.campaign_name || approval.title}</strong>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            {payload.mode && (
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border shrink-0 ${
+                                    payload.mode === 'deactivate'
+                                        ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                        : payload.mode === 'update'
+                                            ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                            : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                }`}>
+                                    {payload.mode === 'deactivate' ? 'End Promo' : payload.mode === 'update' ? 'Update' : 'New Promo'}
+                                </span>
+                            )}
+                            <strong className="text-stone-900 font-bold truncate">{payload.campaign_name || approval.title}</strong>
+                        </div>
                     </div>
+
+                    {payload.voucher_code && (
+                        <div className="flex items-center justify-between">
+                            <span className="text-stone-500 font-medium">Voucher Code:</span>
+                            <span className="font-mono font-bold px-2 py-0.5 rounded bg-stone-100 text-stone-900 border border-stone-200">
+                                {payload.voucher_code}
+                            </span>
+                        </div>
+                    )}
+
+                    {payload.min_spend > 0 && (
+                        <div className="flex items-center justify-between">
+                            <span className="text-stone-500 font-medium">Minimum Spend:</span>
+                            <span className="font-bold text-stone-800">{formatMoney(payload.min_spend)}</span>
+                        </div>
+                    )}
 
                     {payload.schedule && (
                         <div className="flex items-center justify-between">
@@ -278,6 +327,13 @@ export default function ApprovalDomainBreakdown({
                         <div className="flex items-center justify-between">
                             <span className="text-stone-500 font-medium">Allocated Promo Stock:</span>
                             <span className="font-bold text-stone-800">{payload.promo_stock} units</span>
+                        </div>
+                    )}
+
+                    {payload.groups_count > 1 && (
+                        <div className="flex items-center justify-between">
+                            <span className="text-stone-500 font-medium">Campaign Ruleset Groups:</span>
+                            <span className="font-bold text-stone-800">{payload.groups_count} groups</span>
                         </div>
                     )}
 
@@ -341,48 +397,6 @@ export default function ApprovalDomainBreakdown({
         );
     };
 
-    // 6. Product Listing Draft Details
-    const renderProductDraftDetails = () => {
-        return (
-            <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 flex items-center justify-between">
-                    <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 block mb-0.5">
-                            Suggested Retail Price
-                        </span>
-                        <span className="text-2xl font-black text-stone-900">
-                            {formatMoney(payload.proposed_price || payload.price || 0)}
-                        </span>
-                    </div>
-                    <FileText size={28} className="text-stone-400" />
-                </div>
-
-                <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-3 text-xs">
-                    <div className="flex items-center justify-between pb-2 border-b border-stone-100">
-                        <span className="text-stone-500 font-medium">Product Name:</span>
-                        <strong className="text-stone-900 font-bold">{payload.product_name || approval.title}</strong>
-                    </div>
-
-                    {payload.cost_margin && (
-                        <div className="flex items-center justify-between">
-                            <span className="text-stone-500 font-medium">Estimated Production Margin:</span>
-                            <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                                {payload.cost_margin}
-                            </span>
-                        </div>
-                    )}
-
-                    {payload.category && (
-                        <div className="flex items-center justify-between">
-                            <span className="text-stone-500 font-medium">Category:</span>
-                            <span className="font-semibold text-stone-800">{payload.category}</span>
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    };
-
     // Generic Fallback
     const renderGenericDetails = () => {
         return (
@@ -413,7 +427,7 @@ export default function ApprovalDomainBreakdown({
         case 'discount':
             return renderDiscountDetails();
         case 'product_draft':
-            return renderProductDraftDetails();
+            return <ApprovalProductDraftBreakdown approval={approval} payload={payload} />;
         default:
             return renderGenericDetails();
     }
