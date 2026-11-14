@@ -25,15 +25,24 @@ export default function OrderHeader({ order }) {
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
                 <a
-                    href={route("orders.receipt", order.id)}
+                    href={
+                        order.order_type === "pos_walkin" && order.db_id
+                            ? route("seller.pos.receipt", order.db_id)
+                            : route("orders.receipt", order.id)
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 px-2 py-0.5 text-[10.5px] font-bold text-stone-600 bg-white border border-stone-200/90 rounded-md hover:bg-stone-50 hover:text-stone-900 transition shadow-2xs"
-                    title="Print Packing Slip & Customer Receipt"
+                    title={order.order_type === "pos_walkin" ? "Print 80mm POS Receipt" : "Print Packing Slip & Customer Receipt"}
                 >
                     <Printer size={11} className="text-stone-400" />
-                    <span>Slip</span>
+                    <span>{order.order_type === "pos_walkin" ? "80mm" : "Slip"}</span>
                 </a>
+                {order.order_type === "pos_walkin" && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border border-clay-200 bg-clay-50 text-clay-700">
+                        Walk-In POS
+                    </span>
+                )}
                 <PaymentStatusBadge
                     status={order.payment_status}
                     method={order.payment_method}

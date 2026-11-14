@@ -1,13 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+/* global route */
+import React, { useCallback, useEffect, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import SellerHeader from '@/Layouts/SellerHeader';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import ReadOnlyCapabilityNotice from '@/Components/Seller/Shared/ReadOnlyCapabilityNotice';
 import useSellerModuleAccess from '@/hooks/useSellerModuleAccess';
-import { AlertCircle, History, Search, X, LoaderCircle, ArrowLeft, ChevronRight } from 'lucide-react';
+import { AlertCircle, ChevronRight } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 import useFlashToast from '@/hooks/useFlashToast';
-import ExportButton from '@/Components/ExportButton';
 
 // Subcomponents
 import FundMetrics from '@/Components/Seller/Accounting/FundMetrics';
@@ -16,8 +16,9 @@ import PendingApprovalsList from '@/Components/Seller/Accounting/PendingApproval
 import TransactionLedgerTable from '@/Components/Seller/Accounting/TransactionLedgerTable';
 import ReleaseRequestDetails from '@/Components/Seller/Accounting/ReleaseRequestDetails';
 import AccountingFilterPanel from '@/Components/Seller/Accounting/AccountingFilterPanel';
+import SalesChannelBreakdown from '@/Components/Seller/Accounting/SalesChannelBreakdown';
 
-export default function FundRelease({ auth, pendingRequests, history, finances, filters = {} }) {
+export default function FundRelease({ auth, pendingRequests, history, finances, channelBreakdown = {} }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const { url } = usePage();
     const { flash } = usePage().props;
@@ -26,6 +27,28 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
 
     const [isTableShimmering, setIsTableShimmering] = useState(false);
     const [isSearchLoading, setIsSearchLoading] = useState(false);
+
+    const normalizeCalendarDate = (value) => {
+        if (typeof value !== 'string') return '';
+        const trimmed = value.trim();
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+        if (!match) return '';
+
+        const year = Number(match[1]);
+        const month = Number(match[2]);
+        const day = Number(match[3]);
+        const dt = new Date(Date.UTC(year, month - 1, day));
+
+        if (
+            dt.getUTCFullYear() !== year
+            || (dt.getUTCMonth() + 1) !== month
+            || dt.getUTCDate() !== day
+        ) {
+            return '';
+        }
+
+        return trimmed;
+    };
 
     // Parse initial query params for state sync
     const getInitialQueryParam = (param, defaultVal) => {
@@ -44,8 +67,9 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
     const [searchTerm, setSearchTerm] = useState(() => getInitialQueryParam('search', ''));
     const [entryTypeFilter, setEntryTypeFilter] = useState(() => getInitialQueryParam('type', 'all'));
     const [ledgerStatusFilter, setLedgerStatusFilter] = useState(() => getInitialQueryParam('ledger_status', 'all'));
-    const [startDateFilter, setStartDateFilter] = useState(() => getInitialQueryParam('start_date', ''));
-    const [endDateFilter, setEndDateFilter] = useState(() => getInitialQueryParam('end_date', ''));
+    const [startDateFilter, setStartDateFilter] = useState(() => normalizeCalendarDate(getInitialQueryParam('start_date', '')));
+    const [endDateFilter, setEndDateFilter] = useState(() => normalizeCalendarDate(getInitialQueryParam('end_date', '')));
+    const [paymentChannelFilter, setPaymentChannelFilter] = useState(() => getInitialQueryParam('payment_channel', 'all'));
     const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
 
     const requestSort = (key) => {
@@ -56,42 +80,33 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
         setSortConfig({ key, direction });
     };
     
-    // Debounce the search input to avoid spamming server requests on every keystroke
-    const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
-
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedSearch(searchTerm);
-        }, 400);
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [searchTerm]);
+    const [prevUrl, setPrevUrl] = useState(url);
 
     // Sync state with URL navigation (e.g. back/forward button)
-    useEffect(() => {
+    if (url !== prevUrl) {
+        setPrevUrl(url);
         const urlParams = new URLSearchParams(url.includes('?') ? url.substring(url.indexOf('?')) : '');
         const urlTab = urlParams.get('tab') || 'pending';
         const urlSearch = urlParams.get('search') || '';
         const urlType = urlParams.get('type') || 'all';
         const urlLedgerStatus = urlParams.get('ledger_status') || 'all';
-        const urlStartDate = urlParams.get('start_date') || '';
-        const urlEndDate = urlParams.get('end_date') || '';
+        const urlStartDate = normalizeCalendarDate(urlParams.get('start_date') || '');
+        const urlEndDate = normalizeCalendarDate(urlParams.get('end_date') || '');
+        const urlPaymentChannel = urlParams.get('payment_channel') || 'all';
 
         if (urlTab !== activeTab) setActiveTab(urlTab);
         if (urlType !== entryTypeFilter) setEntryTypeFilter(urlType);
         if (urlLedgerStatus !== ledgerStatusFilter) setLedgerStatusFilter(urlLedgerStatus);
         if (urlStartDate !== startDateFilter) setStartDateFilter(urlStartDate);
         if (urlEndDate !== endDateFilter) setEndDateFilter(urlEndDate);
+        if (urlPaymentChannel !== paymentChannelFilter) setPaymentChannelFilter(urlPaymentChannel);
 
-        // Only sync search term from URL if the search input is not currently focused.
-        if (document.activeElement?.id !== 'accounting-search' && urlSearch !== searchTerm) {
+        if (typeof document !== 'undefined' && document.activeElement?.id !== 'accounting-search' && urlSearch !== searchTerm) {
             setSearchTerm(urlSearch);
         }
-    }, [url]);
+    }
 
-    const reload = (newParams) => {
+    const reload = useCallback((newParams) => {
         const urlParams = new URLSearchParams(url.includes('?') ? url.substring(url.indexOf('?')) : '');
         const params = {
             tab: urlParams.get('tab') || 'pending',
@@ -100,6 +115,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
             ledger_status: urlParams.get('ledger_status') || 'all',
             start_date: urlParams.get('start_date') || '',
             end_date: urlParams.get('end_date') || '',
+            payment_channel: urlParams.get('payment_channel') || 'all',
             page_pending: urlParams.get('page_pending') || '1',
             page_history: urlParams.get('page_history') || '1',
             ...newParams
@@ -111,6 +127,7 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
         if (params.ledger_status === 'all') delete params.ledger_status;
         if (!params.start_date) delete params.start_date;
         if (!params.end_date) delete params.end_date;
+        if (params.payment_channel === 'all') delete params.payment_channel;
 
         if (params.tab === 'pending') {
             delete params.page_history;
@@ -135,12 +152,12 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                 setIsTableShimmering(false);
             }
         });
-    };
+    }, [url]);
 
-    const closeReviewModal = () => {
+    const closeReviewModal = useCallback(() => {
         setReviewModal({ open: false, item: null, source: 'pending' });
         setRevisionItems([]);
-    };
+    }, []);
 
     const resetReviewModal = () => {
         setReviewModal({ open: false, item: null, source: 'pending' });
@@ -159,9 +176,17 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
         if ('ledger_status' in filterObj) setLedgerStatusFilter(filterObj.ledger_status);
         if ('start_date' in filterObj) setStartDateFilter(filterObj.start_date);
         if ('end_date' in filterObj) setEndDateFilter(filterObj.end_date);
+        if ('payment_channel' in filterObj) setPaymentChannelFilter(filterObj.payment_channel);
+        const nextTab = (filterObj.payment_channel && filterObj.payment_channel !== 'all')
+            ? 'history'
+            : activeTab;
+        if (nextTab !== activeTab) {
+            setActiveTab(nextTab);
+        }
         closeReviewModal();
         reload({
             ...filterObj,
+            tab: nextTab,
             page_pending: 1,
             page_history: 1,
         });
@@ -172,12 +197,28 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
         setLedgerStatusFilter('all');
         setStartDateFilter('');
         setEndDateFilter('');
+        setPaymentChannelFilter('all');
         closeReviewModal();
         reload({
             type: 'all',
             ledger_status: 'all',
             start_date: '',
             end_date: '',
+            payment_channel: 'all',
+            page_pending: 1,
+            page_history: 1,
+        });
+    };
+
+    const handleSelectChannel = (channelKey) => {
+        setActiveTab('history');
+        setEntryTypeFilter('sale');
+        setPaymentChannelFilter(channelKey);
+        closeReviewModal();
+        reload({
+            tab: 'history',
+            type: 'sale',
+            payment_channel: channelKey,
             page_pending: 1,
             page_history: 1,
         });
@@ -186,31 +227,27 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
     useEffect(() => {
         const urlParams = new URLSearchParams(url.includes('?') ? url.substring(url.indexOf('?')) : '');
         const urlSearch = urlParams.get('search') || '';
-        if (debouncedSearch !== urlSearch) {
+        if (searchTerm === urlSearch) {
+            return undefined;
+        }
+
+        const handler = setTimeout(() => {
             closeReviewModal();
             reload({
-                search: debouncedSearch,
+                search: searchTerm,
                 page_pending: 1,
                 page_history: 1,
             });
-        }
-    }, [debouncedSearch]);
+        }, 400);
+
+        return () => clearTimeout(handler);
+    }, [searchTerm, url, reload, closeReviewModal]);
 
     const handleTabChange = (tabName) => {
         setActiveTab(tabName);
         closeReviewModal();
         reload({
             tab: tabName,
-            page_pending: 1,
-            page_history: 1,
-        });
-    };
-
-    const handleTypeChange = (typeVal) => {
-        setEntryTypeFilter(typeVal);
-        closeReviewModal();
-        reload({
-            type: typeVal,
             page_pending: 1,
             page_history: 1,
         });
@@ -329,6 +366,13 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                             onEditBaseFunds={() => setShowBaseFundsModal(true)}
                         />
 
+                        {/* Sales Payment Channel Audit Breakdown */}
+                        <SalesChannelBreakdown
+                            channelBreakdown={channelBreakdown}
+                            activeChannel={paymentChannelFilter}
+                            onSelectChannel={handleSelectChannel}
+                        />
+
                         {/* Missing Payout Alert */}
                         {auth.user?.role === 'artisan' && Number(finances.readyForPayout || 0) > 0 && !(auth.user?.has_payout_account ?? Boolean(auth.user?.payout_account_number)) && (
                             <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs">
@@ -370,16 +414,12 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                             setSearchTerm={setSearchTerm}
                             isSearchLoading={isSearchLoading}
                             entryTypeFilter={entryTypeFilter}
-                            setEntryTypeFilter={setEntryTypeFilter}
                             ledgerStatusFilter={ledgerStatusFilter}
-                            setLedgerStatusFilter={setLedgerStatusFilter}
                             startDateFilter={startDateFilter}
-                            setStartDateFilter={setStartDateFilter}
                             endDateFilter={endDateFilter}
-                            setEndDateFilter={setEndDateFilter}
+                            paymentChannelFilter={paymentChannelFilter}
                             applyFilters={applyFilters}
                             resetFilters={resetFilters}
-                            visibleCount={activeTab === 'pending' ? (pendingRequests?.total || 0) : (history?.total || 0)}
                         />
 
                         {/* List */}

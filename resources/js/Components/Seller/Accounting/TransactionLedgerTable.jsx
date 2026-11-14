@@ -3,7 +3,7 @@ import { History, Eye, Users, Banknote, FileText } from 'lucide-react';
 import SortableHeader from '@/Components/SortableHeader';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import CompactPagination from '@/Components/CompactPagination';
-import { formatDate, formatShortMoney, statusTone, typeTone, reviewLabel } from '@/utils/accountingFormatters';
+import { formatDate, formatShortMoney, statusTone, typeTone } from '@/utils/accountingFormatters';
 
 function TableSkeleton() {
     return (
@@ -188,7 +188,7 @@ export default function TransactionLedgerTable({
                                             </p>
                                             <p className="text-[11px] text-stone-500 mt-0.5 font-medium">
                                                 {isSale
-                                                    ? `Customer: ${item.requester?.name || 'Guest'}`
+                                                    ? `Customer: ${item.requester?.name || 'Guest'}${item.payment_method ? ` • ${item.payment_method}` : ''}`
                                                     : isPayout
                                                     ? `Ref: ${item.detail_category || 'Direct Transfer'}`
                                                     : `Requested by ${item.requester?.name || 'Unknown'}`}

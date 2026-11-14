@@ -77,7 +77,7 @@ export default function FulfillmentActionGroup({
 
             {order.status === "Pending" && renderStickyActions(
                 <div className="space-y-2">
-                    {canAccessMessages && (
+                    {canAccessMessages && order.user_id && (
                         <button
                             onClick={() => openChat(order.user_id)}
                             aria-label={`Open chat for order ${order.id}`}
@@ -276,7 +276,7 @@ export default function FulfillmentActionGroup({
 
             {order.status === "Refund/Return" && renderStickyActions(
                 <>
-                    {canAccessMessages && (
+                    {canAccessMessages && order.user_id && (
                         <button
                             onClick={() => openChat(order.user_id)}
                             aria-label={`Open chat for order ${order.id}`}
@@ -351,14 +351,18 @@ export default function FulfillmentActionGroup({
             {order.status === "Completed" && (
                 <div className="pt-1">
                     <a
-                        href={route("orders.receipt", order.id)}
+                        href={
+                            order.order_type === "pos_walkin" && order.db_id
+                                ? route("seller.pos.receipt", order.db_id)
+                                : route("orders.receipt", order.id)
+                        }
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex w-full items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-stone-700 bg-white border border-stone-200 rounded-lg hover:bg-stone-50 hover:border-stone-300 transition shadow-2xs min-h-[38px]"
-                        title="Print Packing Slip & Customer Receipt"
+                        title={order.order_type === "pos_walkin" ? "Print 80mm POS Receipt" : "Print Packing Slip & Customer Receipt"}
                     >
                         <Printer size={13} className="text-stone-400" />
-                        <span>Print Receipt</span>
+                        <span>{order.order_type === "pos_walkin" ? "80mm Receipt" : "Print Receipt"}</span>
                     </a>
                 </div>
             )}

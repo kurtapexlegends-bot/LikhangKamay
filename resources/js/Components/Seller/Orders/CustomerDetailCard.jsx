@@ -16,7 +16,7 @@ export default function CustomerDetailCard({ order, canAccessMessages, openChat 
                         <span className="text-[10px] text-stone-400 font-medium hidden sm:inline">• {order.shipping_contact_phone}</span>
                     )}
                 </div>
-                {canAccessMessages && (
+                {canAccessMessages && order.user_id && (
                     <button
                         onClick={() => openChat(order.user_id)}
                         className="p-1 text-clay-600 hover:text-clay-700 bg-clay-50 hover:bg-clay-100 rounded-lg transition-all flex items-center justify-center shrink-0"

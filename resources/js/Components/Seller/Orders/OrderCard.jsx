@@ -112,7 +112,26 @@ export default function OrderCard({
                     )}
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                    {order.order_type === "pos_walkin" && (
+                        <>
+                            {order.db_id && (
+                                <a
+                                    href={route("seller.pos.receipt", order.db_id)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10.5px] font-bold text-stone-600 bg-white border border-stone-200/90 rounded-md hover:bg-stone-50 hover:text-stone-900 transition shadow-2xs"
+                                    title="Print 80mm POS Receipt"
+                                >
+                                    <Printer size={11} className="text-stone-400" />
+                                    <span>80mm</span>
+                                </a>
+                            )}
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border border-clay-200 bg-clay-50 text-clay-700">
+                                Walk-In POS
+                            </span>
+                        </>
+                    )}
                     <PaymentStatusBadge
                         status={order.payment_status}
                         method={order.payment_method}
@@ -134,7 +153,7 @@ export default function OrderCard({
                             <span className="text-[10px] text-stone-400 font-medium hidden sm:inline">&bull; {order.shipping_contact_phone}</span>
                         )}
                     </div>
-                    {canAccessMessages && (
+                    {canAccessMessages && order.user_id && (
                         <button
                             onClick={() => openChat(order.user_id)}
                             className="p-1 text-clay-600 hover:text-clay-800 bg-clay-50 hover:bg-clay-100 rounded-md transition"

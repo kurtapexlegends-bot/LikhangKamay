@@ -20,7 +20,8 @@ export default function OrderPaymentFilter({
                     <option value="all">All Payment Methods</option>
                     <option value="paymongo">PayMongo Online (GCash, Maya, Card)</option>
                     <option value="card">Credit / Debit Card</option>
-                    <option value="manual">Cash on Delivery / Direct</option>
+                    <option value="manual">Cash on Delivery / Cash</option>
+                    <option value="pos">Walk-In POS (Cash, GCash, Maya)</option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={14} />
             </div>

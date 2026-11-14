@@ -46,10 +46,16 @@ export default function OrderManager({ auth, orders = [], tabCounts, filters: pr
     const { canEdit: canEditOrders, isReadOnly: isOrdersReadOnly } = useSellerModuleAccess("orders");
 
     // Filters and toggles
-    const [activeTab, setActiveTab] = useState(storedView?.activeTab || "All");
+    const [activeTab, setActiveTab] = useState(filters?.status || storedView?.activeTab || "All");
     const [searchQuery, setSearchQuery] = useState(filters?.search || storedView?.searchQuery || "");
-    const [quickFilter, setQuickFilter] = useState(storedView?.quickFilter || "all");
-    const [dateRange, setDateRange] = useState(storedView?.dateRange || { start: filters?.start_date || "", end: filters?.end_date || "" });
+    const [quickFilter, setQuickFilter] = useState(
+        filters?.status ? (filters?.quick_filter || "all") : (storedView?.quickFilter || "all")
+    );
+    const [dateRange, setDateRange] = useState(
+        filters?.status
+            ? { start: filters?.start_date || "", end: filters?.end_date || "" }
+            : (storedView?.dateRange || { start: filters?.start_date || "", end: filters?.end_date || "" })
+    );
     const [paymentMethod, setPaymentMethod] = useState(filters?.payment_method || "all");
     const [fulfillmentType, setFulfillmentType] = useState(filters?.fulfillment_type || "all");
     const [flaggedOnly, setFlaggedOnly] = useState(filters?.flagged || "all");
@@ -110,6 +116,7 @@ export default function OrderManager({ auth, orders = [], tabCounts, filters: pr
         if (!paginatedOrders) return 0;
         if (status === "Cancelled") return paginatedOrders.filter(o => ["Cancelled", "Rejected"].includes(o.status)).length;
         if (status === "To Pickup") return paginatedOrders.filter(o => o.status === "Ready for Pickup").length;
+        if (status === "Walk-In") return paginatedOrders.filter(o => o.order_type === "pos_walkin").length;
         if (status === "Returns") return paginatedOrders.filter(o => o.status === "Refund/Return").length;
         return paginatedOrders.filter(o => o.status === status).length;
     };
@@ -295,7 +302,7 @@ export default function OrderManager({ auth, orders = [], tabCounts, filters: pr
         addToast,
     });
 
-    const openChat = (userId) => { if (canAccessMessages) router.visit(route("chat.index", { user_id: userId })); };
+    const openChat = (userId) => { if (canAccessMessages && userId) router.visit(route("chat.index", { user_id: userId })); };
 
     const orderToShip = paginatedOrders.find(o => o.id === shippingModal.orderId);
 

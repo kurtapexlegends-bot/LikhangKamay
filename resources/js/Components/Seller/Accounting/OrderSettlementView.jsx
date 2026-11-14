@@ -11,8 +11,15 @@ export default function OrderSettlementView({ item }) {
             <div className="p-5 bg-white space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Customer</p>
-                        <p className="mt-1 font-bold text-stone-900 text-[14px]">{item.requester?.name || 'Guest'}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Customer &amp; Channel</p>
+                        <p className="mt-1 font-bold text-stone-900 text-[14px]">
+                            {item.requester?.name || 'Guest'}
+                            {(item.financials?.payment_method || item.payment_method) && (
+                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-md bg-stone-100 text-[10px] font-bold text-stone-700 align-middle">
+                                    {item.financials?.payment_method || item.payment_method}
+                                </span>
+                            )}
+                        </p>
                     </div>
                     <div className="text-right">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Settled On</p>

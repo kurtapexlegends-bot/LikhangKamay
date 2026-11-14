@@ -2,6 +2,7 @@ import React from "react";
 
 const STATUS_TABS = [
     { key: "All", label: "All" },
+    { key: "Walk-In", label: "Walk-In" },
     { key: "Pending", label: "Pending" },
     { key: "Accepted", label: "Accepted" },
     { key: "Processing", label: "Processing" },
