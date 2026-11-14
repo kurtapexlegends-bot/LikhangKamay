@@ -24,6 +24,8 @@
 │ 10. Buyer & Artisan: Email Code Verification & Artisan KYC Setup Wizard with Permits   │
 │ 11. HR & Accounting: Staff Seat Provisioning & Teardown, Off-Site Attendance Override, │
 │     HR Payroll Gen -> Accounting Rejection -> Final Approval, BIR 2307, Location Purge │
+│ 11.5 Team Approvals: Role Scoping (Owner/Manager), Self-Approval Defense, Product Draft│
+│      Triggers, Multi-Group Discounts, Compensation Approvals, Batch Processing        │
 │ 12. Artisan & Admin: Subscription Tiers, Retention Modal, Ad Boost Bids & Email Studio │
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -266,6 +268,29 @@
 5. **Payroll Gen -> Accounting Rejection -> Approval:** Generate payroll dry run (assert SSS, PhilHealth, Pag-IBIG, BIR TRAIN deductions), submit for approval (`POST /hr/payroll/{payroll}/submit`), reject from accounting (`POST /accounting/payroll/{payroll}/reject`) with itemized `RevisionChecklistSelector` items, verify `RevisionFeedbackBanner` renders on HR payroll view styled as an earthy warm stone audit memo (`bg-stone-50/90`, `border-stone-200/90`, `dot: bg-clay-600` instead of harsh pink wash), resubmit, and approve (`POST /accounting/payroll/{payroll}/approve`).
 6. **Stock Release Approval & BIR 2307 Export:** Approve stock release (`POST /accounting/release/{stockRequest}`) and export BIR 2307 statement (`GET /accounting/settlement/export`).
 7. **Location Cleanup & Trash Recovery (`/shop-locations`, `/admin/trash`):** Delete `"Silang Ceramic Studio"`, test trash restoration (`POST /admin/trash/restore`).
+
+---
+
+### Step 11.5: Team Approvals Maker-Checker & Governance Desk (`/seller/approvals`)
+*Personas:* `test.staff@likhangkamay.local` $\rightarrow$ `test.artisan@likhangkamay.local`
+
+1. **Role-Based Scope & Access Boundary Isolation:**
+   - Authenticate as restricted staff without approval permissions. Navigate to `/seller/approvals` $\rightarrow$ assert clean fallback to `/staff/dashboard` or HTTP 403 (preventing unauthorized operational access).
+   - Authenticate as Staff Manager with permissions (`manage_products`, `manage_discounts`, `manage_hr`). Access `/seller/approvals` $\rightarrow$ assert domain filters display scoped accessible domains (`Products`, `Discounts`, `Compensation`, `Returns`).
+2. **Self-Approval Prevention Shield (`OwnerApprovalService`):**
+   - Attempt to self-approve a request created by the currently authenticated user (`POST /seller/approvals/{id}/approve` or `POST /seller/approvals/batch-approve`).
+   - Assert HTTP 403 / validation block with message: `"You cannot approve your own request."` (Preventing maker-checker collision vulnerabilities).
+3. **Product Draft Smart Trigger & Inspection:**
+   - Staff crafts new product listing or updates sensitive price/title attributes $\rightarrow$ status flags `needs_approval` and pending approval is created.
+   - Artisan Workshop Owner opens `/seller/approvals` $\rightarrow$ clicks `Review Details` on the pending product draft.
+   - Assert `ApprovalDetailsDrawer` mounts `ApprovalProductDraftBreakdown.jsx` with before/after diff cards and media asset previews.
+4. **Staff Discount & HR Compensation Approvals:**
+   - Verify pending multi-group staff discounts and compensation adjustments render itemized diff summaries with clean whitespace-nowrap badges.
+   - Test single approval (`POST /seller/approvals/{id}/approve`) and decline with reason (`POST /seller/approvals/{id}/decline` via `ApprovalDeclineModal.jsx`).
+5. **Product Archival Auto-Cleanup:**
+   - Archive product with pending approval (`POST /products/{id}/archive`) $\rightarrow$ assert associated pending approval automatically updates to cancelled status, purging dangling queue items.
+6. **Batch Approval Processing:**
+   - Select multiple eligible pending requests via checkbox selection $\rightarrow$ click `Approve Selected` (`POST /seller/approvals/batch-approve`). Assert all selected requests transition to approved with green notification toast.
 
 ---
 

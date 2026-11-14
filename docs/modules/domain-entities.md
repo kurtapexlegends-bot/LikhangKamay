@@ -230,3 +230,31 @@ Calculations are orchestrated by [AccountingLedgerService.php](file:///c:/larago
    * Provides rapid command shortcuts via `>` command palette mode.
    * Groups results with semantic category badges and distinct Lucide icons.
 
+---
+
+## 7. Team Approvals & Workshop Governance Desk
+
+*   **Model File**: [OwnerApproval.php](file:///c:/laragon/www/LikhangKamay/app/Models/OwnerApproval.php)
+*   **Database Table**: `owner_approvals` (supports `HasTargetedRevisions`)
+
+### Core Architecture & Maker-Checker Workflow
+*   **Service Layer**: [OwnerApprovalService.php](file:///c:/laragon/www/LikhangKamay/app/Services/OwnerApprovalService.php)
+    *   Implements maker-checker separation for critical artisan operations: product draft catalog modifications, multi-group staff discounts, HR wage rate changes, order return refund vs. replacement resolutions, and procurement requests.
+    *   **Self-Approval Prevention**: `approve()` and `batchApprove()` strictly enforce that the reviewing user cannot be the original requester (`$approval->requester_id === $reviewer->id`), throwing an authorization exception to block self-approval bypasses.
+    *   **Product Archival Auto-Cleanup**: Archiving a product via [ArchiveProduct.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Catalog/ArchiveProduct.php) automatically transitions any associated pending draft approvals to cancelled status.
+    *   **Role-Based Domain Scoping**: Workshop owners have full administrative visibility over all approval domains. Delegated staff managers only see domains permitted by their assigned permissions (`manage_products`, `manage_discounts`, `manage_hr`, `manage_orders`), while restricted staff are prevented from accessing sensitive management routes.
+*   **Controller**: [ApprovalController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/ApprovalController.php)
+    *   `GET /seller/approvals` (`seller.approvals.index`): Paginated approval feed with status tabs (`pending`, `approved`, `declined`), domain filtering, and real-time counter badges.
+    *   `POST /seller/approvals/{ownerApproval}/approve` (`seller.approvals.approve`): Executes atomic domain action handler upon approval.
+    *   `POST /seller/approvals/{ownerApproval}/decline` (`seller.approvals.decline`): Declines request with itemized revision guidance.
+    *   `POST /seller/approvals/batch-approve` (`seller.approvals.batch-approve`): Processes batch approvals with transaction safety.
+*   **Notifications**: [OwnerApprovalDecisionNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/OwnerApprovalDecisionNotification.php) notifies staff members when their submitted requests are approved or declined.
+*   **Seeder**: [TeamApprovalMockSeeder.php](file:///c:/laragon/www/LikhangKamay/database/seeders/TeamApprovalMockSeeder.php) generates realistic mock approval records across all domains for local development and demonstration.
+
+### Frontend Components & Views
+*   **Main Page**: [ApprovalManager.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Seller/Approvals/ApprovalManager.jsx) provides tabbed filtering, batch selection, and real-time polling sync.
+*   **Summary Cards**: [ApprovalDiffCard.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Approvals/ApprovalDiffCard.jsx) renders domain icons, status badges, diff previews, and quick actions.
+*   **Inspection Drawer**: [ApprovalDetailsDrawer.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Approvals/ApprovalDetailsDrawer.jsx) slides open detailed request payloads.
+*   **Decline Dialog**: [ApprovalDeclineModal.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Approvals/ApprovalDeclineModal.jsx) captures required decline reasons and feedback.
+*   **Domain Breakdowns**: [ApprovalDomainBreakdown.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Approvals/ApprovalDomainBreakdown.jsx) and [ApprovalProductDraftBreakdown.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Approvals/ApprovalProductDraftBreakdown.jsx) format specialized field-level before/after diffs with media asset previews.
+

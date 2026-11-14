@@ -98,6 +98,14 @@ This reference eliminates blind accessibility tree dumps by providing pre-verifi
 - **TimeCard Records Documents Tab (`EmployeeDocumentsTable.jsx`, `EmployeeDocumentUploadModal.jsx`):** `button:has-text("Employee Documents")`, `button:has-text("Upload Document")`, `button[title="Preview document"]`, `a[title="Download document"]`
 - **Document Preview Modal (`EmployeeDocumentPreviewModal.jsx`):** `a:has-text("Open")`, `a:has-text("Download")`
 
+### Team Approvals & Governance Desk (`/seller/approvals`)
+- **Approvals Tab Selectors:** `button:has-text("Pending")`, `button:has-text("Approved")`, `button:has-text("Declined")`, `button:has-text("All Domains")`
+- **Domain Filter Pills:** `button:has-text("Products")`, `button:has-text("Discounts")`, `button:has-text("Compensation")`, `button:has-text("Returns")`
+- **Batch Action Triggers:** `button:has-text("Select All")`, `button:has-text("Approve Selected")`
+- **Approval Card Actions:** `button:has-text("Quick Approve")`, `button:has-text("Decline")`, `button:has-text("Review Details")`
+- **Decline Modal Inputs (`ApprovalDeclineModal.jsx`):** `textarea[placeholder*="reason" i]`, `button:has-text("Confirm Decline")`
+- **Approval Details Drawer (`ApprovalDetailsDrawer.jsx`):** `div[role="dialog"]`, `button:has-text("Approve Request")`, `button:has-text("Decline Request")`
+
 ### Dispute, Return Criteria & Review Operations
 - **Buyer Request Return Button:** `button:has-text("Return")`
 - **Return Modal Claim Reason Radio (`ReturnCriteriaFields.jsx`):** `input[name="damage_reason_code"]`
