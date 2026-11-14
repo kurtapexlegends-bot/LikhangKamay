@@ -164,10 +164,12 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         'approved_at',
         'approved_by',
         'artisan_welcomed',
-        // Payout Details
+        // Payout Details & Walk-In POS QR
         'payout_method',
         'payout_account_name',
         'payout_account_number',
+        'pos_gcash_qr_path',
+        'pos_maya_qr_path',
         // Social Auth Fields
         'social_provider',
         'social_id',
@@ -212,6 +214,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
      */
     protected $hidden = [
         'password',
+        'pos_void_pin',
         'remember_token',
         'face_descriptor',
     ];
@@ -228,6 +231,8 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
             'email_verification_code_expires_at' => 'datetime',
             'email_verification_code_sent_at' => 'datetime',
             'password' => 'hashed',
+            'pos_void_pin' => 'hashed',
+            'pos_void_pin_updated_at' => 'datetime',
             'setup_completed_at' => 'datetime',
             'approved_at' => 'datetime',
             'kyc_liveness_verified_at' => 'datetime',
@@ -284,6 +289,11 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     public function isBanned(): bool
     {
         return !is_null($this->banned_at);
+    }
+
+    public function hasPosVoidPin(): bool
+    {
+        return filled($this->pos_void_pin);
     }
 
     /**
@@ -661,6 +671,22 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         }
 
         return static::$hasSplitNameColumns;
+    }
+
+    /**
+     * Get the resolved URL for the artisan's uploaded Walk-In GCash QR image.
+     */
+    public function getPosGcashQrUrlAttribute(): ?string
+    {
+        return $this->pos_gcash_qr_path ? \App\Services\StorageUrl::url($this->pos_gcash_qr_path) : null;
+    }
+
+    /**
+     * Get the resolved URL for the artisan's uploaded Walk-In Maya QR image.
+     */
+    public function getPosMayaQrUrlAttribute(): ?string
+    {
+        return $this->pos_maya_qr_path ? \App\Services\StorageUrl::url($this->pos_maya_qr_path) : null;
     }
 
     /**

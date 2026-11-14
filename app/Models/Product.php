@@ -157,6 +157,7 @@ class Product extends Model
                 'end_at' => $activeDiscount->end_at ? $activeDiscount->end_at->toIso8601String() : null,
                 'end_at_formatted' => $activeDiscount->end_at ? $activeDiscount->end_at->format('M d, Y') : null,
                 'max_purchase_limit' => $activeDiscount->max_purchase_limit,
+                'remaining_promo_stock' => $activeDiscount->remaining_promo_stock,
             ];
         } catch (\Throwable $e) {
             return null;

@@ -44,6 +44,9 @@ class Order extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const TYPE_ONLINE = 'online';
+    public const TYPE_POS_WALKIN = 'pos_walkin';
+
     public const STATUS_PENDING = 'Pending';
     public const STATUS_ACCEPTED = 'Accepted';
     public const STATUS_PROCESSING = 'Processing';
@@ -57,9 +60,10 @@ class Order extends Model
     public const STATUS_REPLACED = 'Replaced';
 
     protected $fillable = [
-        'artisan_id', 'user_id', 'order_number', 'customer_name', 
+        'artisan_id', 'user_id', 'order_type', 'order_number', 'customer_name',
         'merchandise_subtotal', 'convenience_fee_amount', 'shipping_fee_amount', 'platform_commission_amount', 'seller_net_amount',
-        'total_amount', 'status', 'auto_complete_at', 'payment_method', 'payment_status', 'paymongo_session_id', 'payment_id', 'review_reminder_sent', 'shipment_reminder_sent', 'shipping_address', 'shipping_address_type',
+        'total_amount', 'pos_cash_tendered', 'pos_change_amount', 'pos_payment_reference', 'pos_processed_by_user_id', 'pos_location_id',
+        'status', 'auto_complete_at', 'payment_method', 'payment_status', 'paymongo_session_id', 'payment_id', 'review_reminder_sent', 'shipment_reminder_sent', 'shipping_address', 'shipping_address_type',
         'shipping_street_address', 'shipping_barangay', 'shipping_city', 'shipping_region', 'shipping_postal_code',
         'shipping_latitude', 'shipping_longitude',
         'shipping_recipient_name', 'shipping_contact_phone', 'shipping_notes', 'tracking_number', 'received_at', 'warranty_expires_at',
@@ -94,6 +98,8 @@ class Order extends Model
         'shipping_fee_amount' => 'decimal:2',
         'platform_commission_amount' => 'decimal:2',
         'seller_net_amount' => 'decimal:2',
+        'pos_cash_tendered' => 'decimal:2',
+        'pos_change_amount' => 'decimal:2',
         'vatable_sales' => 'decimal:2',
         'vat_amount' => 'decimal:2',
         'vat_exempt_sales' => 'decimal:2',
@@ -164,6 +170,21 @@ class Order extends Model
     public function voucherRedemptions()
     {
         return $this->hasMany(VoucherRedemption::class);
+    }
+
+    public function processedBy()
+    {
+        return $this->belongsTo(User::class, 'pos_processed_by_user_id')->withTrashed();
+    }
+
+    public function posLocation()
+    {
+        return $this->belongsTo(SellerLocation::class, 'pos_location_id')->withTrashed();
+    }
+
+    public function isPosWalkIn(): bool
+    {
+        return ($this->order_type ?? self::TYPE_ONLINE) === self::TYPE_POS_WALKIN;
     }
 
     /**
