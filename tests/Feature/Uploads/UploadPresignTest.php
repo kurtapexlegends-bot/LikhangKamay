@@ -3,6 +3,7 @@
 namespace Tests\Feature\Uploads;
 
 use App\Models\User;
+use App\Services\StorageUrl;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -98,5 +99,63 @@ class UploadPresignTest extends TestCase
 
         Storage::disk('public')->assertExists($validKey);
         $this->assertSame($content, Storage::disk('public')->get($validKey));
+    }
+
+    public function test_employee_documents_presign_requires_hr_editor_and_uses_private_disk(): void
+    {
+        Storage::fake(StorageUrl::privateDisk());
+
+        $buyer = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($buyer)->postJson(route('api.uploads.presign'), [
+            'folder' => 'employee_documents',
+            'filename' => 'valid-id.png',
+            'contentType' => 'image/png',
+        ])->assertForbidden();
+
+        $sellerOwner = User::factory()->artisanApproved()->create(['premium_tier' => 'premium']);
+        $sellerOwner->modules_enabled = ['hr' => true];
+        $sellerOwner->save();
+
+        // Reject unsupported 3D model extension in employee_documents
+        $this->actingAs($sellerOwner)->postJson(route('api.uploads.presign'), [
+            'folder' => 'employee_documents',
+            'filename' => 'model.glb',
+            'contentType' => 'model/gltf-binary',
+        ])->assertStatus(422);
+
+        $presign = $this->actingAs($sellerOwner)->postJson(route('api.uploads.presign'), [
+            'folder' => 'employee_documents',
+            'filename' => 'nbi-clearance.pdf',
+            'contentType' => 'application/pdf',
+        ]);
+
+        $presign->assertOk()
+            ->assertJsonPath('disk', StorageUrl::privateDisk());
+
+        $key = $presign->json('key');
+        $this->assertStringStartsWith("employee_documents/{$sellerOwner->id}/", $key);
+
+        // Cross-seller upload into another seller's prefix is forbidden
+        $otherSeller = User::factory()->artisanApproved()->create(['premium_tier' => 'premium']);
+        $otherSeller->modules_enabled = ['hr' => true];
+        $otherSeller->save();
+
+        $this->actingAs($otherSeller)
+            ->call('PUT', route('api.uploads.local', ['key' => $key]), [], [], [], [], 'fake-pdf-bytes')
+            ->assertForbidden();
+
+        // Valid owner private upload succeeds and exposes no public URL
+        $uploadResponse = $this->actingAs($sellerOwner)
+            ->call('PUT', route('api.uploads.local', ['key' => $key]), [], [], [], [], 'fake-pdf-bytes');
+
+        $uploadResponse->assertOk()
+            ->assertJson([
+                'success' => true,
+                'key' => $key,
+                'url' => null,
+            ]);
+
+        Storage::disk(StorageUrl::privateDisk())->assertExists($key);
+        $this->assertFalse(Storage::disk('public')->exists($key));
     }
 }

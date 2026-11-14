@@ -33,7 +33,7 @@ class ShiftPolicySettingsTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $response->assertSessionHas('success', 'People & Payroll settings updated successfully.');
+        $response->assertSessionHas('success', 'Employees & Payroll settings updated successfully.');
 
         $seller->refresh();
         $this->assertSame('09:00', $seller->shift_start_time);
