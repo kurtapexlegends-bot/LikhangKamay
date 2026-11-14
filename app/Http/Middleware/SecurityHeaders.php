@@ -27,7 +27,7 @@ class SecurityHeaders
         if (app()->environment('production')) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
             // Content Security Policy (Supporting 3D WebAssembly decoders, Service Workers, and Blob Workers)
-            $response->headers->set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.google.com https://*.googleapis.com https://*.gstatic.com https://cdn.jsdelivr.net; worker-src 'self' blob:; child-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' blob: data: https: wss://*.supabase.co wss://*.supabase.in wss://*.pusher.com wss://ws-ap1.pusher.com; frame-src 'self' https:;");
+            $response->headers->set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.google.com https://*.googleapis.com https://*.gstatic.com https://cdn.jsdelivr.net; worker-src 'self' blob:; child-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' blob: data: https: wss://*.supabase.co wss://*.supabase.in wss://*.pusher.com wss://ws-ap1.pusher.com; frame-src 'self' blob: https:;");
         }
 
         return $response;

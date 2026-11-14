@@ -15,7 +15,7 @@ class HRRolePresets
             'stock_clerk' => ['label' => 'Stock Clerk', 'description' => 'Operations focus. Can manage inventory, process orders, and request supplies.'],
             'customer_support' => ['label' => 'Customer Care', 'description' => 'Orders, buyer messages, team inbox, and customer review handling.'],
             'driver' => ['label' => 'Logistics & Driver', 'description' => 'Delivery companion console to view assigned routes and submit delivery proof.'],
-            'hr' => ['label' => 'People & Payroll', 'description' => 'Employee records, payroll prep, and workspace access coordination.'],
+            'hr' => ['label' => 'Employees & Payroll', 'description' => 'Employee records, payroll prep, and workspace access coordination.'],
             'accounting' => ['label' => 'Finance Review', 'description' => 'Legacy finance visibility role.'],
             'procurement' => ['label' => 'Procurement', 'description' => 'Legacy inventory tracking role.'],
             'custom' => ['label' => 'Custom Access', 'description' => 'Configure individual module permissions manually.'],
@@ -47,7 +47,7 @@ class HRRolePresets
             'team_messages' => ['label' => 'Team Inbox', 'description' => 'Internal seller workspace conversations.'],
             'reviews' => ['label' => 'Reviews', 'description' => 'Customer review replies and moderation.'],
             'shop_settings' => ['label' => 'Shop Settings', 'description' => 'Seller storefront profile settings.'],
-            'hr' => ['label' => 'People & Payroll', 'description' => 'Employee records, payroll prep, and workspace access management.'],
+            'hr' => ['label' => 'Employees & Payroll', 'description' => 'Employee records, payroll prep, and workspace access management.'],
             'accounting' => ['label' => 'Finance Approvals', 'description' => 'Finance review, fund visibility, and payroll approval.'],
             'procurement' => ['label' => 'Inventory', 'description' => 'Inventory tracking, supply management, and purchasing workflows.'],
             'stock_requests' => ['label' => 'Restock Requests', 'description' => 'Restock request tracking and approval flow.'],
@@ -79,7 +79,7 @@ class HRRolePresets
             [
                 'key' => User::STAFF_MANAGER_USER_LEVEL,
                 'label' => 'Staff Manager',
-                'description' => 'Can manage employee logins and staff permissions inside People & Payroll when that capability is enabled.',
+                'description' => 'Can manage employee logins and staff permissions inside Employees & Payroll when that capability is enabled.',
             ],
         ];
     }

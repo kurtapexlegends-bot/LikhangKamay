@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Seller;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
 use App\Models\Employee;
+use App\Models\EmployeeDocument;
 use App\Models\OwnerApproval;
 use App\Models\Payroll;
 use App\Models\User;
 use App\Services\StaffAttendanceService;
 use App\Services\SellerEntitlementService;
 use App\Services\OwnerApprovalService;
+use App\Services\HR\EmployeeDocumentService;
 use App\Services\HR\PayrollCalculatorService;
 use App\Services\HR\AttendanceAggregatorService;
 use App\Actions\Seller\HR\CreateEmployeeAction;
@@ -22,12 +24,14 @@ use App\Actions\Seller\HR\SubmitPayrollRun;
 use App\Http\Requests\Seller\StoreEmployeeRequest;
 use App\Http\Requests\Seller\UpdateEmployeeRequest;
 use App\Http\Requests\Seller\HR\RejectAttendanceSessionRequest;
+use App\Http\Requests\Seller\HR\StoreEmployeeDocumentRequest;
 use App\Support\HRWorkflowHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\Gate;
@@ -66,6 +70,7 @@ class HRController extends Controller
                 'payrolls' => $payrolls,
                 'locations' => $locations,
                 'staffAccessAudits' => $recentAccessAudits,
+                'documentTypes' => EmployeeDocument::documentTypes(),
                 'sellerSettings' => HRWorkflowHelper::buildSellerSettings($seller, $activePeriod),
                 'staffProvisioning' => array_merge(
                     HRWorkflowHelper::buildStaffProvisioningData(
@@ -91,6 +96,7 @@ class HRController extends Controller
                 'payrolls' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10),
                 'locations' => collect(),
                 'staffAccessAudits' => [],
+                'documentTypes' => EmployeeDocument::documentTypes(),
                 'sellerSettings' => [
                     'overtime_rate' => 50.00,
                     'overtime_multiplier' => 1.25,
@@ -139,7 +145,7 @@ class HRController extends Controller
             $request->input('employee_id')
         );
 
-        if ($result['emailFailed']) {
+        if (!($result['success'] ?? true) || ($result['emailFailed'] ?? false) || ($result['documentsFailed'] ?? false)) {
             return redirect()->back()->with('error', $result['message']);
         }
 
@@ -345,7 +351,7 @@ class HRController extends Controller
             'break_allowance_minutes' => $request->break_allowance_minutes ?? 60,
         ]);
 
-        return redirect()->back()->with('success', 'People & Payroll settings updated successfully.');
+        return redirect()->back()->with('success', 'Employees & Payroll settings updated successfully.');
     }
 
     public function generatePayroll(Request $request, PayrollCalculatorService $payrollService)
@@ -470,12 +476,28 @@ class HRController extends Controller
 
         $summary = $aggregator->aggregateForPeriod($employee, $start, $end, $seller);
         $canEdit = HRWorkflowHelper::canEditHrRecords($actor);
+        $supportsDocuments = EmployeeDocumentService::supportsSchema();
+        $relations = ['assignedLocation', 'loginAccount'];
+        if ($supportsDocuments) {
+            $relations[] = 'documents.uploadedBy';
+        }
+        $employee->loadMissing($relations);
+
+        $documents = $supportsDocuments
+            ? $employee->documents->map->serializeForHr()->values()->all()
+            : [];
+
+        $requestedTab = (string) $request->query('tab', 'shifts');
+        $initialTab = in_array($requestedTab, ['shifts', 'documents'], true) ? $requestedTab : 'shifts';
 
         return Inertia::render('Seller/HR/TimeCardAudit', [
-            'employee' => $employee->loadMissing(['assignedLocation', 'loginAccount']),
+            'employee' => $employee,
             'summary' => $summary,
             'selectedMonth' => $month,
             'canEdit' => $canEdit,
+            'documents' => $documents,
+            'documentTypes' => EmployeeDocument::documentTypes(),
+            'initialTab' => $initialTab,
         ]);
     }
 
@@ -511,5 +533,103 @@ class HRController extends Controller
             'message' => 'Attendance session declined.',
             'session' => $session,
         ]);
+    }
+
+    public function listEmployeeDocuments(Employee $employee)
+    {
+        $seller = $this->sellerOwner();
+
+        abort_unless($employee->user_id === $seller->id, 403, 'Unauthorized employee access.');
+
+        if (!EmployeeDocumentService::supportsSchema()) {
+            return response()->json([
+                'documents' => [],
+                'total' => 0,
+            ]);
+        }
+
+        $documents = $employee->documents()
+            ->with('uploadedBy:id,name')
+            ->get()
+            ->map->serializeForHr()
+            ->values();
+
+        return response()->json([
+            'documents' => $documents,
+            'total' => $documents->count(),
+        ]);
+    }
+
+    public function storeDocument(
+        StoreEmployeeDocumentRequest $request,
+        Employee $employee,
+        EmployeeDocumentService $documentService
+    ) {
+        abort_unless(EmployeeDocumentService::supportsSchema(), 503, 'Employee document storage is pending migration.');
+
+        $validated = $request->validated();
+        $documentKey = trim((string) ($validated['document_key'] ?? ''));
+
+        try {
+            if ($documentKey !== '') {
+                $documentService->storePresignedFile(
+                    $this->sellerOwner(),
+                    $this->sellerActor(),
+                    $employee,
+                    $documentKey,
+                    $validated
+                );
+            } else {
+                $documentService->storeUploadedFile(
+                    $this->sellerOwner(),
+                    $this->sellerActor(),
+                    $employee,
+                    $request->file('document'),
+                    $validated
+                );
+            }
+        } catch (\InvalidArgumentException $e) {
+            throw ValidationException::withMessages([
+                'document' => $e->getMessage(),
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Employee document uploaded successfully.');
+    }
+
+    public function serveDocument(
+        Request $request,
+        Employee $employee,
+        EmployeeDocument $document,
+        EmployeeDocumentService $documentService
+    ) {
+        $seller = $this->sellerOwner();
+
+        abort_unless($employee->user_id === $seller->id, 403, 'Unauthorized employee access.');
+        abort_unless(
+            (int) $document->employee_id === (int) $employee->id && (int) $document->user_id === (int) $seller->id,
+            404,
+            'Employee document not found.'
+        );
+        abort_unless(EmployeeDocumentService::supportsSchema(), 503, 'Employee document storage is pending migration.');
+
+        return $documentService->buildFileResponse($document, $request->boolean('download'));
+    }
+
+    public function destroyDocument(
+        Employee $employee,
+        EmployeeDocument $document,
+        EmployeeDocumentService $documentService
+    ) {
+        $actor = $this->sellerActor();
+        $seller = $this->sellerOwner();
+
+        abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
+        abort_unless($employee->user_id === $seller->id, 403, 'Unauthorized employee access.');
+        abort_unless(EmployeeDocumentService::supportsSchema(), 503, 'Employee document storage is pending migration.');
+
+        $documentService->deleteDocument($seller, $employee, $document);
+
+        return redirect()->back()->with('success', 'Employee document removed.');
     }
 }

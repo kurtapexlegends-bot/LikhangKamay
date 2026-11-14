@@ -95,11 +95,11 @@ class UpdateEmployeeRequest extends FormRequest
         $wantsLoginAccount = $this->wantsLoginAccount();
 
         if ($linkedLogin && $this->has('create_login_account') && !$canManageLoginSettings) {
-            abort(403, 'Only the shop owner or a user with editable People & Payroll access can update seller login access.');
+            abort(403, 'Only the shop owner or a user with editable Employees & Payroll access can update seller login access.');
         }
 
         if (!$linkedLogin && $wantsLoginAccount && !$canCreateLoginSettings) {
-            abort(403, 'Only the shop owner or a user with editable People & Payroll access can create staff login accounts.');
+            abort(403, 'Only the shop owner or a user with editable Employees & Payroll access can create staff login accounts.');
         }
 
         // Self-elevation guard: Staff members cannot edit their own permission level or role preset

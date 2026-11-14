@@ -99,6 +99,11 @@ class Employee extends Model
         return $this->assignedLocation();
     }
 
+    public function documents()
+    {
+        return $this->hasMany(EmployeeDocument::class)->orderByDesc('created_at');
+    }
+
     public function isDailyShiftMode(): bool
     {
         return ($this->shift_schedule_mode ?? self::SHIFT_MODE_UNIFORM) === self::SHIFT_MODE_PER_DAY;

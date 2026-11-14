@@ -8,6 +8,7 @@ use App\Models\PayrollItem;
 use App\Models\StaffAccessAudit;
 use App\Models\User;
 use App\Notifications\AccountingApprovalRequestedNotification;
+use App\Services\HR\EmployeeDocumentService;
 use App\Services\HR\PayrollCalculatorService;
 use App\Services\StaffAttendanceService;
 use Carbon\Carbon;
@@ -25,6 +26,10 @@ class HREmployeeLoader
             ->with('assignedLocation')
             ->where('user_id', $seller->id)
             ->orderBy('created_at', 'desc');
+
+        if (EmployeeDocumentService::supportsSchema()) {
+            $employeeQuery->withCount('documents');
+        }
 
         if ($supportsEmployeeLoginLinks) {
             $loginAccountColumns = array_values(array_filter([
@@ -207,7 +212,7 @@ class HREmployeeLoader
         }
         if ($auditBefore !== null && $auditAfter !== null) {
             if (($auditBefore['permission_level'] ?? null) !== ($auditAfter['permission_level'] ?? null)) {
-                $auditChanges[] = 'Changed People & Payroll access to ' . HRRolePresets::permissionLevelLabel($auditAfter['permission_level'] ?? null);
+                $auditChanges[] = 'Changed Employees & Payroll access to ' . HRRolePresets::permissionLevelLabel($auditAfter['permission_level'] ?? null);
             }
             if (($auditBefore['role_preset_key'] ?? null) !== ($auditAfter['role_preset_key'] ?? null)) {
                 $auditChanges[] = 'Changed capability template';

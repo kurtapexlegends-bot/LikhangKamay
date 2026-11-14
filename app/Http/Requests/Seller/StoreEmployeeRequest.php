@@ -3,9 +3,11 @@
 namespace App\Http\Requests\Seller;
 
 use App\Http\Controllers\Concerns\InteractsWithSellerContext;
+use App\Models\EmployeeDocument;
 use App\Services\SellerEntitlementService;
 use App\Support\HRWorkflowHelper;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreEmployeeRequest extends FormRequest
 {
@@ -17,7 +19,7 @@ class StoreEmployeeRequest extends FormRequest
         abort_unless(HRWorkflowHelper::canEditHrRecords($actor), 403, 'Read-only people access can only view records.');
 
         if ($this->boolean('create_login_account')) {
-            abort_unless($actor->canCreateStaffAccounts(), 403, 'Only the shop owner or a user with editable People & Payroll access can create staff login accounts.');
+            abort_unless($actor->canCreateStaffAccounts(), 403, 'Only the shop owner or a user with editable Employees & Payroll access can create staff login accounts.');
         }
 
         return true;
@@ -47,17 +49,43 @@ class StoreEmployeeRequest extends FormRequest
                     );
                 }
             }
+
+            $stagedFiles = collect($this->file('staged_documents', []))->pluck('file')->filter();
+            if ($stagedFiles->isNotEmpty()) {
+                $totalBytes = $stagedFiles->sum(fn ($file) => (int) ($file->getSize() ?? 0));
+                if ($totalBytes > 4 * 1024 * 1024) {
+                    $validator->errors()->add(
+                        'staged_documents',
+                        'Combined initial document uploads must stay under 4MB. Save the employee first and upload extra documents separately.'
+                    );
+                }
+            }
         });
     }
 
     public function rules(SellerEntitlementService $entitlementService): array
     {
-        return HRWorkflowHelper::getProvisionValidationRules(
-            $this->sellerOwner(),
-            $entitlementService,
-            null,
-            null,
-            $this->boolean('create_login_account')
+        $sellerOwnerId = $this->sellerOwnerId();
+        $keyPattern = '#^employee_documents/' . preg_quote((string) $sellerOwnerId, '#') . '/[A-Za-z0-9\-]+\.(jpg|jpeg|png|webp|pdf)$#i';
+
+        return array_merge(
+            HRWorkflowHelper::getProvisionValidationRules(
+                $this->sellerOwner(),
+                $entitlementService,
+                null,
+                null,
+                $this->boolean('create_login_account')
+            ),
+            [
+                'staged_documents' => ['nullable', 'array', 'max:10'],
+                'staged_documents.*.document_type' => ['required', 'string', Rule::in(array_keys(EmployeeDocument::documentTypes()))],
+                'staged_documents.*.title' => ['nullable', 'string', 'max:150'],
+                'staged_documents.*.expires_at' => ['nullable', 'date'],
+                'staged_documents.*.notes' => ['nullable', 'string', 'max:500'],
+                'staged_documents.*.original_filename' => ['nullable', 'string', 'max:255'],
+                'staged_documents.*.document_key' => ['nullable', 'required_without:staged_documents.*.file', 'string', 'max:255', "regex:{$keyPattern}"],
+                'staged_documents.*.file' => ['nullable', 'required_without:staged_documents.*.document_key', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:4096'],
+            ]
         );
     }
 

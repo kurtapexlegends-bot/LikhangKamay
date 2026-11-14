@@ -93,6 +93,7 @@
         "QUEUE_CONNECTION": "database",
         "FILESYSTEM_DISK": "s3",
         "PUBLIC_DISK_DRIVER": "s3",
+        "PRIVATE_DISK_DRIVER": "s3",
         "FILESYSTEM_LOCAL_ROOT": "/tmp/storage/app/private",
         "APP_CONFIG_CACHE": "/tmp/config.php",
         "APP_EVENTS_CACHE": "/tmp/events.php",

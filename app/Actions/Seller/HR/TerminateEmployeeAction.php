@@ -4,12 +4,17 @@ namespace App\Actions\Seller\HR;
 
 use App\Models\Employee;
 use App\Models\User;
+use App\Services\HR\EmployeeDocumentService;
 use App\Support\HRWorkflowHelper;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class TerminateEmployeeAction
 {
+    public function __construct(
+        protected EmployeeDocumentService $documentService
+    ) {}
+
     /**
      * Terminate/delete an employee and remove their linked staff login.
      *
@@ -33,7 +38,7 @@ class TerminateEmployeeAction
         $linkedLoginSnapshot = $linkedLogin ? HRWorkflowHelper::buildStaffAccessSnapshot($linkedLogin) : null;
 
         if ($linkedLogin && !$actor->canDeleteStaffAccounts()) {
-            abort(403, 'Only the shop owner or a user with editable People & Payroll access can remove staff login accounts.');
+            abort(403, 'Only the shop owner or a user with editable Employees & Payroll access can remove staff login accounts.');
         }
 
         if ($actor->isStaff() && $linkedLogin && $linkedLogin->id === $actor->id) {
@@ -44,7 +49,11 @@ class TerminateEmployeeAction
             abort(403, 'Only the Shop Owner can manage owner accounts.');
         }
 
-        DB::transaction(function () use ($employee, $linkedLogin) {
+        $documentPaths = [];
+
+        DB::transaction(function () use ($employee, $linkedLogin, &$documentPaths) {
+            $documentPaths = $this->documentService->deleteAllRecordsForEmployee($employee);
+
             if ($linkedLogin) {
                 $linkedLogin->update([
                     'suspended_at' => now(),
@@ -55,6 +64,10 @@ class TerminateEmployeeAction
 
             $employee->delete();
         });
+
+        if (!empty($documentPaths)) {
+            $this->documentService->deleteStoredFiles($documentPaths);
+        }
 
         if ($linkedLoginSnapshot !== null) {
             HRWorkflowHelper::recordStaffAccessAudit($seller, $actor, 'login_removed', $employee, null, [

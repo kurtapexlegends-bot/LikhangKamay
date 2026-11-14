@@ -38,6 +38,38 @@ return [
             'report' => false,
         ],
 
+        'private' => env('PRIVATE_DISK_DRIVER', env('FILESYSTEM_DISK', 'local')) === 's3' ? [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AWS_PRIVATE_BUCKET', env('AWS_BUCKET')),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ] : [
+            'driver' => 'local',
+            'root' => env('FILESYSTEM_LOCAL_ROOT', storage_path('app/private')),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        's3_private' => [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AWS_PRIVATE_BUCKET', env('AWS_BUCKET')),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => env('PUBLIC_DISK_DRIVER', env('FILESYSTEM_DISK', 'local')) === 's3' ? [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

@@ -1104,6 +1104,12 @@ class StaffAttendanceService
                 'driver_license_number' => $employee->driver_license_number,
                 'driver_license_photo_path' => $employee->driver_license_photo_path,
                 'driver_license_photo_url' => $employee->driver_license_photo_path ? StorageUrl::url($employee->driver_license_photo_path) : null,
+                'documents' => $employee->relationLoaded('documents')
+                    ? $employee->documents->map(fn (\App\Models\EmployeeDocument $doc) => $doc->serializeForHr())->values()->all()
+                    : [],
+                'documents_count' => (int) ($employee->documents_count ?? ($employee->relationLoaded('documents')
+                    ? $employee->documents->count()
+                    : 0)),
                 'delivery_compensation_type' => $employee->delivery_compensation_type ?: 'salary',
                 'delivery_fee_rate' => $employee->delivery_fee_rate,
                 'has_login_account' => $supportsEmployeeLoginLinks && (bool) $loginAccount,

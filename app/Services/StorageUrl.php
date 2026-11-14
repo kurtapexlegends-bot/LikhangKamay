@@ -56,18 +56,30 @@ class StorageUrl
     }
 
     /**
-     * Safely delete a file from the active storage disk.
+     * Resolve the private storage disk for sensitive KYC / HR documents.
      */
-    public static function delete(?string $path): bool
+    public static function privateDisk(): string
+    {
+        $defaultDisk = (string) config('filesystems.default', 'local');
+        $privateDriver = (string) config('filesystems.disks.private.driver', 'local');
+
+        return ($defaultDisk === 's3' || $privateDriver === 's3') ? 's3_private' : 'private';
+    }
+
+    /**
+     * Safely delete a file from the active (or specified) storage disk.
+     */
+    public static function delete(?string $path, ?string $disk = null): bool
     {
         if (empty($path)) {
             return false;
         }
 
         $cleanPath = preg_replace('#^/?storage/#', '', $path);
+        $targetDisk = $disk ?: self::disk();
 
         try {
-            return Storage::disk(self::disk())->delete($cleanPath);
+            return Storage::disk($targetDisk)->delete($cleanPath);
         } catch (\Throwable $e) {
             return false;
         }

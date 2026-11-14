@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Core;
 
 use App\Http\Controllers\Controller;
+use App\Services\StorageUrl;
+use App\Support\HRWorkflowHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -17,12 +19,19 @@ class UploadPresignController extends Controller
         'returns',
         'shops',
         'avatars',
+        'employee_documents',
     ];
 
     private const ALLOWED_EXTENSIONS = [
         'jpg', 'jpeg', 'png', 'webp', 'pdf',
         'glb', 'gltf', 'bin',
     ];
+
+    private const PRIVATE_DOCUMENT_EXTENSIONS = [
+        'jpg', 'jpeg', 'png', 'webp', 'pdf',
+    ];
+
+    private const MAX_PRIVATE_DOCUMENT_BYTES = 4 * 1024 * 1024;
 
     /**
      * Generate a presigned direct-to-cloud upload URL or local upload route.
@@ -38,8 +47,26 @@ class UploadPresignController extends Controller
         $folder = trim($validated['folder'], '/');
         $filename = $validated['filename'];
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $isPrivateDocument = $folder === 'employee_documents';
 
-        if (!in_array($extension, self::ALLOWED_EXTENSIONS, true)) {
+        if ($isPrivateDocument) {
+            $user = $request->user();
+            if (
+                !$user
+                || (!$user->canManageStaff() && !$user->canAccessSellerModule('hr'))
+                || !HRWorkflowHelper::canEditHrRecords($user)
+            ) {
+                return response()->json([
+                    'error' => 'Unauthorized to upload employee documents.',
+                ], 403);
+            }
+
+            if (!in_array($extension, self::PRIVATE_DOCUMENT_EXTENSIONS, true)) {
+                return response()->json([
+                    'error' => 'Employee documents only allow JPG, PNG, WEBP, or PDF files.',
+                ], 422);
+            }
+        } elseif (!in_array($extension, self::ALLOWED_EXTENSIONS, true)) {
             return response()->json([
                 'error' => 'Unsupported file extension for direct upload.',
             ], 422);
@@ -52,15 +79,23 @@ class UploadPresignController extends Controller
             $contentType = 'model/gltf+json';
         }
 
-        $key = $folder . '/' . Str::uuid() . '.' . $extension;
-        $driver = config('filesystems.disks.public.driver');
+        if ($isPrivateDocument) {
+            $sellerId = $request->user()->getEffectiveSellerId();
+            $key = $folder . '/' . $sellerId . '/' . Str::uuid() . '.' . $extension;
+            $diskName = StorageUrl::privateDisk();
+        } else {
+            $key = $folder . '/' . Str::uuid() . '.' . $extension;
+            $diskName = 'public';
+        }
+
+        $driver = config("filesystems.disks.{$diskName}.driver");
 
         /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
-        $disk = Storage::disk('public');
+        $disk = Storage::disk($diskName);
 
         if ($driver === 's3') {
             $client = $disk->getClient();
-            $bucket = config('filesystems.disks.public.bucket');
+            $bucket = config("filesystems.disks.{$diskName}.bucket");
             $command = $client->getCommand('PutObject', [
                 'Bucket' => $bucket,
                 'Key' => $key,
@@ -75,6 +110,7 @@ class UploadPresignController extends Controller
         return response()->json([
             'url' => $url,
             'key' => $key,
+            'disk' => $diskName,
             'contentType' => $contentType,
             'is_direct_cloud' => $driver === 's3',
         ]);
@@ -103,17 +139,42 @@ class UploadPresignController extends Controller
             return response()->json(['error' => 'Storage key is outside allowed upload directories.'], 403);
         }
 
+        $isPrivateDocument = str_starts_with($key, 'employee_documents/');
+        if ($isPrivateDocument) {
+            $user = $request->user();
+            $sellerId = $user?->getEffectiveSellerId();
+            if (
+                !$user
+                || !$sellerId
+                || (!$user->canManageStaff() && !$user->canAccessSellerModule('hr'))
+                || !HRWorkflowHelper::canEditHrRecords($user)
+                || !str_starts_with($key, 'employee_documents/' . $sellerId . '/')
+            ) {
+                return response()->json(['error' => 'Unauthorized storage key for employee documents.'], 403);
+            }
+
+            $extension = strtolower(pathinfo($key, PATHINFO_EXTENSION));
+            if (!in_array($extension, self::PRIVATE_DOCUMENT_EXTENSIONS, true)) {
+                return response()->json(['error' => 'Unsupported file extension for employee documents.'], 422);
+            }
+        }
+
         $content = $request->getContent();
         if ($content === false || $content === '') {
             return response()->json(['error' => 'No content received in upload stream.'], 400);
         }
 
-        Storage::disk('public')->put($key, $content);
+        if ($isPrivateDocument && strlen($content) > self::MAX_PRIVATE_DOCUMENT_BYTES) {
+            return response()->json(['error' => 'Employee document exceeds 4MB limit.'], 422);
+        }
+
+        $diskName = $isPrivateDocument ? StorageUrl::privateDisk() : 'public';
+        Storage::disk($diskName)->put($key, $content);
 
         return response()->json([
             'success' => true,
             'key' => $key,
-            'url' => Storage::disk('public')->url($key),
+            'url' => $isPrivateDocument ? null : Storage::disk('public')->url($key),
         ]);
     }
 }
