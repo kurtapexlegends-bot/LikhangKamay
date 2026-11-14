@@ -130,6 +130,7 @@ All order operations are processed through dedicated single-responsibility Actio
 *   **Support Utilities**: [PersonName.php](file:///c:/laragon/www/LikhangKamay/app/Support/PersonName.php) helper.
 *   **Suspension / Banning**: Enforces direct account bans and disables staff access using the `banned_at` column.
 *   **Subscription Period Fields**: `subscription_expires_at` (expiry timestamp for active tier benefits), `subscription_cancelled_at` (timestamp when auto-renewal cancellation was requested), and `pending_downgrade_tier` (target tier upon period expiration).
+*   **Walk-In POS & Supervisor Security Fields**: `pos_gcash_qr_path`, `pos_maya_qr_path` (workshop e-wallet QR paths on shop owners), `pos_void_pin` (hashed 6-digit personal void authorization PIN), and `pos_void_pin_updated_at` (PIN update timestamp), alongside `orders.order_type` (`'online'` | `'pos_walkin'`), `orders.pos_location_id`, `orders.pos_processed_by_user_id`, `orders.pos_cash_tendered`, `orders.pos_change_amount`, and `orders.pos_payment_reference`.
 
 ### Related User Models & Preferences
 *   [FollowedShop.php](file:///c:/laragon/www/LikhangKamay/app/Models/FollowedShop.php): Tracks buyer subscriptions and follows to artisan shop profiles.

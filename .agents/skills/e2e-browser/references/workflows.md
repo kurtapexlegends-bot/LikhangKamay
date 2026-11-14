@@ -119,7 +119,13 @@
 6. **Review Engagement (`/reviews`):**
    - Reply (`POST /reviews/{id}/reply`), delete reply (`DELETE /reviews/{id}/reply`), re-reply, and pin (`POST /reviews/{id}/toggle-pin`).
 7. **Ledger & Data Exports:** Verify CSV exports stream cleanly without 500 error: `/orders/export`, `/analytics/export`, `/accounting/export`, `/audit-log/export`.
-8. **Session Evacuation:** Execute Session Evacuation Protocol.
+8. **Walk-In POS Terminal, Paginated History & 6-Digit Supervisor Void PIN (`/seller/pos`, `/profile`, `/orders?status=Walk-In`, `/accounting`):**
+   - Configure personal 6-digit Void PIN (`PUT /profile/pos-void-pin` via `UpdatePosVoidPinForm.jsx`), verify `/seller/pos` opens smoothly across all subscription tiers (`standard`, `premium`, `super_premium`).
+   - Add catalog product (verify promo stock & split-tier pricing if discounted), select `Cash` / `GCash` / `Maya`, click `Charge` -> `Complete Sale` (`POST /seller/pos/checkout`), verify BOM deduction & 80mm receipt modal (`/seller/pos/{order}/receipt`).
+   - Open `History` drawer (`PosRecentSalesDrawer.jsx`), assert paginated server fetch (`GET /seller/pos/history`) across `All Payments` (`POS Cash`, `POS GCash`, `POS Maya`), flexible dates (`Yesterday`, `Specific Date`, `Custom Range`), and location isolation (`All Branches` owner-only; branch-scoped for managers/accounting).
+   - Authorize void (`POST /seller/pos/{order}/void`) with supervisor dropdown + 6-digit PIN + min 5-char reason; verify stock reversal and `'owner'`/`'artisan'` actor attribution.
+   - Verify `/orders` `Walk-In` tab filter (`status=Walk-In` / `payment_method=pos`) and `/accounting` `SalesChannelBreakdown` (`System Online:` vs `Walk-In POS:`) + settlement inclusion.
+9. **Session Evacuation:** Execute Session Evacuation Protocol.
 
 ---
 

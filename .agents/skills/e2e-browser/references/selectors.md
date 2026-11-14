@@ -82,6 +82,17 @@ This reference eliminates blind accessibility tree dumps by providing pre-verifi
 - **Driver Deliveries Complete Button:** `button:has-text("Confirm Delivery")`
 - **Driver Proof of Delivery (POD) Input:** `input[name="pod_photo"]`, `input[type="file"][accept*="image"]`
 
+### Walk-In POS Terminal, Void PIN & Accounting Sales Breakdown
+- **Seller Walk-In POS Link (`/seller/pos`):** `a[href*="/seller/pos"]`, `button:has-text("Charge")`
+- **POS Customer & Payment Inputs:** `input[placeholder*="Walk-In Guest"]`, `button:has-text("Cash")`, `button:has-text("GCash")`, `button:has-text("Maya")`
+- **POS Payment Confirmation Modal (`PosPaymentModal.jsx`):** `button:has-text("Complete Sale")`
+- **POS Utility Buttons (`PosProductGrid.jsx`):** `button:has-text("History")`, `button:has-text("QR Setup")`
+- **POS History Drawer Filters (`PosRecentSalesDrawer.jsx`):** `select[aria-label="Filter by payment method"]`, `select[aria-label="Filter by date range"]`, `select[aria-label="Filter by branch"]`, `input[aria-label="Select specific date"]`, `button:has-text("Reset")`
+- **Supervisor Void Authorization Box (`PosVoidAuthorizationBox.jsx`):** `button:has-text("Void")`, `input[placeholder="••••••"]`, `input[placeholder*="Min 5 chars"]`, `a[href*="/profile"]` (`Set up Void PIN in Profile Settings`)
+- **Profile 6-Digit Void PIN Setup (`UpdatePosVoidPinForm.jsx`):** Section `"Walk-In POS Void PIN"`, `put(route('profile.pos-void-pin.update'))`
+- **Orders Walk-In Tab & 80mm Receipt (`OrderManager.jsx`, `OrderHeader.jsx`):** `button:has-text("Walk-In")`, `select` option `"Walk-In POS (Cash, GCash, Maya)"`, `a:has-text("80mm")`
+- **Accounting Sales Channel Breakdown (`SalesChannelBreakdown.jsx`):** `button:has-text("System Online:")`, `button:has-text("Walk-In POS:")`
+
 ### Dispute, Return Criteria & Review Operations
 - **Buyer Request Return Button:** `button:has-text("Return")`
 - **Return Modal Claim Reason Radio (`ReturnCriteriaFields.jsx`):** `input[name="damage_reason_code"]`

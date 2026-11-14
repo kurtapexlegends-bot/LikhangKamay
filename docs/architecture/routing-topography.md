@@ -77,7 +77,9 @@ Protected under `auth`:
 
 ### Seller Management Modules
 Protected under `seller.workspace` and feature-toggled via `seller.module`:
-*   **Orders Dashboard**: `/orders` (Module: `orders`)
+*   **Orders Dashboard**: `/orders` (Module: `orders`, supports `Walk-In` status filter and `pos` payment filter)
+*   **Walk-In POS Terminal**: `/seller/pos` (`seller.pos.index`), `/seller/pos/history` (`seller.pos.history`), `POST /seller/pos/checkout` (`seller.pos.store`), `POST /seller/pos/{order}/void` (`seller.pos.void`), `POST /seller/pos/qr-settings` (`seller.pos.qr-settings`), `GET /seller/pos/{order}/receipt` (`seller.pos.receipt`) (Module: `orders`, available across all subscription tiers)
+*   **Profile Supervisor Void PIN**: `PUT /profile/pos-void-pin` (`profile.pos-void-pin.update`) handled by [ProfileController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Core/ProfileController.php) (`staff.security` exempted from single prefix block alongside shared profile updates)
 *   **Financial & Performance Analytics**: `/analytics` (Module: `analytics`)
 *   **Inventory & Products**: `/products` (Module: `products`)
 *   **Product Markdowns (Elite)**: `/discounts` (Module: `discounts`, `discounts.*`)
