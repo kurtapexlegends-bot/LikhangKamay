@@ -123,6 +123,20 @@ class UploadPresignTest extends TestCase
             'contentType' => 'model/gltf-binary',
         ])->assertStatus(422);
 
+        // Reject spoofed HTML content type even with .jpg extension
+        $this->actingAs($sellerOwner)->postJson(route('api.uploads.presign'), [
+            'folder' => 'employee_documents',
+            'filename' => 'id.jpg',
+            'contentType' => 'text/html',
+        ])->assertStatus(422);
+
+        // Normalize image/jpg -> image/jpeg
+        $this->actingAs($sellerOwner)->postJson(route('api.uploads.presign'), [
+            'folder' => 'employee_documents',
+            'filename' => 'id.jpg',
+            'contentType' => 'image/jpg',
+        ])->assertOk()->assertJsonPath('contentType', 'image/jpeg');
+
         $presign = $this->actingAs($sellerOwner)->postJson(route('api.uploads.presign'), [
             'folder' => 'employee_documents',
             'filename' => 'nbi-clearance.pdf',

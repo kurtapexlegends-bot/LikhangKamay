@@ -49,6 +49,7 @@ test('resolveEmployeeDocumentContentType infers fallback MIME from extension whe
     assert.equal(resolveEmployeeDocumentContentType({ name: 'a.png', type: '' }), 'image/png');
     assert.equal(resolveEmployeeDocumentContentType({ name: 'a.webp', type: '' }), 'image/webp');
     assert.equal(resolveEmployeeDocumentContentType({ name: 'a.jpg', type: 'image/jpeg' }), 'image/jpeg');
+    assert.equal(resolveEmployeeDocumentContentType({ name: 'a.jpg', type: 'image/jpg' }), 'image/jpeg');
 });
 
 test('uploadEmployeeDocumentToPresign uses fetch PUT for direct cloud and axios.put for local fallback', async () => {

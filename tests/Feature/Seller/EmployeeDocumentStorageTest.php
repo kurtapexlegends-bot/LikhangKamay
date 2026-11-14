@@ -464,6 +464,36 @@ class EmployeeDocumentStorageTest extends TestCase
         $this->assertSame('image/png', $doc->mime_type);
     }
 
+    public function test_presigned_upload_rejects_spoofed_binary_with_invalid_magic_bytes(): void
+    {
+        $privateDisk = StorageUrl::privateDisk();
+        Storage::fake($privateDisk);
+        $owner = $this->createOwnerWithHrAccess();
+        $employee = Employee::create([
+            'user_id' => $owner->id,
+            'name' => 'Maya Lim',
+            'role' => 'Potter',
+            'salary' => 15000,
+            'status' => 'Active',
+            'join_date' => now()->toDateString(),
+        ]);
+
+        $key = "employee_documents/{$owner->id}/spoofed-file.jpg";
+        // Random binary payload that is neither JPEG, PNG, WEBP, nor PDF
+        Storage::disk($privateDisk)->put($key, "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09");
+
+        $this->actingAs($owner)
+            ->post(route('hr.employees.documents.store', $employee->id), [
+                'document_type' => EmployeeDocument::TYPE_VALID_ID,
+                'document_key' => $key,
+                'original_filename' => 'spoofed-file.jpg',
+            ])
+            ->assertSessionHasErrors(['document_key']);
+
+        $this->assertDatabaseCount('employee_documents', 0);
+        Storage::disk($privateDisk)->assertMissing($key);
+    }
+
     private function createOwnerWithHrAccess(): User
     {
         $owner = User::factory()->artisanApproved()->create([
