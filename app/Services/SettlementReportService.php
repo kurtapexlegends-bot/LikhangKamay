@@ -38,8 +38,9 @@ class SettlementReportService
         $voucherDiscounts = (float) $completedOrders->sum('voucher_discount_amount');
         $ordersCount = $completedOrders->count();
 
-        $codOrders = $completedOrders->where('payment_method', 'COD');
-        $onlineOrders = $completedOrders->where('payment_method', '!=', 'COD');
+        $directCollectedMethods = ['COD', 'POS Cash', 'POS GCash', 'POS Maya'];
+        $codOrders = $completedOrders->filter(fn ($order) => in_array($order->payment_method, $directCollectedMethods, true) || $order->isPosWalkIn());
+        $onlineOrders = $completedOrders->reject(fn ($order) => in_array($order->payment_method, $directCollectedMethods, true) || $order->isPosWalkIn());
 
         $codSales = (float) $codOrders->sum('seller_net_amount');
         $onlineSales = (float) $onlineOrders->sum('seller_net_amount');

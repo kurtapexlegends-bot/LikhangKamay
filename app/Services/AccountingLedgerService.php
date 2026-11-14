@@ -11,6 +11,25 @@ use Illuminate\Support\Facades\DB;
 
 class AccountingLedgerService
 {
+    public static function normalizeCalendarDate(mixed $rawDate): string
+    {
+        if (!is_string($rawDate)) {
+            return '';
+        }
+
+        $trimmed = trim($rawDate);
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $trimmed)) {
+            return '';
+        }
+
+        $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d', $trimmed);
+        if (!$parsed || $parsed->format('Y-m-d') !== $trimmed) {
+            return '';
+        }
+
+        return $trimmed;
+    }
+
     public function getLedgerData(
         User $seller,
         string $tab,
@@ -18,12 +37,18 @@ class AccountingLedgerService
         string $search,
         string $ledgerStatus = 'all',
         string $startDate = '',
-        string $endDate = ''
+        string $endDate = '',
+        string $paymentChannel = 'all'
     ): array {
+        $startDate = self::normalizeCalendarDate($startDate);
+        $endDate = self::normalizeCalendarDate($endDate);
+
         $financials = $this->buildFinancialSnapshot($seller);
+        $channelBreakdown = $this->buildChannelBreakdown($seller, $startDate, $endDate);
+        $normalizedChannel = $this->normalizePaymentChannel($paymentChannel);
 
         if ($tab === 'pending') {
-            $pendingQuery = $this->buildLedgerQuery($seller, 'pending', $type, $search, $ledgerStatus, $startDate, $endDate);
+            $pendingQuery = $this->buildLedgerQuery($seller, 'pending', $type, $search, $ledgerStatus, $startDate, $endDate, $normalizedChannel);
             $pendingPaginator = $pendingQuery->paginate(10, ['*'], 'page_pending');
             $serializedPending = $this->enrichAndSerializeLedger($pendingPaginator->getCollection(), $seller, $financials['balance']);
             $pendingPaginator->setCollection(collect($serializedPending));
@@ -34,7 +59,7 @@ class AccountingLedgerService
                 'query' => request()->query()
             ]);
         } else {
-            $historyQuery = $this->buildLedgerQuery($seller, 'history', $type, $search, $ledgerStatus, $startDate, $endDate);
+            $historyQuery = $this->buildLedgerQuery($seller, 'history', $type, $search, $ledgerStatus, $startDate, $endDate, $normalizedChannel);
             $historyPaginator = $historyQuery->paginate(10, ['*'], 'page_history');
             $serializedHistory = $this->enrichAndSerializeLedger($historyPaginator->getCollection(), $seller, $financials['balance']);
             $historyPaginator->setCollection(collect($serializedHistory));
@@ -49,6 +74,7 @@ class AccountingLedgerService
         return [
             'pendingRequests' => $pendingPaginator,
             'history' => $historyPaginator,
+            'channelBreakdown' => $channelBreakdown,
             'finances' => [
                 'baseFunds' => $financials['base_funds'],
                 'revenue' => $financials['revenue'],
@@ -114,7 +140,10 @@ class AccountingLedgerService
         $codRevenue = (float) Order::where('artisan_id', $userId)
             ->when(!$isTest, fn($q) => $q->where('is_test', \App\Casts\PostgresCompatibleBoolean::dbVal(false)))
             ->where('status', 'Completed')
-            ->where('payment_method', 'COD')
+            ->where(function ($q) {
+                $q->whereIn('payment_method', ['COD', 'POS Cash', 'POS GCash', 'POS Maya'])
+                    ->orWhere('order_type', Order::TYPE_POS_WALKIN);
+            })
             ->sum('seller_net_amount');
 
         $onlineRevenue = max(0.00, $totalRevenue - $codRevenue);
@@ -144,7 +173,8 @@ class AccountingLedgerService
         string $searchQuery,
         string $ledgerStatus = 'all',
         string $startDate = '',
-        string $endDate = ''
+        string $endDate = '',
+        string $paymentChannel = 'all'
     ) {
         $hasSearch = !empty($searchQuery);
 
@@ -160,7 +190,9 @@ class AccountingLedgerService
                 $hasSearch ? 'users.role as requester_role' : DB::raw("NULL as requester_role"),
                 $hasSearch ? 'supplies.name as detail_name' : DB::raw("NULL as detail_name"),
                 $hasSearch ? 'supplies.category as detail_category' : DB::raw("NULL as detail_category"),
-                DB::raw("NULL as order_number")
+                DB::raw("NULL as order_number"),
+                DB::raw("NULL as payment_method"),
+                DB::raw("NULL as order_type")
             ])
             ->where('stock_requests.user_id', $seller->id);
 
@@ -194,7 +226,9 @@ class AccountingLedgerService
                 $hasSearch ? 'users.role as requester_role' : DB::raw("NULL as requester_role"),
                 'payrolls.month as detail_name',
                 DB::raw("NULL as detail_category"),
-                DB::raw("NULL as order_number")
+                DB::raw("NULL as order_number"),
+                DB::raw("NULL as payment_method"),
+                DB::raw("NULL as order_type")
             ])
             ->where('payrolls.user_id', $seller->id);
 
@@ -220,12 +254,19 @@ class AccountingLedgerService
                     'orders.seller_net_amount as amount',
                     'orders.customer_name as requester_name',
                     DB::raw("'buyer' as requester_role"),
-                    DB::raw("NULL as detail_name"),
+                    'orders.payment_method as detail_name',
                     DB::raw("NULL as detail_category"),
-                    'orders.order_number'
+                    'orders.order_number',
+                    'orders.payment_method',
+                    'orders.order_type'
                 ])
                 ->where('orders.artisan_id', $seller->id)
-                ->where('orders.status', 'Completed');
+                ->where('orders.status', 'Completed')
+                ->whereNull('orders.deleted_at');
+
+            if ($paymentChannel !== 'all') {
+                $this->applyPaymentChannelFilter($salesQuery, $paymentChannel);
+            }
         }
 
         $payoutQuery = DB::table('payouts')
@@ -240,7 +281,9 @@ class AccountingLedgerService
                 DB::raw("NULL as requester_role"),
                 'payouts.payout_method as detail_name',
                 'payouts.reference_number as detail_category',
-                DB::raw("NULL as order_number")
+                DB::raw("NULL as order_number"),
+                DB::raw("NULL as payment_method"),
+                DB::raw("NULL as order_type")
             ])
             ->where('payouts.user_id', $seller->id);
 
@@ -250,7 +293,11 @@ class AccountingLedgerService
             $payoutQuery->where('payouts.status', 'Completed');
         }
 
-        if ($typeFilter !== 'all') {
+        if ($paymentChannel !== 'all') {
+            $unionQuery = ($typeFilter === 'all' || $typeFilter === 'sale') && $salesQuery
+                ? $salesQuery
+                : $stockQuery->whereRaw('1 = 0');
+        } elseif ($typeFilter !== 'all') {
             if ($typeFilter === 'stock_request') {
                 $unionQuery = $stockQuery;
             } elseif ($typeFilter === 'payroll') {
@@ -301,12 +348,15 @@ class AccountingLedgerService
             }
         }
 
-        if (!empty($startDate)) {
-            $outerQuery->whereDate('created_at', '>=', $startDate);
+        $normalizedStartDate = self::normalizeCalendarDate($startDate);
+        $normalizedEndDate = self::normalizeCalendarDate($endDate);
+
+        if ($normalizedStartDate !== '') {
+            $outerQuery->whereDate('created_at', '>=', $normalizedStartDate);
         }
 
-        if (!empty($endDate)) {
-            $outerQuery->whereDate('created_at', '<=', $endDate);
+        if ($normalizedEndDate !== '') {
+            $outerQuery->whereDate('created_at', '<=', $normalizedEndDate);
         }
 
         if ($statusGroup === 'pending') {
@@ -505,6 +555,8 @@ class AccountingLedgerService
             'id' => $order->id,
             'type' => 'sale',
             'order_number' => $order->order_number,
+            'order_type' => $order->order_type,
+            'payment_method' => $order->payment_method,
             'status' => $order->status,
             'created_at' => $order->created_at?->toIso8601String(),
             'updated_at' => $order->updated_at?->toIso8601String(),
@@ -520,6 +572,8 @@ class AccountingLedgerService
                 'convenience_fee' => (float) $order->convenience_fee_amount,
                 'net_payout' => (float) $order->seller_net_amount,
                 'total_charged' => (float) $order->total_amount,
+                'payment_method' => $order->payment_method,
+                'order_type' => $order->order_type,
             ],
             'activity' => [
                 'requested_at' => $order->created_at?->toIso8601String(),
@@ -527,6 +581,108 @@ class AccountingLedgerService
                 'last_reviewed_at' => $order->updated_at?->toIso8601String(),
             ]
         ];
+    }
+
+    private function normalizePaymentChannel(?string $channel): string
+    {
+        $allowed = ['all', 'online_all', 'online_gcash', 'online_maya', 'online_cod', 'pos_all', 'pos_cash', 'pos_gcash', 'pos_maya'];
+        $clean = trim((string) $channel);
+
+        return in_array($clean, $allowed, true) ? $clean : 'all';
+    }
+
+    private function applyPaymentChannelFilter($query, string $channel): void
+    {
+        $posMethods = ['POS Cash', 'POS GCash', 'POS Maya'];
+
+        match ($channel) {
+            'online_all' => $query
+                ->where(fn ($q) => $q->whereNull('orders.order_type')->orWhere('orders.order_type', '!=', Order::TYPE_POS_WALKIN))
+                ->whereNotIn('orders.payment_method', $posMethods),
+            'online_gcash' => $query
+                ->where(fn ($q) => $q->whereNull('orders.order_type')->orWhere('orders.order_type', '!=', Order::TYPE_POS_WALKIN))
+                ->whereIn('orders.payment_method', ['GCash', 'GCash (PayMongo)']),
+            'online_maya' => $query
+                ->where(fn ($q) => $q->whereNull('orders.order_type')->orWhere('orders.order_type', '!=', Order::TYPE_POS_WALKIN))
+                ->whereIn('orders.payment_method', ['Maya', 'Maya (PayMongo)']),
+            'online_cod' => $query
+                ->where(fn ($q) => $q->whereNull('orders.order_type')->orWhere('orders.order_type', '!=', Order::TYPE_POS_WALKIN))
+                ->where('orders.payment_method', 'COD'),
+            'pos_all' => $query->where(fn ($q) => $q
+                ->where('orders.order_type', Order::TYPE_POS_WALKIN)
+                ->orWhereIn('orders.payment_method', $posMethods)),
+            'pos_cash' => $query->where('orders.payment_method', 'POS Cash'),
+            'pos_gcash' => $query->where('orders.payment_method', 'POS GCash'),
+            'pos_maya' => $query->where('orders.payment_method', 'POS Maya'),
+            default => null,
+        };
+    }
+
+    private function buildChannelBreakdown(User $seller, string $startDate = '', string $endDate = ''): array
+    {
+        $isTest = (bool) ($seller->is_test ?? false);
+        $normalizedStartDate = self::normalizeCalendarDate($startDate);
+        $normalizedEndDate = self::normalizeCalendarDate($endDate);
+
+        $rows = Order::query()
+            ->where('artisan_id', $seller->id)
+            ->when(!$isTest, fn ($q) => $q->where('is_test', \App\Casts\PostgresCompatibleBoolean::dbVal(false)))
+            ->where('status', Order::STATUS_COMPLETED)
+            ->when($normalizedStartDate !== '', fn ($q) => $q->whereDate('created_at', '>=', $normalizedStartDate))
+            ->when($normalizedEndDate !== '', fn ($q) => $q->whereDate('created_at', '<=', $normalizedEndDate))
+            ->selectRaw('order_type, payment_method, COUNT(*) as order_count, COALESCE(SUM(merchandise_subtotal), 0) as gross_sales, COALESCE(SUM(seller_net_amount), 0) as net_sales')
+            ->groupBy('order_type', 'payment_method')
+            ->get();
+
+        $channels = [
+            'all' => ['key' => 'all', 'label' => 'All Channels', 'group' => 'summary', 'count' => 0, 'gross' => 0.0, 'net' => 0.0],
+            'online_all' => ['key' => 'online_all', 'label' => 'Online Store Total', 'group' => 'online', 'count' => 0, 'gross' => 0.0, 'net' => 0.0],
+            'online_gcash' => ['key' => 'online_gcash', 'label' => 'System GCash', 'group' => 'online', 'count' => 0, 'gross' => 0.0, 'net' => 0.0],
+            'online_maya' => ['key' => 'online_maya', 'label' => 'System Maya', 'group' => 'online', 'count' => 0, 'gross' => 0.0, 'net' => 0.0],
+            'online_cod' => ['key' => 'online_cod', 'label' => 'System COD', 'group' => 'online', 'count' => 0, 'gross' => 0.0, 'net' => 0.0],
+            'pos_all' => ['key' => 'pos_all', 'label' => 'Walk-In POS Total', 'group' => 'pos', 'count' => 0, 'gross' => 0.0, 'net' => 0.0],
+            'pos_cash' => ['key' => 'pos_cash', 'label' => 'POS Cash', 'group' => 'pos', 'count' => 0, 'gross' => 0.0, 'net' => 0.0],
+            'pos_gcash' => ['key' => 'pos_gcash', 'label' => 'POS GCash', 'group' => 'pos', 'count' => 0, 'gross' => 0.0, 'net' => 0.0],
+            'pos_maya' => ['key' => 'pos_maya', 'label' => 'POS Maya', 'group' => 'pos', 'count' => 0, 'gross' => 0.0, 'net' => 0.0],
+        ];
+
+        $addTo = function (string $key, int $count, float $gross, float $net) use (&$channels): void {
+            $channels[$key]['count'] += $count;
+            $channels[$key]['gross'] = round($channels[$key]['gross'] + $gross, 2);
+            $channels[$key]['net'] = round($channels[$key]['net'] + $net, 2);
+        };
+
+        foreach ($rows as $row) {
+            $count = (int) $row->order_count;
+            $gross = (float) $row->gross_sales;
+            $net = (float) $row->net_sales;
+            $method = (string) ($row->payment_method ?? '');
+            $isPos = ($row->order_type === Order::TYPE_POS_WALKIN) || in_array($method, ['POS Cash', 'POS GCash', 'POS Maya'], true);
+
+            $addTo('all', $count, $gross, $net);
+
+            if ($isPos) {
+                $addTo('pos_all', $count, $gross, $net);
+                if ($method === 'POS Cash') {
+                    $addTo('pos_cash', $count, $gross, $net);
+                } elseif ($method === 'POS GCash') {
+                    $addTo('pos_gcash', $count, $gross, $net);
+                } elseif ($method === 'POS Maya') {
+                    $addTo('pos_maya', $count, $gross, $net);
+                }
+            } else {
+                $addTo('online_all', $count, $gross, $net);
+                if (in_array($method, ['GCash', 'GCash (PayMongo)'], true)) {
+                    $addTo('online_gcash', $count, $gross, $net);
+                } elseif (in_array($method, ['Maya', 'Maya (PayMongo)'], true)) {
+                    $addTo('online_maya', $count, $gross, $net);
+                } elseif ($method === 'COD') {
+                    $addTo('online_cod', $count, $gross, $net);
+                }
+            }
+        }
+
+        return $channels;
     }
 
     private function serializePayout(object $payout): array
@@ -737,7 +893,10 @@ class AccountingLedgerService
 
         $codSalesAggregates = Order::whereIn('artisan_id', $artisanIds)
             ->where('status', 'Completed')
-            ->where('payment_method', 'COD')
+            ->where(function ($q) {
+                $q->whereIn('payment_method', ['COD', 'POS Cash', 'POS GCash', 'POS Maya'])
+                    ->orWhere('order_type', Order::TYPE_POS_WALKIN);
+            })
             ->selectRaw('artisan_id, SUM(seller_net_amount) as cod_sales')
             ->groupBy('artisan_id')
             ->get()

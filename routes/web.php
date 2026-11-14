@@ -183,6 +183,9 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
         // PROFILE
         Route::get('/profile', [\App\Http\Controllers\Core\ProfileController::class, 'edit'])->name('profile.edit');
         Route::match(['patch', 'post'], '/profile', [\App\Http\Controllers\Core\ProfileController::class, 'update'])->name('profile.update');
+        Route::put('/profile/pos-void-pin', [\App\Http\Controllers\Core\ProfileController::class, 'updatePosVoidPin'])
+            ->middleware('throttle:6,1')
+            ->name('profile.pos-void-pin.update');
         Route::delete('/profile', [\App\Http\Controllers\Core\ProfileController::class, 'destroy'])->name('profile.destroy');
 
         // USER ADDRESSES
@@ -225,6 +228,13 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
     // SELLER ROUTES
     Route::middleware(['seller.workspace', 'staff.attendance', 'seller.compliance'])->group(function () {
+        Route::get('/seller/pos', [\App\Http\Controllers\Seller\PosOrderController::class, 'index'])->middleware('seller.module:orders')->name('seller.pos.index');
+        Route::get('/seller/pos/history', [\App\Http\Controllers\Seller\PosOrderController::class, 'history'])->middleware('seller.module:orders')->name('seller.pos.history');
+        Route::post('/seller/pos/checkout', [\App\Http\Controllers\Seller\PosOrderController::class, 'store'])->middleware('seller.module:orders')->name('seller.pos.store');
+        Route::post('/seller/pos/{order}/void', [\App\Http\Controllers\Seller\PosOrderController::class, 'void'])->middleware('seller.module:orders')->name('seller.pos.void');
+        Route::post('/seller/pos/qr-settings', [\App\Http\Controllers\Seller\PosOrderController::class, 'updateQrSettings'])->middleware('seller.module:orders')->name('seller.pos.qr-settings');
+        Route::get('/seller/pos/{order}/receipt', [\App\Http\Controllers\Seller\PosOrderController::class, 'receipt'])->middleware('seller.module:orders')->name('seller.pos.receipt');
+
         Route::get('/orders', [\App\Http\Controllers\Seller\SellerOrderController::class, 'index'])->middleware('seller.module:orders')->name('orders.index');
         Route::get('/orders/export', [\App\Http\Controllers\Seller\SellerOrderController::class, 'export'])->middleware('seller.module:orders')->name('orders.export'); // <--- Added
         Route::get('/orders/{id}/route-preview', [\App\Http\Controllers\Seller\SellerOrderController::class, 'routePreview'])->middleware('seller.module:orders')->name('orders.route-preview');

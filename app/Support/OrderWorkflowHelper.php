@@ -341,6 +341,21 @@ class OrderWorkflowHelper
             ]);
         };
 
+        if ($order->isPosWalkIn()) {
+            $cashierName = $order->relationLoaded('processedBy')
+                ? ($order->processedBy?->name ?: 'Studio Owner')
+                : 'Studio Staff';
+
+            $pushEntry(
+                'pos_walkin_completed',
+                $order->created_at,
+                'Walk-in POS sale completed',
+                trim("{$order->payment_method} • Recorded by {$cashierName}")
+            );
+
+            return $entries->values()->all();
+        }
+
         $pushEntry('order_placed', $order->created_at, 'Order placed', 'Buyer submitted the order.');
         $pushEntry('order_accepted', $order->accepted_at, 'Order accepted', 'Seller confirmed the order.');
 

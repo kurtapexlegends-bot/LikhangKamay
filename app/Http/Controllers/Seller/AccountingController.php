@@ -32,12 +32,19 @@ class AccountingController extends Controller
     public function index(Request $request)
     {
         $seller = $this->sellerOwner();
-        $search = $request->query('search', '');
-        $type = $request->query('type', 'all');
-        $ledgerStatus = $request->query('ledger_status', 'all');
-        $startDate = $request->query('start_date', '');
-        $endDate = $request->query('end_date', '');
-        $tab = $request->query('tab', 'pending');
+        $queryString = static function (string $key, string $default = '') use ($request): string {
+            $val = $request->query($key);
+
+            return is_scalar($val) ? trim((string) $val) : $default;
+        };
+
+        $search = $queryString('search', '');
+        $type = $queryString('type', 'all') ?: 'all';
+        $ledgerStatus = $queryString('ledger_status', 'all') ?: 'all';
+        $startDate = AccountingLedgerService::normalizeCalendarDate($request->query('start_date'));
+        $endDate = AccountingLedgerService::normalizeCalendarDate($request->query('end_date'));
+        $paymentChannel = $queryString('payment_channel', 'all') ?: 'all';
+        $tab = $queryString('tab', 'pending') ?: 'pending';
 
         $ledgerData = $this->ledgerService->getLedgerData(
             $seller,
@@ -46,7 +53,8 @@ class AccountingController extends Controller
             $search,
             $ledgerStatus,
             $startDate,
-            $endDate
+            $endDate,
+            $paymentChannel
         );
 
         return Inertia::render('Seller/Accounting/FundRelease', [
@@ -56,12 +64,14 @@ class AccountingController extends Controller
             'payrollHistory' => [], // Combined in history data list
             'salesHistory' => [], // Combined in history data list
             'finances' => $ledgerData['finances'],
+            'channelBreakdown' => $ledgerData['channelBreakdown'],
             'filters' => [
                 'search' => $search,
                 'type' => $type,
                 'ledger_status' => $ledgerStatus,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
+                'payment_channel' => $paymentChannel,
                 'tab' => $tab,
             ],
         ]);

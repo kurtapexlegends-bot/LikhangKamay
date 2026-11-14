@@ -18,8 +18,10 @@ class BOMDeductionService
      * @throws \Exception When insufficient materials are available
      * @return void
      */
-    public function deductForOrder(Order $order): void
+    public function deductForOrder(Order $order, ?int $actorUserId = null): void
     {
+        $resolvedActorId = $actorUserId ?: ($order->pos_processed_by_user_id ?: $order->artisan_id);
+
         // Guard idempotency: check if BOM was already deducted for this order
         $alreadyDeducted = SellerActivityLog::where('seller_owner_id', $order->artisan_id)
             ->where('module', 'procurement')
@@ -122,7 +124,7 @@ class BOMDeductionService
                     $suggestedQty = max(1, ($supply->max_stock ?? ($supply->min_stock * 2)) - $supply->quantity);
                     StockRequest::create([
                         'user_id' => $supply->user_id,
-                        'requested_by_user_id' => $order->artisan_id,
+                        'requested_by_user_id' => $resolvedActorId,
                         'supply_id' => $supply->id,
                         'quantity' => $suggestedQty,
                         'total_cost' => round($suggestedQty * (float) ($supply->unit_cost ?? 0), 2),
@@ -136,7 +138,7 @@ class BOMDeductionService
             // Log individual supply deduction audit
             SellerActivityLog::recordEvent([
                 'seller_owner_id' => $order->artisan_id,
-                'actor_user_id' => $order->artisan_id,
+                'actor_user_id' => $resolvedActorId,
                 'actor_type' => 'system',
                 'category' => 'inventory',
                 'module' => 'procurement',
@@ -160,7 +162,7 @@ class BOMDeductionService
         // Record master idempotency event
         SellerActivityLog::recordEvent([
             'seller_owner_id' => $order->artisan_id,
-            'actor_user_id' => $order->artisan_id,
+            'actor_user_id' => $resolvedActorId,
             'actor_type' => 'system',
             'category' => 'inventory',
             'module' => 'procurement',

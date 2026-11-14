@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Core;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\PosCheckoutService;
 use App\Support\PersonName;
 use App\Support\StructuredAddress;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -35,12 +36,20 @@ class ProfileController extends Controller
 
             // Workspace profile shell for seller owners, seller staff, and super admins.
             if (in_array($user->role, ['artisan', 'staff', 'super_admin'], true)) {
+                $canManagePosVoidPin = in_array($user->role, ['artisan', 'staff'], true)
+                    && app(PosCheckoutService::class)->canActorVoidPos($user);
+
                 return Inertia::render('Seller/Profile/Edit', [
                     'mustVerifyEmail' => $user instanceof MustVerifyEmail,
                     'status' => session('status'),
                     'addresses' => $user->addresses()->orderBy('is_default', 'desc')->get(),
                     'profileMode' => $user->role === 'artisan' ? 'owner' : 'personal',
                     'workspaceShell' => $user->role === 'super_admin' ? 'admin' : 'seller',
+                    'canManagePosVoidPin' => $canManagePosVoidPin,
+                    'hasPosVoidPin' => $canManagePosVoidPin && $user->hasPosVoidPin(),
+                    'posVoidPinUpdatedAt' => $canManagePosVoidPin
+                        ? $user->pos_void_pin_updated_at?->timezone('Asia/Manila')->format('M d, Y h:i A')
+                        : null,
                 ]);
             }
 
@@ -191,5 +200,29 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return Redirect::to('/')->with('status', 'Your account has been deactivated.');
+    }
+
+    public function updatePosVoidPin(Request $request, PosCheckoutService $posCheckoutService): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($posCheckoutService->canActorVoidPos($user), 403, 'Only Shop Owners, Shop Managers, or Accounting staff can set a POS Void PIN.');
+
+        $validated = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'pin' => ['required', 'digits:6', 'confirmed'],
+        ], [
+            'current_password.required' => 'Enter your account password to confirm.',
+            'current_password.current_password' => 'Your current account password does not match.',
+            'pin.required' => 'Enter a 6-digit POS Void PIN.',
+            'pin.digits' => 'The POS Void PIN must be exactly 6 numeric digits.',
+            'pin.confirmed' => 'PIN confirmation does not match.',
+        ]);
+
+        $posCheckoutService->updateUserVoidPin($user, $validated['pin'], [
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return Redirect::route('profile.edit')->with('success', 'POS Void PIN saved.');
     }
 }

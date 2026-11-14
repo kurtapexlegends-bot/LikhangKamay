@@ -5,6 +5,7 @@ namespace App\Actions\Seller\Orders;
 use App\Models\Order;
 use App\Models\OrderDelivery;
 use App\Models\User;
+use App\Services\AccountingLedgerService;
 use App\Services\OrderLogisticsService;
 use App\Services\OrderPaymentReconciliationService;
 use App\Services\StorageUrl;
@@ -42,7 +43,7 @@ class ListSellerOrders
         $hasB2BSupport = rescue(fn () => Schema::hasTable('order_items') && Schema::hasColumn('order_items', 'is_b2b_supply'), false);
 
         $query = Order::where('artisan_id', $sellerId)
-            ->with(['items.product.recipes.supply', 'user', 'delivery.events', 'dispute', 'artisan']);
+            ->with(['items.product.recipes.supply', 'user', 'processedBy:id,name', 'delivery.events', 'dispute', 'artisan']);
 
         if ($hasB2BSupport) {
             if (isset($filters['type']) && $filters['type'] === 'b2b') {
@@ -58,7 +59,7 @@ class ListSellerOrders
         $like = DB::connection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'like';
 
         $applySearchFilter = function ($q) use ($filters, $like) {
-            if (empty($filters['search'])) {
+            if (empty($filters['search']) || !is_scalar($filters['search'])) {
                 return;
             }
 
@@ -93,11 +94,14 @@ class ListSellerOrders
         $applySearchFilter($query);
 
         // Date range filters
-        if (!empty($filters['start_date'])) {
-            $query->whereDate('created_at', '>=', $filters['start_date']);
+        $startDate = AccountingLedgerService::normalizeCalendarDate($filters['start_date'] ?? null);
+        $endDate = AccountingLedgerService::normalizeCalendarDate($filters['end_date'] ?? null);
+
+        if ($startDate !== '') {
+            $query->whereDate('created_at', '>=', $startDate);
         }
-        if (!empty($filters['end_date'])) {
-            $query->whereDate('created_at', '<=', $filters['end_date']);
+        if ($endDate !== '') {
+            $query->whereDate('created_at', '<=', $endDate);
         }
 
         // Fetch tab counts for this artisan (with search and date filters applied, but status omitted)
@@ -108,11 +112,11 @@ class ListSellerOrders
 
         $applySearchFilter($countsQuery);
 
-        if (!empty($filters['start_date'])) {
-            $countsQuery->whereDate('created_at', '>=', $filters['start_date']);
+        if ($startDate !== '') {
+            $countsQuery->whereDate('created_at', '>=', $startDate);
         }
-        if (!empty($filters['end_date'])) {
-            $countsQuery->whereDate('created_at', '<=', $filters['end_date']);
+        if ($endDate !== '') {
+            $countsQuery->whereDate('created_at', '<=', $endDate);
         }
 
         $statusCounts = $countsQuery->select(['status', DB::raw('count(*) as count')])
@@ -126,6 +130,7 @@ class ListSellerOrders
             'Processing' => $statusCounts['Processing'] ?? 0,
             'Shipped' => $statusCounts['Shipped'] ?? 0,
             'To Pickup' => $statusCounts['Ready for Pickup'] ?? 0,
+            'Walk-In' => (clone $countsQuery)->where('order_type', Order::TYPE_POS_WALKIN)->count(),
             'Delivered' => $statusCounts['Delivered'] ?? 0,
             'Returns' => $statusCounts['Refund/Return'] ?? 0,
             'Completed' => $statusCounts['Completed'] ?? 0,
@@ -150,11 +155,13 @@ class ListSellerOrders
         ];
 
         // 2. Status Filter (Tab based) - Skip status restriction when performing an active search query
-        if (empty($filters['search']) && !empty($filters['status']) && $filters['status'] !== 'All') {
+        if ((empty($filters['search']) || !is_scalar($filters['search'])) && !empty($filters['status']) && is_scalar($filters['status']) && $filters['status'] !== 'All') {
             if ($filters['status'] === 'Cancelled') {
                 $query->whereIn('status', ['Cancelled', 'Rejected']);
             } elseif ($filters['status'] === 'To Pickup') {
                 $query->where('status', 'Ready for Pickup');
+            } elseif ($filters['status'] === 'Walk-In') {
+                $query->where('order_type', Order::TYPE_POS_WALKIN);
             } elseif ($filters['status'] === 'Returns') {
                 $query->where('status', 'Refund/Return');
             } else {
@@ -163,10 +170,15 @@ class ListSellerOrders
         }
 
         // 3. Payment Method Filter
-        if (!empty($filters['payment_method']) && $filters['payment_method'] !== 'all') {
-            $pm = strtolower($filters['payment_method']);
+        if (!empty($filters['payment_method']) && is_scalar($filters['payment_method']) && $filters['payment_method'] !== 'all') {
+            $pm = strtolower((string) $filters['payment_method']);
             if ($pm === 'paymongo') {
-                $query->where(function ($q) use ($like) {
+                $query->where(function ($oq) {
+                    $oq->whereNull('order_type')
+                        ->orWhere('order_type', '!=', Order::TYPE_POS_WALKIN);
+                })
+                ->whereNotIn('payment_method', ['POS Cash', 'POS GCash', 'POS Maya'])
+                ->where(function ($q) use ($like) {
                     $q->where('payment_method', $like, '%paymongo%')
                       ->orWhere('payment_method', $like, '%e-wallet%')
                       ->orWhere('payment_method', $like, '%gcash%')
@@ -182,14 +194,20 @@ class ListSellerOrders
                 $query->where(function ($q) use ($like) {
                     $q->where('payment_method', $like, '%manual%')
                       ->orWhere('payment_method', $like, '%cod%')
-                      ->orWhere('payment_method', $like, '%bank%');
+                      ->orWhere('payment_method', $like, '%bank%')
+                      ->orWhere('payment_method', 'POS Cash');
+                });
+            } elseif ($pm === 'pos') {
+                $query->where(function ($q) {
+                    $q->where('order_type', Order::TYPE_POS_WALKIN)
+                      ->orWhereIn('payment_method', ['POS Cash', 'POS GCash', 'POS Maya']);
                 });
             }
         }
 
         // 4. Fulfillment Type Filter
-        if (!empty($filters['fulfillment_type']) && $filters['fulfillment_type'] !== 'all') {
-            $ft = strtolower($filters['fulfillment_type']);
+        if (!empty($filters['fulfillment_type']) && is_scalar($filters['fulfillment_type']) && $filters['fulfillment_type'] !== 'all') {
+            $ft = strtolower((string) $filters['fulfillment_type']);
             if ($ft === 'lalamove') {
                 $query->whereHas('delivery', function ($q) {
                     $q->whereNotNull('external_order_id');
@@ -260,6 +278,7 @@ class ListSellerOrders
                 'id' => $order->order_number,
                 'db_id' => $order->id,
                 'order_number' => $order->order_number,
+                'order_type' => $order->order_type ?? Order::TYPE_ONLINE,
                 'date' => $order->created_at->format('M d, Y - h:i A'),
                 'customer' => $order->customer_name,
                 'customer_avatar' => $order->user?->avatar_url,
