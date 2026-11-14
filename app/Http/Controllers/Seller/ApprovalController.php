@@ -29,17 +29,22 @@ class ApprovalController extends Controller
             abort(403, 'Team Requests is available on Premium and Elite plans.');
         }
 
-        // Enforce owner-only or staff with executive access
-        if ($user->isStaff() && !$user->canEditSellerModule('overview') && !$user->isStaffManager()) {
+        // Enforce owner or Shop Manager access
+        if ($user->isStaff() && !$user->isStaffManager()) {
             abort(403, 'Unauthorized access to the approval hub.');
         }
 
         $filters = $request->only(['status', 'domain', 'search']);
         $filters['status'] = $filters['status'] ?? OwnerApproval::STATUS_PENDING;
+        $allowedDomains = $approvalService->getReviewableDomainsForUser($user);
+
+        if (!empty($filters['domain']) && !in_array($filters['domain'], $allowedDomains, true)) {
+            $filters['domain'] = '';
+        }
 
         try {
-            $approvals = $approvalService->getPaginatedApprovals($seller, $filters, 12);
-            $stats = $approvalService->getStats($seller);
+            $approvals = $approvalService->getPaginatedApprovals($seller, $filters, 12, $user);
+            $stats = $approvalService->getStats($seller, $user);
 
             return Inertia::render('Seller/Approvals/ApprovalManager', [
                 'approvals' => $approvals,
@@ -48,6 +53,8 @@ class ApprovalController extends Controller
                 'filters' => $filters,
                 'isElite' => $seller->isEliteTier(),
                 'isPremium' => $seller->isPremiumTier(),
+                'isOwnerReviewer' => $user->isSellerOwner(),
+                'allowedDomains' => $allowedDomains,
             ]);
         } catch (\Throwable $e) {
             Log::error('ApprovalController index error: ' . $e->getMessage(), [
@@ -57,9 +64,12 @@ class ApprovalController extends Controller
             $emptyPaginator = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 12);
             $emptyStats = [
                 'pending_count' => 0,
+                'owner_only_pending_count' => 0,
                 'approved_count' => 0,
                 'declined_count' => 0,
                 'active_staff_count' => 0,
+                'pending_exposure_amount' => 0.0,
+                'domain_counts' => [],
             ];
 
             return Inertia::render('Seller/Approvals/ApprovalManager', [
@@ -69,6 +79,8 @@ class ApprovalController extends Controller
                 'filters' => $filters,
                 'isElite' => $seller->isEliteTier(),
                 'isPremium' => $seller->isPremiumTier(),
+                'isOwnerReviewer' => $user->isSellerOwner(),
+                'allowedDomains' => $allowedDomains,
                 'load_error' => 'Unable to load approvals at this moment.',
             ]);
         }
@@ -86,12 +98,16 @@ class ApprovalController extends Controller
             abort(403, 'Team Requests is available on Premium and Elite plans.');
         }
 
-        if ($user->isStaff() && !$user->canEditSellerModule('overview') && !$user->isStaffManager()) {
+        if ($user->isStaff() && !$user->isStaffManager()) {
             abort(403, 'Only the shop owner or authorized managers can approve requests.');
         }
 
         if ($approval->seller_id !== $seller->id) {
             abort(403, 'This approval does not belong to your shop.');
+        }
+
+        if (!$approvalService->canReviewerActOnDomain($user, $approval->domain)) {
+            abort(403, 'Only the shop owner can approve this request category.');
         }
 
         if ($user->id === $approval->requester_id) {
@@ -123,12 +139,16 @@ class ApprovalController extends Controller
             abort(403, 'Team Requests is available on Premium and Elite plans.');
         }
 
-        if ($user->isStaff() && !$user->canEditSellerModule('overview') && !$user->isStaffManager()) {
+        if ($user->isStaff() && !$user->isStaffManager()) {
             abort(403, 'Only the shop owner or authorized managers can decline requests.');
         }
 
         if ($approval->seller_id !== $seller->id) {
             abort(403, 'This approval does not belong to your shop.');
+        }
+
+        if (!$approvalService->canReviewerActOnDomain($user, $approval->domain)) {
+            abort(403, 'Only the shop owner can decline this request category.');
         }
 
         if ($user->id === $approval->requester_id) {
@@ -169,7 +189,7 @@ class ApprovalController extends Controller
             abort(403, 'Batch approvals are exclusively available on the Elite plan.');
         }
 
-        if ($user->isStaff() && !$user->canEditSellerModule('overview') && !$user->isStaffManager()) {
+        if ($user->isStaff() && !$user->isStaffManager()) {
             abort(403, 'Only the shop owner or authorized managers can batch approve requests.');
         }
 

@@ -186,14 +186,24 @@ class DiscountController extends Controller
         $isPrivileged = $actor->isSellerOwner() || $actor->isStaffManager();
 
         if (!$isPrivileged) {
-            // Standard staff drafts discount as inactive and routes to Owner Approval Hub
+            // Standard staff drafts discount as inactive and routes all grouped campaigns to Team Requests
             $validated['is_active'] = false;
             $createdDiscounts = $this->discountService->createDiscounts($seller, $validated);
             $firstDiscount = $createdDiscounts[0] ?? null;
 
             if ($firstDiscount) {
-                $productIds = $firstDiscount->products()->pluck('products.id')->all();
-                $payload = $this->ownerApprovalService->buildDiscountPayload($firstDiscount, $productIds);
+                $discountIds = collect($createdDiscounts)->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+                $allProductIds = collect($createdDiscounts)
+                    ->flatMap(fn ($d) => $d->products()->pluck('products.id'))
+                    ->map(fn ($id) => (int) $id)
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                $payload = $this->ownerApprovalService->buildDiscountPayload($firstDiscount, $allProductIds);
+                $payload['mode'] = 'create';
+                $payload['discount_ids'] = $discountIds;
+                $payload['groups_count'] = count($discountIds);
 
                 $this->ownerApprovalService->submitRequest(
                     seller: $seller,
@@ -229,7 +239,64 @@ class DiscountController extends Controller
             abort(403, 'Unauthorized discount modification.');
         }
 
+        $actor = $request->user();
         $validated = $request->validated();
+        $isPrivileged = $actor->isSellerOwner() || $actor->isStaffManager();
+
+        if (!$isPrivileged) {
+            $previewDiscount = $discount->replicate();
+            $previewDiscount->name = $validated['name'] ?? $discount->name;
+            $previewDiscount->type = $validated['type'] ?? $discount->type;
+            $previewDiscount->value = isset($validated['value']) ? (float) $validated['value'] : $discount->value;
+            $previewDiscount->promo_stock = isset($validated['promo_stock']) ? (int) $validated['promo_stock'] : $discount->promo_stock;
+            $previewDiscount->start_at = $validated['start_at'] ?? $discount->start_at;
+            $previewDiscount->end_at = $validated['end_at'] ?? $discount->end_at;
+
+            $productIds = isset($validated['product_ids']) && is_array($validated['product_ids'])
+                ? array_values(array_map('intval', $validated['product_ids']))
+                : (isset($validated['items']) && is_array($validated['items'])
+                    ? array_values(array_map('intval', array_column($validated['items'], 'product_id')))
+                    : $discount->products()->pluck('products.id')->all());
+
+            $payload = $this->ownerApprovalService->buildDiscountPayload($previewDiscount, $productIds);
+            $payload['discount_id'] = $discount->id;
+            $payload['mode'] = 'update';
+            $payload['pending_update'] = $validated;
+
+            $existingPending = OwnerApproval::query()
+                ->where('seller_id', $seller->id)
+                ->where('domain', OwnerApproval::DOMAIN_DISCOUNT)
+                ->where('approvable_type', Discount::class)
+                ->where('approvable_id', $discount->id)
+                ->where('status', OwnerApproval::STATUS_PENDING)
+                ->first();
+
+            $title = 'Update Discount: ' . ($previewDiscount->name ?: 'Promotional Discount');
+            $summary = "Staff requested changes to {$title} ({$payload['discount_display']}).";
+
+            if ($existingPending) {
+                $existingPending->update([
+                    'requester_id' => $actor->id,
+                    'title' => $title,
+                    'summary' => $summary,
+                    'changes_payload' => $payload,
+                ]);
+                $this->ownerApprovalService->forgetPendingCountCache($seller->id);
+            } else {
+                $this->ownerApprovalService->submitRequest(
+                    seller: $seller,
+                    requester: $actor,
+                    domain: OwnerApproval::DOMAIN_DISCOUNT,
+                    title: $title,
+                    summary: $summary,
+                    approvable: $discount,
+                    payload: $payload
+                );
+            }
+
+            return redirect()->back()->with('success', 'Discount update submitted to shop owner for review.');
+        }
+
         $this->discountService->updateDiscount($discount, $validated);
 
         return redirect()->back()->with('success', 'Discount campaign updated successfully.');
@@ -240,10 +307,45 @@ class DiscountController extends Controller
      */
     public function destroy(Request $request, Discount $discount)
     {
-        $sellerId = $this->sellerOwnerId();
+        $seller = $this->sellerOwner();
+        $sellerId = $seller->id;
 
         if ($discount->user_id !== $sellerId) {
             abort(403, 'Unauthorized discount modification.');
+        }
+
+        $actor = $request->user();
+        $isPrivileged = $actor->isSellerOwner() || $actor->isStaffManager();
+
+        if (!$isPrivileged) {
+            $productIds = $discount->products()->pluck('products.id')->all();
+            $payload = $this->ownerApprovalService->buildDiscountPayload($discount, $productIds);
+            $payload['discount_id'] = $discount->id;
+            $payload['mode'] = 'deactivate';
+
+            $existingPending = OwnerApproval::query()
+                ->where('seller_id', $sellerId)
+                ->where('domain', OwnerApproval::DOMAIN_DISCOUNT)
+                ->where('approvable_type', Discount::class)
+                ->where('approvable_id', $discount->id)
+                ->where('status', OwnerApproval::STATUS_PENDING)
+                ->first();
+
+            if ($existingPending) {
+                return redirect()->back()->with('error', 'A pending review request already exists for this discount.');
+            }
+
+            $this->ownerApprovalService->submitRequest(
+                seller: $seller,
+                requester: $actor,
+                domain: OwnerApproval::DOMAIN_DISCOUNT,
+                title: 'Deactivate Discount: ' . ($discount->name ?: "Promo #{$discount->id}"),
+                summary: "Staff requested deactivating active promo ({$payload['discount_display']}).",
+                approvable: $discount,
+                payload: $payload
+            );
+
+            return redirect()->back()->with('success', 'Discount deactivation submitted for Shop Owner / Manager review.');
         }
 
         $this->discountService->deactivateDiscount($discount);

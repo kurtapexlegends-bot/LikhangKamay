@@ -44,14 +44,13 @@ class OwnerApprovalDecisionNotification extends Notification
             ? "Your request '{$this->approval->title}' was approved by {$this->reviewer->name}."
             : "Your request '{$this->approval->title}' was declined by {$this->reviewer->name}." . ($this->reason ? " Reason: {$this->reason}" : '');
 
-        $isRestrictedStaff = ($notifiable instanceof User) && $notifiable->isStaff() && !$notifiable->canEditSellerModule('overview');
-
         $url = match ($this->approval->domain) {
             OwnerApproval::DOMAIN_PROCUREMENT => route('stock-requests.index'),
             OwnerApproval::DOMAIN_HR_PAYROLL, OwnerApproval::DOMAIN_STAFF_RATE => route('hr.index'),
-            default => $isRestrictedStaff
-                ? route('dashboard')
-                : route('seller.approvals.index', ['status' => $this->status]),
+            OwnerApproval::DOMAIN_DISCOUNT => route('discounts.index'),
+            OwnerApproval::DOMAIN_REFUND => route('orders.index'),
+            OwnerApproval::DOMAIN_PRODUCT_DRAFT => route('products.index'),
+            default => route('seller.approvals.index', ['status' => $this->status]),
         };
 
         return [

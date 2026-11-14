@@ -75,7 +75,7 @@ class SellerSearchService
         }
 
         if ($user->canAccessSellerModule('approvals')) {
-            $results = array_merge($results, $this->searchSellerApprovals($sellerId, $query, $like));
+            $results = array_merge($results, $this->searchSellerApprovals($sellerId, $query, $like, $user));
         }
 
         if ($user->canAccessSellerModule('hr')) {
@@ -715,12 +715,18 @@ class SellerSearchService
             ])->toArray();
     }
 
-    public function searchSellerApprovals(int $sellerId, string $query, string $like): array
+    public function searchSellerApprovals(int $sellerId, string $query, string $like, ?\App\Models\User $viewer = null): array
     {
+        $allowedDomains = app(\App\Services\OwnerApprovalService::class)->getReviewableDomainsForUser($viewer);
+        if (empty($allowedDomains)) {
+            return [];
+        }
+
         return \App\Models\OwnerApproval::select([
                 'id', 'seller_id', 'requester_id', 'domain', 'title', 'summary', 'status', 'created_at'
             ])
             ->where('seller_id', $sellerId)
+            ->whereIn('domain', $allowedDomains)
             ->where(function ($q) use ($query, $like) {
                 $q->where('title', $like, "%{$query}%")
                     ->orWhere('summary', $like, "%{$query}%")

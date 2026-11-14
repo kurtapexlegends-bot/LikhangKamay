@@ -2,10 +2,12 @@
 
 namespace App\Actions\Seller\Catalog;
 
+use App\Models\OwnerApproval;
 use App\Models\Product;
 use App\Models\SellerActivityLog;
 use App\Services\Catalog\ProductMediaService;
 use App\Services\Catalog\ThreeDAssetService;
+use App\Services\OwnerApprovalService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -77,18 +79,49 @@ class UpdateProduct
 
         $existingSupplyLookupName = $product->name;
         $sellerId = $seller->id;
+        $actor = Auth::user();
+        $approvalService = app(OwnerApprovalService::class);
+        $priceChanged = round((float) $request->price, 2) !== round((float) $product->price, 2);
+        $costChanged = round((float) ($request->cost_price ?? 0), 2) !== round((float) ($product->cost_price ?? 0), 2);
+        $activatingToActive = $requestedStatus === 'Active' && $product->status !== 'Active';
+        $requiresOwnerProductApproval = $actor
+            && $actor->isStaff()
+            && !$actor->isStaffManager()
+            && ($seller->canManageStaff() || $seller->isPremiumTier())
+            && $approvalService->supportsOwnerApprovals()
+            && ($priceChanged || $costChanged || $activatingToActive);
 
-        DB::transaction(function () use ($product, $request, $validated, $requestedStatus, $sellerId, $existingSupplyLookupName, $before) {
-            $name = trim(strip_tags($request->name));
+        $livePrice = $requiresOwnerProductApproval ? (float) $product->price : (float) $request->price;
+        $liveCostPrice = $requiresOwnerProductApproval ? (float) ($product->cost_price ?? 0) : ($request->cost_price ?? 0);
+        $liveStatus = $requiresOwnerProductApproval ? $product->status : $requestedStatus;
 
-            $product->update([
-                'name' => $name,
-                'description' => $request->description,
-                'category' => $request->category,
-                'price' => $request->price,
-                'cost_price' => $request->cost_price ?? 0,
-                'stock' => $request->stock,
-                'status' => $requestedStatus,
+        $isContentUnchanged = !$request->hasFile('cover_photo')
+            && !$request->hasFile('gallery')
+            && !$request->hasFile('model_3d')
+            && trim(strip_tags((string) $request->name)) === $product->name
+            && trim(strip_tags((string) $request->description)) === trim(strip_tags((string) $product->description))
+            && (string) $request->category === (string) $product->category;
+
+        $shouldPreserveActiveStatus = $product->status === 'Active'
+            && ($requiresOwnerProductApproval || $isContentUnchanged);
+
+        $previousBypass = Product::$bypassReview;
+        if ($shouldPreserveActiveStatus) {
+            Product::$bypassReview = true;
+        }
+
+        try {
+            DB::transaction(function () use ($product, $request, $validated, $liveStatus, $livePrice, $liveCostPrice, $sellerId, $existingSupplyLookupName, $before) {
+                $name = trim(strip_tags($request->name));
+
+                $product->update([
+                    'name' => $name,
+                    'description' => $request->description,
+                    'category' => $request->category,
+                    'price' => $livePrice,
+                    'cost_price' => $liveCostPrice,
+                    'stock' => $request->stock,
+                    'status' => $liveStatus,
                 'clay_type' => $request->clay_type,
                 'glaze_type' => $request->glaze_type,
                 'firing_method' => $request->firing_method,
@@ -139,14 +172,37 @@ class UpdateProduct
                 'target_url' => route('products.index', ['highlight_product' => $product->id]),
                 'target_label' => 'Open Products',
             ]);
-        });
+            });
+        } finally {
+            Product::$bypassReview = $previousBypass;
+        }
 
         $product->refresh();
+
+        if ($requiresOwnerProductApproval && $actor) {
+            $action = $activatingToActive && !$priceChanged && !$costChanged ? 'publish' : 'price_update';
+            $approvalService->queueProductDraftRequest(
+                seller: $seller,
+                requester: $actor,
+                product: $product,
+                proposed: [
+                    'name' => $product->name,
+                    'category' => $product->category,
+                    'price' => (float) $request->price,
+                    'cost_price' => (float) ($request->cost_price ?? 0),
+                    'status' => $requestedStatus,
+                    'stock' => (int) $request->stock,
+                ],
+                action: $action,
+                notes: 'Product pricing or activation change submitted by staff.'
+            );
+        }
 
         return [
             'product' => $product,
             'requestedStatus' => $requestedStatus,
             'activationReadiness' => $activationReadiness,
+            'pendingOwnerApproval' => $requiresOwnerProductApproval,
         ];
     }
 

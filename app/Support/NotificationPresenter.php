@@ -417,14 +417,29 @@ class NotificationPresenter
     private static function resolveOwnerApprovalDecisionUrl(array $data, ?User $user): string
     {
         $domain = $data['domain'] ?? null;
-        $isRestrictedStaff = $user?->isStaff() && !$user->canEditSellerModule('overview');
 
-        if ($isRestrictedStaff) {
-            return match ($domain) {
-                'procurement' => route('stock-requests.index'),
-                'hr_payroll', 'staff_rate' => $user->canAccessSellerModule('hr') ? route('hr.index') : route('staff.dashboard'),
-                default => route('dashboard'),
+        if ($user?->isStaff()) {
+            $domainUrl = match ($domain) {
+                'procurement' => $user->canAccessSellerModule('stock_requests') ? route('stock-requests.index') : null,
+                'hr_payroll', 'staff_rate' => $user->canAccessSellerModule('hr') ? route('hr.index') : null,
+                'discount' => ($user->canAccessSellerModule('discounts') || $user->canAccessSellerModule('vouchers')) ? route('discounts.index') : null,
+                'refund' => $user->canAccessSellerModule('orders') ? route('orders.index') : null,
+                'product_draft' => $user->canAccessSellerModule('products') ? route('products.index') : null,
+                default => null,
             };
+
+            if ($domainUrl !== null) {
+                return $domainUrl;
+            }
+
+            if ($user->canAccessSellerModule('approvals')) {
+                return self::sanitizeFallbackUrl(
+                    $data['url'] ?? route('seller.approvals.index', ['status' => $data['status'] ?? 'pending']),
+                    $user
+                ) ?? route('staff.dashboard');
+            }
+
+            return route('staff.dashboard');
         }
 
         if ($user?->isArtisan()) {
@@ -435,16 +450,6 @@ class NotificationPresenter
                 $data['url'] ?? route('seller.approvals.index', ['status' => $data['status'] ?? 'pending']),
                 $user
             ) ?? route('seller.subscription');
-        }
-
-        if ($user?->isStaff()) {
-            if ($user->canAccessSellerModule('approvals')) {
-                return self::sanitizeFallbackUrl(
-                    $data['url'] ?? route('seller.approvals.index', ['status' => $data['status'] ?? 'pending']),
-                    $user
-                ) ?? route('staff.dashboard');
-            }
-            return route('staff.dashboard');
         }
 
         return $data['url'] ?? route('seller.approvals.index', ['status' => $data['status'] ?? 'pending']);

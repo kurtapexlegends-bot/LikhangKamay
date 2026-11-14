@@ -123,10 +123,24 @@ class SellerOrderController extends Controller
 
         $user = $request->user();
         $isStaff = $user->isStaff() && !$user->isSellerOwner();
+        $requiresOwnerApproval = $isStaff && ($request->action_type === 'refund' || !$user->isStaffManager());
 
-        if ($isStaff) {
+        if ($requiresOwnerApproval) {
             $approvalService = app(\App\Services\OwnerApprovalService::class);
             $sellerOwner = $this->sellerOwner();
+
+            $alreadyPending = \App\Models\OwnerApproval::query()
+                ->where('seller_id', $sellerOwner->id)
+                ->where('domain', \App\Models\OwnerApproval::DOMAIN_REFUND)
+                ->where('approvable_type', Order::class)
+                ->where('approvable_id', $order->id)
+                ->where('status', \App\Models\OwnerApproval::STATUS_PENDING)
+                ->exists();
+
+            if ($alreadyPending) {
+                return back()->with('error', "A return approval request is already pending owner review for Order #{$order->order_number}.");
+            }
+
             $actionLabel = $request->action_type === 'refund' ? 'Refund' : 'Replacement';
             $approvalService->submitRequest(
                 seller: $sellerOwner,

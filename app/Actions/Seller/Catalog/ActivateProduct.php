@@ -5,6 +5,7 @@ namespace App\Actions\Seller\Catalog;
 use App\Models\Product;
 use App\Models\SellerActivityLog;
 use App\Models\User;
+use App\Services\OwnerApprovalService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -31,6 +32,39 @@ class ActivateProduct
                 'type' => 'error',
                 'reason' => 'limit_reached',
                 'message' => 'You have reached your active products limit. Please upgrade your plan.',
+            ];
+        }
+
+        $actor = Auth::user();
+        $approvalService = app(OwnerApprovalService::class);
+        if (
+            $actor
+            && $actor->isStaff()
+            && !$actor->isStaffManager()
+            && ($seller->canManageStaff() || $seller->isPremiumTier())
+            && $approvalService->supportsOwnerApprovals()
+        ) {
+            $approvalService->queueProductDraftRequest(
+                seller: $seller,
+                requester: $actor,
+                product: $product,
+                proposed: [
+                    'name' => $product->name,
+                    'category' => $product->category,
+                    'price' => $product->price,
+                    'cost_price' => $product->cost_price,
+                    'status' => 'Active',
+                    'stock' => $product->stock,
+                ],
+                action: 'publish',
+                notes: 'Product activation submitted by staff for review.'
+            );
+
+            return [
+                'success' => true,
+                'type' => 'success',
+                'pendingOwnerApproval' => true,
+                'message' => 'Product submitted for Shop Owner or Manager approval before publishing.',
             ];
         }
 

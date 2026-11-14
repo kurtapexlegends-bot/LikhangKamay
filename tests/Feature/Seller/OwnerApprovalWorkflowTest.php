@@ -2,18 +2,24 @@
 
 namespace Tests\Feature\Seller;
 
+use App\Models\Category;
+use App\Models\Discount;
 use App\Models\Employee;
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\OwnerApproval;
 use App\Models\Payroll;
+use App\Models\Product;
 use App\Models\StaffAttendanceSession;
 use App\Models\StockRequest;
-use App\Models\Order;
 use App\Models\Supply;
 use App\Models\User;
 use App\Actions\Seller\HR\ProvisionStaffAccount;
+use App\Actions\Seller\HR\TerminateEmployeeAction;
 use App\Notifications\OwnerApprovalDecisionNotification;
 use App\Notifications\TeamRequestSubmittedNotification;
 use App\Services\OwnerApprovalService;
+use App\Services\Search\SellerSearchService;
 use App\Support\NotificationPresenter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -1125,5 +1131,688 @@ class OwnerApprovalWorkflowTest extends TestCase
         Cache::put($cacheKey, 5, 60);
         $this->approvalService->reject($approval2, $this->owner, 'Too high discount');
         $this->assertNull(Cache::get($cacheKey));
+    }
+
+    protected function createShopManagerForOwner(): User
+    {
+        $managerEmp = Employee::create([
+            'user_id' => $this->owner->id,
+            'name' => 'Shop Manager',
+            'role' => 'Shop Manager',
+            'salary' => 25000.00,
+            'status' => 'active',
+            'join_date' => now()->toDateString(),
+        ]);
+
+        $manager = User::factory()->staff($this->owner)->create([
+            'employee_id' => $managerEmp->id,
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'shop_manager',
+            'staff_module_permissions' => User::withWorkspaceAccessFlag(
+                User::withStaffUserLevelFlag([
+                    'products' => User::STAFF_ACCESS_PERMISSION_CAN_EDIT,
+                    'orders' => User::STAFF_ACCESS_PERMISSION_CAN_EDIT,
+                    'discounts' => User::STAFF_ACCESS_PERMISSION_CAN_EDIT,
+                    'marketing' => User::STAFF_ACCESS_PERMISSION_CAN_EDIT,
+                    'approvals' => User::STAFF_ACCESS_PERMISSION_CAN_EDIT,
+                ], User::STAFF_MANAGER_USER_LEVEL),
+                true
+            ),
+        ]);
+
+        StaffAttendanceSession::create([
+            'staff_user_id' => $manager->id,
+            'seller_owner_id' => $this->owner->id,
+            'attendance_date' => now(config('app.timezone'))->toDateString(),
+            'clock_in_at' => now(config('app.timezone'))->subHour(),
+            'last_heartbeat_at' => now(config('app.timezone')),
+            'worked_minutes' => 60,
+        ]);
+
+        return $manager;
+    }
+
+    public function test_shop_manager_scoped_to_discount_and_product_draft_only_in_approvals_hub_notifications_and_search(): void
+    {
+        Notification::fake();
+        $manager = $this->createShopManagerForOwner();
+
+        $payrollApproval = $this->approvalService->submitRequest(
+            $this->owner,
+            $this->staff,
+            OwnerApproval::DOMAIN_HR_PAYROLL,
+            'November Payroll Run (1st Half)',
+            'Payroll summary'
+        );
+
+        $procurementApproval = $this->approvalService->submitRequest(
+            $this->owner,
+            $this->staff,
+            OwnerApproval::DOMAIN_PROCUREMENT,
+            'Restock Clay Slip Batch',
+            'Clay restock summary'
+        );
+
+        $rateApproval = $this->approvalService->submitRequest(
+            $this->owner,
+            $this->staff,
+            OwnerApproval::DOMAIN_STAFF_RATE,
+            'Salary Update: Juan',
+            'Rate proposal'
+        );
+
+        $refundApproval = $this->approvalService->submitRequest(
+            $this->owner,
+            $this->staff,
+            OwnerApproval::DOMAIN_REFUND,
+            'Refund Order #ORD-9001',
+            'Cash refund request'
+        );
+
+        $discountApproval = $this->approvalService->submitRequest(
+            $this->owner,
+            $this->staff,
+            OwnerApproval::DOMAIN_DISCOUNT,
+            'Ber-Months Flash Promo',
+            '15% OFF stoneware'
+        );
+
+        Product::$bypassReview = true;
+        $draftProduct = Product::create([
+            'user_id' => $this->owner->id,
+            'sku' => 'MGR-DRAFT-01',
+            'name' => 'Draft Carved Vase',
+            'category' => 'Pottery & Ceramics',
+            'price' => 1200,
+            'cost_price' => 500,
+            'stock' => 10,
+            'status' => 'Draft',
+            'cover_photo_path' => 'products/covers/ready.jpg',
+            'gallery_paths' => ['products/gallery/1.jpg', 'products/gallery/2.jpg', 'products/gallery/3.jpg'],
+            'model_3d_path' => 'products/models/ready.glb',
+        ]);
+        Product::$bypassReview = false;
+
+        $productDraftApproval = $this->approvalService->queueProductDraftRequest(
+            $this->owner,
+            $this->staff,
+            $draftProduct,
+            ['status' => 'Active', 'price' => 1200, 'cost_price' => 500],
+            'publish'
+        );
+
+        // Manager notifications ONLY sent for discount & product_draft
+        Notification::assertSentTo($manager, TeamRequestSubmittedNotification::class, 2);
+        Notification::assertNotSentTo($manager, TeamRequestSubmittedNotification::class, function ($n) use ($payrollApproval) {
+            return $n->approval->id === $payrollApproval->id;
+        });
+
+        // /approvals hub only exposes discount + product_draft to Shop Manager
+        $this->actingAs($manager)
+            ->get(route('seller.approvals.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('pendingCount', 2)
+                ->where('pendingApprovalsCount', 2)
+                ->where('isOwnerReviewer', false)
+                ->where('allowedDomains', [OwnerApproval::DOMAIN_DISCOUNT, OwnerApproval::DOMAIN_PRODUCT_DRAFT])
+                ->has('approvals.data', 2)
+            );
+
+        // Owner still sees all 6 pending
+        $this->actingAs($this->owner)
+            ->get(route('seller.approvals.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('pendingCount', 6)
+                ->where('isOwnerReviewer', true)
+            );
+
+        // Global search scopes Shop Manager away from owner-only domains
+        $searchResults = app(SellerSearchService::class)->search($manager, 'Payroll', 'like');
+        $teamReqPayroll = array_values(array_filter($searchResults, fn ($item) => ($item['type'] ?? null) === 'Team Request'));
+        $this->assertCount(0, $teamReqPayroll);
+
+        $managerDiscountSearch = app(SellerSearchService::class)->search($manager, 'Ber-Months', 'like');
+        $teamReqDiscount = array_values(array_filter($managerDiscountSearch, fn ($item) => ($item['type'] ?? null) === 'Team Request'));
+        $this->assertCount(1, $teamReqDiscount);
+
+        // Shop Manager blocked from owner-only actions (403)
+        foreach ([$payrollApproval, $procurementApproval, $rateApproval, $refundApproval] as $restricted) {
+            $this->actingAs($manager)
+                ->post(route('seller.approvals.approve', $restricted->id))
+                ->assertForbidden();
+
+            $this->actingAs($manager)
+                ->post(route('seller.approvals.reject', $restricted->id), ['reason' => 'No access'])
+                ->assertForbidden();
+        }
+
+        // Batch approve cannot bypass owner-only domain guard
+        $this->actingAs($manager)
+            ->post(route('seller.approvals.batch-approve'), [
+                'approval_ids' => [$payrollApproval->id, $discountApproval->id, $productDraftApproval->id],
+            ])
+            ->assertRedirect();
+
+        $this->assertEquals(OwnerApproval::STATUS_PENDING, $payrollApproval->fresh()->status);
+        $this->assertEquals(OwnerApproval::STATUS_APPROVED, $discountApproval->fresh()->status);
+        $this->assertEquals(OwnerApproval::STATUS_APPROVED, $productDraftApproval->fresh()->status);
+        $this->assertEquals('pending_review', $draftProduct->fresh()->status);
+    }
+
+    public function test_accounting_payroll_and_release_decisions_sync_owner_approval_and_evict_both_caches(): void
+    {
+        $ownerCacheKey = "seller_{$this->owner->id}_pending_approvals_count";
+        $managerCacheKey = "seller_{$this->owner->id}_manager_pending_approvals_count";
+
+        $this->owner->update(['base_funds' => 500000]);
+
+        $payroll1 = Payroll::create([
+            'user_id' => $this->owner->id,
+            'requested_by_user_id' => $this->staff->id,
+            'month' => '2026-10-01',
+            'total_amount' => 15000,
+            'employee_count' => 2,
+            'status' => 'Pending',
+        ]);
+        $approvalP1 = $this->approvalService->submitRequest($this->owner, $this->staff, OwnerApproval::DOMAIN_HR_PAYROLL, 'Payroll Oct 1', 'Summary', $payroll1);
+
+        $payroll2 = Payroll::create([
+            'user_id' => $this->owner->id,
+            'requested_by_user_id' => $this->staff->id,
+            'month' => '2026-10-15',
+            'total_amount' => 15000,
+            'employee_count' => 2,
+            'status' => 'Pending',
+        ]);
+        $approvalP2 = $this->approvalService->submitRequest($this->owner, $this->staff, OwnerApproval::DOMAIN_HR_PAYROLL, 'Payroll Oct 15', 'Summary', $payroll2);
+
+        $supply = Supply::create([
+            'user_id' => $this->owner->id,
+            'sku' => 'SUP-ACC-01',
+            'name' => 'White Slip Clay',
+            'category' => 'Raw Clay & Slips',
+            'quantity' => 5,
+            'unit' => 'bags',
+            'min_stock' => 2,
+            'unit_cost' => 300,
+        ]);
+
+        $req1 = StockRequest::create([
+            'user_id' => $this->owner->id,
+            'requested_by_user_id' => $this->staff->id,
+            'supply_id' => $supply->id,
+            'quantity' => 10,
+            'total_cost' => 3000,
+            'status' => StockRequest::STATUS_PENDING,
+        ]);
+        $approvalS1 = $this->approvalService->submitRequest($this->owner, $this->staff, OwnerApproval::DOMAIN_PROCUREMENT, 'Restock S1', 'Summary', $req1);
+
+        $req2 = StockRequest::create([
+            'user_id' => $this->owner->id,
+            'requested_by_user_id' => $this->staff->id,
+            'supply_id' => $supply->id,
+            'quantity' => 10,
+            'total_cost' => 3000,
+            'status' => StockRequest::STATUS_PENDING,
+        ]);
+        $approvalS2 = $this->approvalService->submitRequest($this->owner, $this->staff, OwnerApproval::DOMAIN_PROCUREMENT, 'Restock S2', 'Summary', $req2);
+
+        Cache::put($ownerCacheKey, 4, 60);
+        Cache::put($managerCacheKey, 4, 60);
+        $this->actingAs($this->owner)->post(route('accounting.approvePayroll', $payroll1->id))->assertRedirect();
+        $this->assertNull(Cache::get($ownerCacheKey));
+        $this->assertNull(Cache::get($managerCacheKey));
+        $this->assertEquals(OwnerApproval::STATUS_APPROVED, $approvalP1->fresh()->status);
+
+        Cache::put($ownerCacheKey, 3, 60);
+        Cache::put($managerCacheKey, 3, 60);
+        $this->actingAs($this->owner)->post(route('accounting.rejectPayroll', $payroll2->id), ['reason' => 'Adjust OT'])->assertRedirect();
+        $this->assertNull(Cache::get($ownerCacheKey));
+        $this->assertNull(Cache::get($managerCacheKey));
+        $this->assertEquals(OwnerApproval::STATUS_REJECTED, $approvalP2->fresh()->status);
+
+        Cache::put($ownerCacheKey, 2, 60);
+        Cache::put($managerCacheKey, 2, 60);
+        $this->actingAs($this->owner)->post(route('accounting.approve', $req1->id))->assertRedirect();
+        $this->assertNull(Cache::get($ownerCacheKey));
+        $this->assertNull(Cache::get($managerCacheKey));
+        $this->assertEquals(OwnerApproval::STATUS_APPROVED, $approvalS1->fresh()->status);
+
+        Cache::put($ownerCacheKey, 1, 60);
+        Cache::put($managerCacheKey, 1, 60);
+        $this->actingAs($this->owner)->post(route('accounting.reject', $req2->id), ['reason' => 'Over budget'])->assertRedirect();
+        $this->assertNull(Cache::get($ownerCacheKey));
+        $this->assertNull(Cache::get($managerCacheKey));
+        $this->assertEquals(OwnerApproval::STATUS_REJECTED, $approvalS2->fresh()->status);
+    }
+
+    public function test_product_draft_smart_triggers_and_owner_or_manager_approval(): void
+    {
+        Category::firstOrCreate(['name' => 'Pottery & Ceramics'], ['slug' => 'pottery-ceramics']);
+        $manager = $this->createShopManagerForOwner();
+
+        $this->owner->modules_enabled = array_merge((array) $this->owner->modules_enabled, ['products' => true]);
+        $this->owner->save();
+
+        $this->staff->update([
+            'staff_module_permissions' => User::withWorkspaceAccessFlag(['products' => User::STAFF_ACCESS_PERMISSION_CAN_EDIT], true),
+        ]);
+
+        // 1. Junior staff creates Draft, attaches required media, then requests activation -> stays Draft + product_draft approval
+        $this->actingAs($this->staff)->post(route('products.store'), [
+            'sku' => 'STAFF-NEW-01',
+            'name' => 'Handcrafted Stoneware Flower Vase',
+            'category' => 'Pottery & Ceramics',
+            'price' => 1400,
+            'cost_price' => 600,
+            'stock' => 15,
+            'status' => 'Draft',
+        ])->assertRedirect();
+
+        $created = Product::where('sku', 'STAFF-NEW-01')->firstOrFail();
+        $created->forceFill([
+            'cover_photo_path' => 'products/covers/sample.jpg',
+            'gallery_paths' => ['products/gallery/1.jpg', 'products/gallery/2.jpg', 'products/gallery/3.jpg'],
+            'model_3d_path' => 'products/models/vase.glb',
+        ])->saveQuietly();
+
+        $this->actingAs($this->staff)->post(route('products.activate', $created->id))->assertRedirect();
+        $this->assertEquals('Draft', $created->fresh()->status);
+
+        $publishApproval = OwnerApproval::where('approvable_type', Product::class)
+            ->where('approvable_id', $created->id)
+            ->where('domain', OwnerApproval::DOMAIN_PRODUCT_DRAFT)
+            ->where('status', OwnerApproval::STATUS_PENDING)
+            ->firstOrFail();
+
+        // Owner approving publishes it to Active (which transitions to pending_review for platform review)
+        $this->actingAs($this->owner)->post(route('seller.approvals.approve', $publishApproval->id))->assertRedirect();
+        $this->assertEquals('pending_review', $created->fresh()->status);
+
+        // Simulate platform admin approving it so it becomes an Active storefront product for live testing:
+        $created->forceFill(['status' => 'Active'])->saveQuietly();
+
+        // 2. Routine stock/description edit passes straight through WITHOUT creating an approval
+        $countBefore = OwnerApproval::where('domain', OwnerApproval::DOMAIN_PRODUCT_DRAFT)->count();
+        $this->actingAs($this->staff)->post(route('products.update', $created->id), [
+            'sku' => $created->sku,
+            'name' => $created->name,
+            'category' => 'Pottery & Ceramics',
+            'price' => 1400,
+            'cost_price' => 600,
+            'stock' => 22,
+            'status' => 'Active',
+            'retained_gallery' => $created->gallery_paths,
+        ])->assertRedirect();
+
+        $created->refresh();
+        $this->assertEquals(22, $created->stock);
+        $this->assertEquals($countBefore, OwnerApproval::where('domain', OwnerApproval::DOMAIN_PRODUCT_DRAFT)->count());
+
+        // 3. Changing price holds old price (1400) and submits price_change approval; Shop Manager approves
+        $this->actingAs($this->staff)->post(route('products.update', $created->id), [
+            'sku' => $created->sku,
+            'name' => $created->name,
+            'category' => 'Pottery & Ceramics',
+            'price' => 1750,
+            'cost_price' => 650,
+            'stock' => 22,
+            'status' => 'Active',
+            'retained_gallery' => $created->gallery_paths,
+        ])->assertRedirect();
+
+        $created->refresh();
+        $this->assertEquals(1400.00, (float) $created->price);
+        $this->assertEquals(600.00, (float) $created->cost_price);
+
+        $priceApproval = OwnerApproval::where('approvable_type', Product::class)
+            ->where('approvable_id', $created->id)
+            ->where('domain', OwnerApproval::DOMAIN_PRODUCT_DRAFT)
+            ->where('status', OwnerApproval::STATUS_PENDING)
+            ->latest('id')
+            ->firstOrFail();
+
+        $this->actingAs($manager)->post(route('seller.approvals.approve', $priceApproval->id))->assertRedirect();
+        $created->refresh();
+        $this->assertEquals(1750.00, (float) $created->price);
+        $this->assertEquals(650.00, (float) $created->cost_price);
+        $this->assertEquals('Active', $created->status);
+    }
+
+    public function test_discount_multi_group_store_and_update_destroy_gating_for_junior_staff(): void
+    {
+        $this->owner->modules_enabled = array_merge((array) $this->owner->modules_enabled, ['products' => true]);
+        $this->owner->save();
+
+        $this->staff->update([
+            'staff_module_permissions' => User::withWorkspaceAccessFlag([
+                'products' => User::STAFF_ACCESS_PERMISSION_CAN_EDIT,
+                'discounts' => User::STAFF_ACCESS_PERMISSION_CAN_EDIT,
+            ], true),
+        ]);
+
+        Product::$bypassReview = true;
+        $p1 = Product::create([
+            'user_id' => $this->owner->id,
+            'sku' => 'DISC-P1',
+            'name' => 'Clay Bowl Alpha',
+            'category' => 'Pottery & Ceramics',
+            'price' => 500,
+            'cost_price' => 200,
+            'stock' => 20,
+            'status' => 'Active',
+        ]);
+        $p2 = Product::create([
+            'user_id' => $this->owner->id,
+            'sku' => 'DISC-P2',
+            'name' => 'Clay Plate Beta',
+            'category' => 'Pottery & Ceramics',
+            'price' => 800,
+            'cost_price' => 300,
+            'stock' => 20,
+            'status' => 'Active',
+        ]);
+        Product::$bypassReview = false;
+
+        // 1. Multi-group store creates 2 inactive discounts and 1 approval holding both IDs
+        $this->actingAs($this->staff)
+            ->post(route('discounts.store'), [
+                'name' => 'Grouped Clay Promo',
+                'start_at' => now()->toDateTimeString(),
+                'end_at' => now()->addDays(5)->toDateTimeString(),
+                'items' => [
+                    ['product_id' => $p1->id, 'type' => 'percentage', 'value' => 10],
+                    ['product_id' => $p2->id, 'type' => 'fixed', 'value' => 100],
+                ],
+            ])
+            ->assertRedirect();
+
+        $discounts = Discount::where('user_id', $this->owner->id)->where('name', 'Grouped Clay Promo')->get();
+        $this->assertCount(2, $discounts);
+        $this->assertTrue($discounts->every(fn ($d) => !$d->is_active));
+
+        $createApproval = OwnerApproval::where('seller_id', $this->owner->id)
+            ->where('domain', OwnerApproval::DOMAIN_DISCOUNT)
+            ->where('status', OwnerApproval::STATUS_PENDING)
+            ->firstOrFail();
+        $this->assertCount(2, $createApproval->changes_payload['discount_ids'] ?? []);
+
+        $this->actingAs($this->owner)->post(route('seller.approvals.approve', $createApproval->id))->assertRedirect();
+        $this->assertEquals(2, Discount::where('name', 'Grouped Clay Promo')->where('is_active', true)->count());
+
+        // 2. Junior staff update is gated and preserves live discount until approved
+        $primaryDiscount = $discounts->first();
+        $this->actingAs($this->staff)
+            ->put(route('discounts.update', $primaryDiscount->id), [
+                'name' => 'Updated Clay Promo',
+                'type' => 'percentage',
+                'value' => 25,
+                'start_at' => now()->toDateTimeString(),
+                'end_at' => now()->addDays(6)->toDateTimeString(),
+                'product_ids' => [$p1->id],
+            ])
+            ->assertRedirect();
+
+        $this->assertEquals(10.0, (float) $primaryDiscount->fresh()->value);
+        $updateApproval = OwnerApproval::where('domain', OwnerApproval::DOMAIN_DISCOUNT)
+            ->where('approvable_id', $primaryDiscount->id)
+            ->where('status', OwnerApproval::STATUS_PENDING)
+            ->firstOrFail();
+
+        $this->actingAs($this->owner)->post(route('seller.approvals.approve', $updateApproval->id))->assertRedirect();
+        $this->assertEquals('Updated Clay Promo', $primaryDiscount->fresh()->name);
+        $this->assertEquals(25.0, (float) $primaryDiscount->fresh()->value);
+
+        // 3. Junior staff destroy submits deactivation approval instead of immediately disabling
+        $this->actingAs($this->staff)
+            ->delete(route('discounts.destroy', $primaryDiscount->id))
+            ->assertRedirect();
+
+        $this->assertTrue((bool) $primaryDiscount->fresh()->is_active);
+        $deactivateApproval = OwnerApproval::where('domain', OwnerApproval::DOMAIN_DISCOUNT)
+            ->where('approvable_id', $primaryDiscount->id)
+            ->where('status', OwnerApproval::STATUS_PENDING)
+            ->firstOrFail();
+
+        $this->actingAs($this->owner)->post(route('seller.approvals.approve', $deactivateApproval->id))->assertRedirect();
+        $this->assertFalse((bool) $primaryDiscount->fresh()->is_active);
+    }
+
+    public function test_order_return_duplicate_guard_and_manager_refund_vs_replacement_governance(): void
+    {
+        Mail::fake();
+        $manager = $this->createShopManagerForOwner();
+        $buyer = User::factory()->create(['role' => 'buyer']);
+
+        Product::$bypassReview = true;
+        $product = Product::create([
+            'user_id' => $this->owner->id,
+            'sku' => 'RET-PROD-01',
+            'name' => 'Stoneware Tea Bowl',
+            'category' => 'Pottery & Ceramics',
+            'price' => 450,
+            'cost_price' => 180,
+            'stock' => 10,
+            'status' => 'Active',
+        ]);
+        Product::$bypassReview = false;
+
+        $this->staff->update([
+            'staff_module_permissions' => User::withWorkspaceAccessFlag(['orders' => 'can_edit'], true),
+        ]);
+
+        // 1. Junior staff double-click creates only ONE pending OwnerApproval
+        $codOrder = Order::create([
+            'artisan_id' => $this->owner->id,
+            'user_id' => $buyer->id,
+            'order_number' => 'ORD-DUP-' . strtoupper(uniqid()),
+            'customer_name' => $buyer->name,
+            'merchandise_subtotal' => 450,
+            'total_amount' => 450,
+            'status' => 'Refund/Return',
+            'payment_method' => 'COD',
+            'payment_status' => 'paid',
+            'shipping_address' => 'Imus, Cavite',
+            'shipping_method' => 'Delivery',
+        ]);
+
+        $this->actingAs($this->staff)->post(route('orders.approve-return', $codOrder->order_number), ['action_type' => 'refund'])->assertRedirect();
+        $this->actingAs($this->staff)->post(route('orders.approve-return', $codOrder->order_number), ['action_type' => 'refund'])->assertRedirect();
+
+        $this->assertEquals(
+            1,
+            OwnerApproval::where('approvable_type', Order::class)
+                ->where('approvable_id', $codOrder->id)
+                ->where('status', OwnerApproval::STATUS_PENDING)
+                ->count()
+        );
+
+        // 2. Shop Manager cash refund MUST still route to Owner-only approval
+        $managerRefundOrder = Order::create([
+            'artisan_id' => $this->owner->id,
+            'user_id' => $buyer->id,
+            'order_number' => 'ORD-MGR-REF-' . strtoupper(uniqid()),
+            'customer_name' => $buyer->name,
+            'merchandise_subtotal' => 450,
+            'total_amount' => 450,
+            'status' => 'Refund/Return',
+            'payment_method' => 'COD',
+            'payment_status' => 'paid',
+            'shipping_address' => 'Imus, Cavite',
+            'shipping_method' => 'Delivery',
+        ]);
+
+        $this->actingAs($manager)
+            ->post(route('orders.approve-return', $managerRefundOrder->order_number), ['action_type' => 'refund'])
+            ->assertRedirect();
+
+        $this->assertEquals('Refund/Return', $managerRefundOrder->fresh()->status);
+        $this->assertDatabaseHas('owner_approvals', [
+            'approvable_type' => Order::class,
+            'approvable_id' => $managerRefundOrder->id,
+            'domain' => OwnerApproval::DOMAIN_REFUND,
+            'status' => OwnerApproval::STATUS_PENDING,
+        ]);
+
+        // 3. Shop Manager replacement executes inline
+        $replacementOrder = Order::create([
+            'artisan_id' => $this->owner->id,
+            'user_id' => $buyer->id,
+            'order_number' => 'ORD-MGR-REP-' . strtoupper(uniqid()),
+            'customer_name' => $buyer->name,
+            'merchandise_subtotal' => 450,
+            'total_amount' => 450,
+            'status' => 'Refund/Return',
+            'payment_method' => 'COD',
+            'payment_status' => 'paid',
+            'shipping_address' => 'Imus, Cavite',
+            'shipping_method' => 'Delivery',
+        ]);
+        OrderItem::create([
+            'order_id' => $replacementOrder->id,
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'price' => 450,
+            'cost' => 180,
+            'quantity' => 1,
+        ]);
+
+        $this->actingAs($manager)
+            ->post(route('orders.approve-return', $replacementOrder->order_number), [
+                'action_type' => 'replace',
+                'replacement_resolution_description' => 'Dispatching replacement stoneware tea bowl.',
+            ])
+            ->assertRedirect();
+
+        $this->assertNotEquals('Refund/Return', $replacementOrder->fresh()->status);
+        $this->assertDatabaseMissing('owner_approvals', [
+            'approvable_type' => Order::class,
+            'approvable_id' => $replacementOrder->id,
+        ]);
+    }
+
+    public function test_terminating_employee_or_deleting_draft_payroll_cleans_up_pending_owner_approvals(): void
+    {
+        $ownerCacheKey = "seller_{$this->owner->id}_pending_approvals_count";
+
+        $rateApproval = $this->approvalService->submitRequest(
+            $this->owner,
+            $this->staff,
+            OwnerApproval::DOMAIN_STAFF_RATE,
+            'Salary Bump',
+            'Rate adjustment',
+            $this->employee
+        );
+
+        Cache::put($ownerCacheKey, 5, 60);
+        app(TerminateEmployeeAction::class)->execute($this->owner, $this->owner, $this->employee->id);
+        $this->assertNull(Cache::get($ownerCacheKey));
+        $this->assertDatabaseMissing('owner_approvals', ['id' => $rateApproval->id]);
+
+        $payroll = Payroll::create([
+            'user_id' => $this->owner->id,
+            'requested_by_user_id' => $this->staff->id,
+            'month' => '2026-11-01',
+            'total_amount' => 12000,
+            'employee_count' => 1,
+            'status' => 'Pending',
+        ]);
+        $payrollApproval = $this->approvalService->submitRequest(
+            $this->owner,
+            $this->staff,
+            OwnerApproval::DOMAIN_HR_PAYROLL,
+            'Nov Payroll',
+            'Draft run',
+            $payroll
+        );
+
+        Cache::put($ownerCacheKey, 5, 60);
+        $this->actingAs($this->owner)
+            ->delete(route('hr.payroll.destroy', $payroll->id))
+            ->assertRedirect();
+
+        $this->assertNull(Cache::get($ownerCacheKey));
+        $this->assertDatabaseMissing('owner_approvals', ['id' => $payrollApproval->id]);
+    }
+
+    public function test_archiving_product_cleans_up_pending_product_draft_approvals(): void
+    {
+        Product::$bypassReview = true;
+        $product = Product::create([
+            'user_id' => $this->owner->id,
+            'sku' => 'MUG-001',
+            'name' => 'Ceramic Mug',
+            'category' => 'Pottery & Ceramics',
+            'price' => 500,
+            'cost_price' => 200,
+            'stock' => 15,
+            'status' => 'Active',
+            'cover_photo_path' => 'products/covers/ready.jpg',
+            'gallery_paths' => ['products/gallery/1.jpg', 'products/gallery/2.jpg', 'products/gallery/3.jpg'],
+            'model_3d_path' => 'products/models/ready.glb',
+        ]);
+        Product::$bypassReview = false;
+
+        $draftApproval = $this->approvalService->submitRequest(
+            $this->owner,
+            $this->staff,
+            OwnerApproval::DOMAIN_PRODUCT_DRAFT,
+            'Draft Update: Ceramic Mug',
+            'Price modification proposal',
+            $product,
+            ['target_status' => 'Active', 'price' => 550]
+        );
+
+        $this->assertDatabaseHas('owner_approvals', ['id' => $draftApproval->id, 'status' => 'pending']);
+
+        app(\App\Actions\Seller\Catalog\ArchiveProduct::class)->execute($product, $this->owner->id);
+
+        $this->assertDatabaseMissing('owner_approvals', ['id' => $draftApproval->id]);
+        $this->assertEquals('Archived', $product->fresh()->status);
+    }
+
+    public function test_manager_cannot_self_approve_via_batch_approve(): void
+    {
+        $manager = User::factory()->staff($this->owner)->create([
+            'name' => 'Head Manager',
+            'staff_role_preset_key' => 'manager',
+            'staff_module_permissions' => ['products' => true],
+        ]);
+
+        Product::$bypassReview = true;
+        $product = Product::create([
+            'user_id' => $this->owner->id,
+            'sku' => 'MUG-002',
+            'name' => 'Draft Carved Pitcher',
+            'category' => 'Pottery & Ceramics',
+            'price' => 600,
+            'cost_price' => 250,
+            'stock' => 5,
+            'status' => 'Draft',
+            'cover_photo_path' => 'products/covers/ready.jpg',
+            'gallery_paths' => ['products/gallery/1.jpg', 'products/gallery/2.jpg', 'products/gallery/3.jpg'],
+            'model_3d_path' => 'products/models/ready.glb',
+        ]);
+        Product::$bypassReview = false;
+
+        // Manager submits a request
+        $approval = $this->approvalService->submitRequest(
+            $this->owner,
+            $manager,
+            OwnerApproval::DOMAIN_PRODUCT_DRAFT,
+            'Manager Proposed Draft',
+            'Draft submission',
+            $product,
+            ['target_status' => 'Active']
+        );
+
+        // Batch approval called by manager on their own request should not approve it
+        $approvedCount = $this->approvalService->batchApprove($this->owner, $manager, [$approval->id]);
+
+        $this->assertEquals(0, $approvedCount);
+        $this->assertEquals('pending', $approval->fresh()->status);
     }
 }

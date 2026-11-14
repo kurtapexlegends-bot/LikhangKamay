@@ -5,6 +5,7 @@ namespace App\Actions\Seller\Catalog;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\SellerActivityLog;
+use App\Services\OwnerApprovalService;
 use Illuminate\Support\Facades\DB;
 
 class BulkActivateProducts
@@ -34,9 +35,18 @@ class BulkActivateProducts
             ];
         }
 
-        $result = DB::transaction(function () use ($seller, $products, $productIds, $actor) {
+        $approvalService = app(OwnerApprovalService::class);
+        $requiresOwnerApproval = $actor->isStaff()
+            && !$actor->isStaffManager()
+            && ($seller->canManageStaff() || $seller->isPremiumTier())
+            && $approvalService->supportsOwnerApprovals();
+
+        $queuedProducts = [];
+
+        $result = DB::transaction(function () use ($seller, $products, $productIds, $actor, $requiresOwnerApproval, &$queuedProducts) {
             $remainingActivationSlots = max(0, $seller->getActiveProductLimit() - $seller->products()->where('status', 'Active')->count());
             $activated = 0;
+            $queued = 0;
             $draftedForMissingMedia = 0;
             $skippedForLimit = 0;
 
@@ -60,6 +70,13 @@ class BulkActivateProducts
                     continue;
                 }
 
+                if ($requiresOwnerApproval) {
+                    $queuedProducts[] = $product;
+                    $remainingActivationSlots--;
+                    $queued++;
+                    continue;
+                }
+
                 $product->update([
                     'status' => 'pending_review',
                     'rejection_reason' => null
@@ -79,13 +96,16 @@ class BulkActivateProducts
                 'module' => 'products',
                 'event_type' => 'product_bulk_status',
                 'severity' => $skippedForLimit > 0 || $draftedForMissingMedia > 0 ? 'warning' : 'info',
-                'status' => 'active',
-                'title' => 'Bulk Product Activation',
-                'summary' => "{$activated} product(s) were activated.",
+                'status' => $requiresOwnerApproval ? 'pending' : 'active',
+                'title' => $requiresOwnerApproval ? 'Bulk Activation Queued for Review' : 'Bulk Product Activation',
+                'summary' => $requiresOwnerApproval
+                    ? "{$queued} product(s) submitted to Team Requests for approval."
+                    : "{$activated} product(s) were activated.",
                 'subject_label' => 'Bulk product update',
                 'details' => [
                     'lines' => array_values(array_filter([
-                        "Activated {$activated} selected product(s).",
+                        $activated > 0 ? "Activated {$activated} selected product(s)." : null,
+                        $queued > 0 ? "Queued {$queued} selected product(s) for Owner/Manager approval." : null,
                         $draftedForMissingMedia > 0 ? "{$draftedForMissingMedia} product(s) remained Draft due to missing media requirements." : null,
                         $skippedForLimit > 0 ? "{$skippedForLimit} product(s) were skipped because your current plan limit is full." : null,
                     ])),
@@ -95,12 +115,31 @@ class BulkActivateProducts
             ]);
 
             return [
-                'status' => ($activated === 0 && ($draftedForMissingMedia > 0 || $skippedForLimit > 0)) ? 'error' : 'success',
+                'status' => (($activated === 0 && $queued === 0) && ($draftedForMissingMedia > 0 || $skippedForLimit > 0)) ? 'error' : 'success',
                 'activated' => $activated,
+                'queued' => $queued,
                 'drafted' => $draftedForMissingMedia,
                 'skipped' => $skippedForLimit
             ];
         });
+
+        foreach ($queuedProducts as $queuedProduct) {
+            $approvalService->queueProductDraftRequest(
+                seller: $seller,
+                requester: $actor,
+                product: $queuedProduct,
+                proposed: [
+                    'name' => $queuedProduct->name,
+                    'category' => $queuedProduct->category,
+                    'price' => $queuedProduct->price,
+                    'cost_price' => $queuedProduct->cost_price,
+                    'status' => 'Active',
+                    'stock' => $queuedProduct->stock,
+                ],
+                action: 'publish',
+                notes: 'Queued via bulk product activation.'
+            );
+        }
 
         return $result;
     }

@@ -24,6 +24,15 @@ class ArchiveProduct
             }
             $product->update($updateData);
 
+            rescue(function () use ($product, $sellerId) {
+                app(\App\Services\OwnerApprovalService::class)->cancelPendingForTarget(
+                    $sellerId,
+                    Product::class,
+                    $product->id,
+                    \App\Models\OwnerApproval::DOMAIN_PRODUCT_DRAFT
+                );
+            }, report: false);
+
             SellerActivityLog::recordEvent([
                 'seller_owner_id' => $sellerId,
                 'actor_user_id' => Auth::id(),

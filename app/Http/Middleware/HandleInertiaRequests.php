@@ -107,10 +107,13 @@ class HandleInertiaRequests extends Middleware
                 if (!$seller->canManageStaff() && !$seller->isPremiumTier()) {
                     return 0;
                 }
-                if ($user->isStaff() && !$user->canEditSellerModule('overview') && !$user->isStaffManager()) {
+                if ($user->isStaff() && !$user->isStaffManager()) {
                     return 0;
                 }
-                return Cache::remember("seller_{$seller->id}_pending_approvals_count", 15, fn () => app(\App\Services\OwnerApprovalService::class)->getPendingCount($seller));
+                $cacheKey = $user->isSellerOwner()
+                    ? "seller_{$seller->id}_pending_approvals_count"
+                    : "seller_{$seller->id}_manager_pending_approvals_count";
+                return Cache::remember($cacheKey, 15, fn () => app(\App\Services\OwnerApprovalService::class)->getPendingCount($seller, $user));
             }, 0, false) : 0,
             
             'flash' => [

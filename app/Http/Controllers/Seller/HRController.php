@@ -168,6 +168,13 @@ class HRController extends Controller
         $payroll->update(['status' => 'Cancelled']);
         $payroll->delete();
 
+        app(\App\Services\OwnerApprovalService::class)->cancelPendingForTarget(
+            $seller->id,
+            Payroll::class,
+            $payroll->id,
+            \App\Models\OwnerApproval::DOMAIN_HR_PAYROLL
+        );
+
         return back()->with('success', 'Draft payroll run cancelled.');
     }
 

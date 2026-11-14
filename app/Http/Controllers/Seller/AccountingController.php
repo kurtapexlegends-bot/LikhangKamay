@@ -10,6 +10,7 @@ use App\Models\StockRequest;
 use App\Models\User;
 use App\Models\CapitalAdjustment;
 use App\Models\OwnerApproval;
+use App\Services\OwnerApprovalService;
 use App\Notifications\AccountingRejectedNotification;
 use App\Services\AccountingLedgerService;
 use App\Support\RevisionSchemaRegistry;
@@ -213,17 +214,14 @@ class AccountingController extends Controller
             StockRequest::where('id', $stockRequest->id)->update(['status' => StockRequest::STATUS_ACCOUNTING_APPROVED]);
             $stockRequest->resolveActiveRevisions();
 
-            OwnerApproval::query()
-                ->where('seller_id', $lockedUser->id)
-                ->where('domain', OwnerApproval::DOMAIN_PROCUREMENT)
-                ->where('approvable_type', StockRequest::class)
-                ->where('approvable_id', $stockRequest->id)
-                ->where('status', OwnerApproval::STATUS_PENDING)
-                ->update([
-                    'status' => OwnerApproval::STATUS_APPROVED,
-                    'reviewer_id' => $actor->id,
-                    'reviewed_at' => now(),
-                ]);
+            app(OwnerApprovalService::class)->syncExternalDecision(
+                sellerId: $lockedUser->id,
+                domain: OwnerApproval::DOMAIN_PROCUREMENT,
+                approvableType: StockRequest::class,
+                approvableId: $stockRequest->id,
+                decision: OwnerApproval::STATUS_APPROVED,
+                reviewer: $actor
+            );
 
             return null;
         });
@@ -253,18 +251,15 @@ class AccountingController extends Controller
 
             $stockRequest->recordRevision('stock_request', $normalizedItems, $rawNote, $this->sellerActor()->id);
 
-            OwnerApproval::query()
-                ->where('seller_id', $this->sellerOwnerId())
-                ->where('domain', OwnerApproval::DOMAIN_PROCUREMENT)
-                ->where('approvable_type', StockRequest::class)
-                ->where('approvable_id', $stockRequest->id)
-                ->where('status', OwnerApproval::STATUS_PENDING)
-                ->update([
-                    'status' => OwnerApproval::STATUS_REJECTED,
-                    'reviewer_id' => $this->sellerActor()->id,
-                    'reviewed_at' => now(),
-                    'rejection_reason' => $formattedReason,
-                ]);
+            app(OwnerApprovalService::class)->syncExternalDecision(
+                sellerId: $this->sellerOwnerId(),
+                domain: OwnerApproval::DOMAIN_PROCUREMENT,
+                approvableType: StockRequest::class,
+                approvableId: $stockRequest->id,
+                decision: OwnerApproval::STATUS_REJECTED,
+                reviewer: $this->sellerActor(),
+                reason: $formattedReason
+            );
         });
 
         $stockRequest->loadMissing(['supply', 'requester', 'user']);
@@ -315,19 +310,14 @@ class AccountingController extends Controller
             Payroll::where('id', $payroll->id)->update(['status' => 'Paid']);
             $payroll->resolveActiveRevisions();
 
-            OwnerApproval::query()
-                ->where('seller_id', $lockedUser->id)
-                ->where('domain', OwnerApproval::DOMAIN_HR_PAYROLL)
-                ->where('approvable_type', Payroll::class)
-                ->where('approvable_id', $payroll->id)
-                ->where('status', OwnerApproval::STATUS_PENDING)
-                ->update([
-                    'status' => OwnerApproval::STATUS_APPROVED,
-                    'reviewer_id' => $actor->id,
-                    'reviewed_at' => now(),
-                ]);
-
-            \Illuminate\Support\Facades\Cache::forget("seller_{$lockedUser->id}_pending_approvals_count");
+            app(OwnerApprovalService::class)->syncExternalDecision(
+                sellerId: $lockedUser->id,
+                domain: OwnerApproval::DOMAIN_HR_PAYROLL,
+                approvableType: Payroll::class,
+                approvableId: $payroll->id,
+                decision: OwnerApproval::STATUS_APPROVED,
+                reviewer: $actor
+            );
 
             return null;
         });
@@ -357,18 +347,15 @@ class AccountingController extends Controller
 
             $payroll->recordRevision('payroll', $normalizedItems, $rawNote, $this->sellerActor()->id);
 
-            OwnerApproval::query()
-                ->where('seller_id', $this->sellerOwnerId())
-                ->where('domain', OwnerApproval::DOMAIN_HR_PAYROLL)
-                ->where('approvable_type', Payroll::class)
-                ->where('approvable_id', $payroll->id)
-                ->where('status', OwnerApproval::STATUS_PENDING)
-                ->update([
-                    'status' => OwnerApproval::STATUS_REJECTED,
-                    'reviewer_id' => $this->sellerActor()->id,
-                    'reviewed_at' => now(),
-                    'rejection_reason' => $formattedReason,
-                ]);
+            app(OwnerApprovalService::class)->syncExternalDecision(
+                sellerId: $this->sellerOwnerId(),
+                domain: OwnerApproval::DOMAIN_HR_PAYROLL,
+                approvableType: Payroll::class,
+                approvableId: $payroll->id,
+                decision: OwnerApproval::STATUS_REJECTED,
+                reviewer: $this->sellerActor(),
+                reason: $formattedReason
+            );
         });
 
         $payroll->loadMissing(['requester', 'user']);

@@ -257,7 +257,7 @@ class DiscountService
     /**
      * Clear caches associated with seller products.
      */
-    protected function clearSellerProductCaches(int $sellerId, array $productIds = []): void
+    public function clearSellerProductCaches(int $sellerId, array $productIds = []): void
     {
         \App\Services\CatalogService::clearCatalogDefaultCache();
         Cache::forget("seller_{$sellerId}_products");

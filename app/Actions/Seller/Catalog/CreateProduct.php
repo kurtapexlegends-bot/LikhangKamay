@@ -2,10 +2,12 @@
 
 namespace App\Actions\Seller\Catalog;
 
+use App\Models\OwnerApproval;
 use App\Models\Product;
 use App\Models\SellerActivityLog;
 use App\Services\Catalog\ProductMediaService;
 use App\Services\Catalog\ThreeDAssetService;
+use App\Services\OwnerApprovalService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -69,8 +71,18 @@ class CreateProduct
         }
 
         $sellerId = $sellerOwner->id;
+        $actor = Auth::user();
+        $approvalService = app(OwnerApprovalService::class);
+        $requiresOwnerProductApproval = $actor
+            && $actor->isStaff()
+            && !$actor->isStaffManager()
+            && $requestedStatus === 'Active'
+            && ($sellerOwner->canManageStaff() || $sellerOwner->isPremiumTier())
+            && $approvalService->supportsOwnerApprovals();
 
-        $product = DB::transaction(function () use ($validated, $request, $modelPath, $coverPath, $galleryPaths, $sellerId, $requestedStatus) {
+        $effectiveStatus = $requiresOwnerProductApproval ? 'Draft' : $requestedStatus;
+
+        $product = DB::transaction(function () use ($validated, $request, $modelPath, $coverPath, $galleryPaths, $sellerId, $requestedStatus, $effectiveStatus, $requiresOwnerProductApproval) {
             $sku = trim(strip_tags($validated['sku']));
             $name = trim(strip_tags($validated['name']));
 
@@ -84,7 +96,7 @@ class CreateProduct
                 'cost_price' => $validated['cost_price'] ?? 0,
                 'stock' => $validated['stock'],
                 'lead_time' => $validated['lead_time'] ?? 3,
-                'status' => $requestedStatus,
+                'status' => $effectiveStatus,
                 'clay_type' => $validated['clay_type'] ?? null,
                 'glaze_type' => $validated['glaze_type'] ?? null,
                 'firing_method' => $validated['firing_method'] ?? null,
@@ -138,10 +150,29 @@ class CreateProduct
             return $product;
         });
 
+        if ($requiresOwnerProductApproval && $actor) {
+            $approvalService->queueProductDraftRequest(
+                seller: $sellerOwner,
+                requester: $actor,
+                product: $product,
+                proposed: [
+                    'name' => $product->name,
+                    'category' => $product->category,
+                    'price' => $product->price,
+                    'cost_price' => $product->cost_price,
+                    'status' => 'Active',
+                    'stock' => $product->stock,
+                ],
+                action: 'publish',
+                notes: 'New listing submitted by staff for publishing approval.'
+            );
+        }
+
         return [
             'product' => $product,
             'requestedStatus' => $requestedStatus,
             'activationReadiness' => $activationReadiness,
+            'pendingOwnerApproval' => $requiresOwnerProductApproval,
         ];
     }
 

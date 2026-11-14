@@ -509,12 +509,24 @@ class GlobalSearchTest extends TestCase
         ], $standardArtisan);
         $this->assertEquals(route('seller.subscription'), $standardNotificationUrl);
 
-        // Restricted staff presenting an approval notification routes safely to stock-requests or dashboard
+        // Restricted staff without stock_requests permission routes safely to staff.dashboard to avoid 403
         $staffNotificationUrl = NotificationPresenter::resolveUrl([
             'type' => 'owner_approval_decision',
             'url' => route('seller.approvals.index'),
             'domain' => 'procurement',
         ], $eliteStaff);
-        $this->assertEquals(route('stock-requests.index'), $staffNotificationUrl);
+        $this->assertEquals(route('staff.dashboard'), $staffNotificationUrl);
+
+        // Staff WITH stock_requests permission routes directly to stock-requests.index
+        $eliteStaffWithProcurement = User::factory()->staff($eliteArtisan)->create([
+            'name' => 'Guild Procurement Lead',
+            'staff_module_permissions' => ['products' => true, 'stock_requests' => true],
+        ]);
+        $procurementNotificationUrl = NotificationPresenter::resolveUrl([
+            'type' => 'owner_approval_decision',
+            'url' => route('seller.approvals.index'),
+            'domain' => 'procurement',
+        ], $eliteStaffWithProcurement);
+        $this->assertEquals(route('stock-requests.index'), $procurementNotificationUrl);
     }
 }

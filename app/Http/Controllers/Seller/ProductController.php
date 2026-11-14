@@ -187,12 +187,15 @@ class ProductController extends Controller
         $validated = $request->validated();
         $result = $createProduct->execute($validated, $request, $this->sellerOwner());
         $isPendingReview = $result['product'] && $result['product']->status === 'pending_review';
+        $isPendingOwnerApproval = (bool) ($result['pendingOwnerApproval'] ?? false);
 
-        return redirect()->back()->with('success', $isPendingReview
-            ? 'Product submitted for review!'
-            : ($result['requestedStatus'] === 'Draft' && $validated['status'] === 'Active'
-                ? $this->draftActivationRequirementMessage($result['activationReadiness']['missing'])
-                : 'Product created successfully!'));
+        return redirect()->back()->with('success', $isPendingOwnerApproval
+            ? 'Product saved as draft and submitted for Shop Owner / Manager approval.'
+            : ($isPendingReview
+                ? 'Product submitted for review!'
+                : ($result['requestedStatus'] === 'Draft' && $validated['status'] === 'Active'
+                    ? $this->draftActivationRequirementMessage($result['activationReadiness']['missing'])
+                    : 'Product created successfully!')));
     }
 
     public function update(UpdateProductRequest $request, int|string $id, UpdateProduct $updateProduct)
@@ -202,12 +205,15 @@ class ProductController extends Controller
 
         $result = $updateProduct->execute($product, $validated, $request, $this->sellerOwner());
         $isPendingReview = $result['product']->status === 'pending_review';
+        $isPendingOwnerApproval = (bool) ($result['pendingOwnerApproval'] ?? false);
 
-        return redirect()->back()->with('success', $isPendingReview
-            ? 'Product submitted for review!'
-            : ($result['requestedStatus'] === 'Draft' && $validated['status'] === 'Active'
-                ? $this->draftActivationRequirementMessage($result['activationReadiness']['missing'])
-                : 'Product updated successfully!'));
+        return redirect()->back()->with('success', $isPendingOwnerApproval
+            ? 'Price or publishing changes submitted for Shop Owner / Manager approval.'
+            : ($isPendingReview
+                ? 'Product submitted for review!'
+                : ($result['requestedStatus'] === 'Draft' && $validated['status'] === 'Active'
+                    ? $this->draftActivationRequirementMessage($result['activationReadiness']['missing'])
+                    : 'Product updated successfully!')));
     }
 
     public function archive(string|int $id, ArchiveProduct $archiveProduct)
@@ -249,7 +255,17 @@ class ProductController extends Controller
         }
 
         $result = $bulkActivateProducts->execute($seller, $validated['ids'], $request->user());
-        
+
+        $queued = (int) ($result['queued'] ?? 0);
+        if ($queued > 0 && $result['activated'] === 0) {
+            return back()->with(
+                $result['status'],
+                "{$queued} product(s) submitted for Shop Owner / Manager approval before publishing."
+                    . ($result['drafted'] > 0 ? " {$result['drafted']} remained Draft due to missing media." : '')
+                    . ($result['skipped'] > 0 ? " {$result['skipped']} skipped due to plan limit." : '')
+            );
+        }
+
         return back()->with(
             $result['status'],
             $this->bulkActivationMessage($result['activated'], $result['drafted'], $result['skipped'])

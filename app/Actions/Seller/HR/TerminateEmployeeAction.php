@@ -3,8 +3,10 @@
 namespace App\Actions\Seller\HR;
 
 use App\Models\Employee;
+use App\Models\OwnerApproval;
 use App\Models\User;
 use App\Services\HR\EmployeeDocumentService;
+use App\Services\OwnerApprovalService;
 use App\Support\HRWorkflowHelper;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -51,7 +53,7 @@ class TerminateEmployeeAction
 
         $documentPaths = [];
 
-        DB::transaction(function () use ($employee, $linkedLogin, &$documentPaths) {
+        DB::transaction(function () use ($employee, $linkedLogin, $seller, &$documentPaths) {
             $documentPaths = $this->documentService->deleteAllRecordsForEmployee($employee);
 
             if ($linkedLogin) {
@@ -63,6 +65,13 @@ class TerminateEmployeeAction
             }
 
             $employee->delete();
+
+            app(OwnerApprovalService::class)->cancelPendingForTarget(
+                $seller->id,
+                Employee::class,
+                $employee->id,
+                OwnerApproval::DOMAIN_STAFF_RATE
+            );
         });
 
         if (!empty($documentPaths)) {
