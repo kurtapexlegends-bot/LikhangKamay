@@ -103,10 +103,10 @@ const OrderStatusBadge = ({ status }) => {
 
     return (
         <span
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${bg} ${text} ${border} ${isUrgent ? "animate-pulse shadow-sm shadow-current/20" : ""}`}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border whitespace-nowrap shrink-0 ${bg} ${text} ${border} ${isUrgent ? "animate-pulse shadow-sm shadow-current/20" : ""}`}
         >
-            <Icon size={12} />
-            {status === "Rejected" ? "Declined" : status}
+            <Icon size={12} className="shrink-0" />
+            <span>{status === "Rejected" ? "Declined" : status}</span>
         </span>
     );
 };

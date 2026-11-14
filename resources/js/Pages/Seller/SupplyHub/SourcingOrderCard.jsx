@@ -77,10 +77,10 @@ export default function SourcingOrderCard({
                         <button
                             type="button"
                             onClick={() => setShowTimelineModal(true)}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold text-stone-600 bg-stone-100 hover:bg-stone-200/80 rounded-md transition cursor-pointer"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold text-stone-600 bg-stone-100 hover:bg-stone-200/80 rounded-md transition cursor-pointer whitespace-nowrap"
                             title="Click to view full delivery timeline"
                         >
-                            <Activity size={10} className="text-stone-400" />
+                            <Activity size={10} className="text-stone-400 shrink-0" />
                             <span>{timelineCount} {timelineCount === 1 ? 'event' : 'events'}</span>
                         </button>
                     )}
@@ -89,17 +89,17 @@ export default function SourcingOrderCard({
                 {/* Status Badges */}
                 <div className="flex items-center gap-1.5 flex-wrap">
                     {/* Payment Badge */}
-                    <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-tight ${
+                    <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-tight whitespace-nowrap ${
                         order.payment_status === 'paid' 
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
                             : 'bg-amber-50 text-amber-700 border border-amber-200'
                     }`}>
-                        <CreditCard size={10} />
+                        <CreditCard size={10} className="shrink-0" />
                         <span>{order.payment_status === 'paid' ? 'Paid' : 'Payment Pending'}</span>
                     </span>
 
                     {/* Order Status Badge */}
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap ${
                         isDelivered
                             ? 'bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs' 
                             : isCompleted
@@ -177,8 +177,8 @@ export default function SourcingOrderCard({
                         </div>
                     )}
                     {(!order.tracking_number || courierLabel === 'Pick Up') && (
-                        <span className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-0.5 text-[9px] font-extrabold uppercase text-stone-600 tracking-tight shadow-2xs">
-                            <Truck size={10} className="text-stone-500" />
+                        <span className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-0.5 text-[9px] font-extrabold uppercase text-stone-600 tracking-tight shadow-2xs whitespace-nowrap">
+                            <Truck size={10} className="text-stone-500 shrink-0" />
                             <span>{courierLabel}</span>
                         </span>
                     )}
@@ -186,7 +186,7 @@ export default function SourcingOrderCard({
                         <button
                             type="button"
                             onClick={() => onCopyToClipboard(order.tracking_number, `track-${order.id}`)}
-                            className="inline-flex items-center gap-1 bg-sky-50 border border-sky-200 hover:bg-sky-100 rounded-md px-2 py-0.5 text-[9px] font-extrabold text-sky-700 tracking-tight shadow-2xs cursor-pointer transition"
+                            className="inline-flex items-center gap-1 bg-sky-50 border border-sky-200 hover:bg-sky-100 rounded-md px-2 py-0.5 text-[9px] font-extrabold text-sky-700 tracking-tight shadow-2xs cursor-pointer transition whitespace-nowrap"
                             title="Copy tracking number"
                         >
                             <Hash size={9} />

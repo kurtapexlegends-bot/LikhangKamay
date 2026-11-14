@@ -181,10 +181,10 @@ export default function DiscountProductTable({
                 <table className="hidden sm:table w-full text-left border-collapse text-xs">
                     <thead className="sticky top-0 bg-stone-50 border-b border-stone-200/70 text-[10px] uppercase tracking-wider font-extrabold text-stone-400 z-10">
                         <tr>
-                            <th className="py-2.5 px-3">Product</th>
-                            <th className="py-2.5 px-3 text-right">Original</th>
-                            <th className="py-2.5 px-3 text-center">Discount Rate</th>
-                            <th className="py-2.5 px-3 text-right">Promo Price</th>
+                            <th className="py-2.5 px-3 whitespace-nowrap">Product</th>
+                            <th className="py-2.5 px-3 text-right whitespace-nowrap">Original</th>
+                            <th className="py-2.5 px-3 text-center whitespace-nowrap">Discount Rate</th>
+                            <th className="py-2.5 px-3 text-right whitespace-nowrap">Promo Price</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100">
@@ -236,10 +236,10 @@ export default function DiscountProductTable({
                                         </td>
 
                                         {/* Discount Rate Input / Indicator */}
-                                        <td className="py-3 px-3 text-center">
+                                        <td className="py-3 px-3 text-center whitespace-nowrap">
                                             {isChecked ? (
                                                 mode === "global" ? (
-                                                    <span className="inline-flex items-center gap-1 bg-amber-100/80 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px]">
+                                                    <span className="inline-flex items-center gap-1 bg-amber-100/80 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px] whitespace-nowrap">
                                                         {globalValue ? (globalType === "percentage" ? `-${globalValue}%` : `₱${globalValue}`) : "Set Value"}
                                                     </span>
                                                 ) : (
@@ -310,7 +310,7 @@ export default function DiscountProductTable({
                                                             ₱{calc.final.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                         </span>
                                                     </div>
-                                                    <span className="inline-flex items-center gap-1 text-[9px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.2 rounded mt-0.5">
+                                                    <span className="inline-flex items-center gap-1 text-[9px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.2 rounded mt-0.5 whitespace-nowrap">
                                                         Save ₱{calc.saved.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                     </span>
                                                 </div>

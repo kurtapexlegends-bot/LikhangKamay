@@ -120,20 +120,20 @@ export default function SponsorshipRequestsTable({ requests }) {
         switch (status) {
             case 'approved':
                 return (
-                    <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-emerald-200/60">
-                        <CheckCircle2 size={12} /> Approved
+                    <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-emerald-200/60 whitespace-nowrap shrink-0">
+                        <CheckCircle2 size={12} className="shrink-0" /> Approved
                     </span>
                 );
             case 'rejected':
                 return (
-                    <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-amber-250/70">
-                        <RotateCcw size={12} /> Needs Revision
+                    <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-amber-250/70 whitespace-nowrap shrink-0">
+                        <RotateCcw size={12} className="shrink-0" /> Needs Revision
                     </span>
                 );
             default:
                 return (
-                    <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-amber-200/60">
-                        <Clock size={12} /> Pending
+                    <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-amber-200/60 whitespace-nowrap shrink-0">
+                        <Clock size={12} className="shrink-0" /> Pending
                     </span>
                 );
         }

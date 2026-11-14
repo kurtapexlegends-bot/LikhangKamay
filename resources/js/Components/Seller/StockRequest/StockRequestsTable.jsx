@@ -51,17 +51,17 @@ export default function StockRequestsTable({
                         <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="inline-flex items-center font-mono text-[11px] font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded-lg border border-stone-200/70">
+                                    <span className="inline-flex items-center font-mono text-[11px] font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded-lg border border-stone-200/70 whitespace-nowrap">
                                         #{req.id}
                                     </span>
                                     <StatusBadge status={req.status} />
                                     {req.urgency_level === 'immediate' && (
-                                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-md">
+                                        <span className="inline-flex items-center text-[9px] font-extrabold uppercase tracking-widest text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-md whitespace-nowrap">
                                             Urgent
                                         </span>
                                     )}
                                     {req.urgency_level === 'soon' && (
-                                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md">
+                                        <span className="inline-flex items-center text-[9px] font-extrabold uppercase tracking-widest text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md whitespace-nowrap">
                                             High Priority
                                         </span>
                                     )}
@@ -151,20 +151,20 @@ export default function StockRequestsTable({
                 <table className="w-full min-w-[920px] text-left">
                     <thead>
                         <tr className="border-b border-stone-100 bg-stone-50/50">
-                            <th className="px-4 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-wider">Request</th>
-                            <th className="px-4 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-wider">Item & Requester</th>
-                            <th className="px-4 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-wider">Order Qty</th>
-                            <th className="px-4 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-wider">Intake Progress</th>
-                            <th className="px-4 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-wider">Total Cost</th>
-                            <th className="px-4 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-wider">Status</th>
-                            <th className="px-4 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-wider text-right">Actions</th>
+                            <th className="px-4 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-wider whitespace-nowrap">Request</th>
+                            <th className="px-4 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-wider whitespace-nowrap">Item & Requester</th>
+                            <th className="px-4 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-wider whitespace-nowrap">Order Qty</th>
+                            <th className="px-4 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-wider whitespace-nowrap">Intake Progress</th>
+                            <th className="px-4 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-wider whitespace-nowrap">Total Cost</th>
+                            <th className="px-4 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-wider whitespace-nowrap">Status</th>
+                            <th className="px-4 py-3 text-[10px] font-bold text-stone-400 uppercase tracking-wider text-right whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100/80">
                         {filteredRequests.map((req) => (
                             <tr key={req.id} className="group hover:bg-stone-50/60 transition-colors duration-150">
-                                <td className="px-4 py-3.5 align-middle">
-                                    <span className="inline-flex items-center font-mono text-xs font-bold text-stone-600 bg-stone-100 px-2 py-1 rounded-lg border border-stone-200/70 shadow-2xs">
+                                <td className="px-4 py-3.5 align-middle whitespace-nowrap">
+                                    <span className="inline-flex items-center font-mono text-xs font-bold text-stone-600 bg-stone-100 px-2 py-1 rounded-lg border border-stone-200/70 shadow-2xs whitespace-nowrap">
                                         #{req.id}
                                     </span>
                                 </td>
@@ -172,12 +172,12 @@ export default function StockRequestsTable({
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         <p className="font-black text-stone-900 text-sm leading-snug">{req.supply?.name || 'Item'}</p>
                                         {req.urgency_level === 'immediate' && (
-                                            <span className="text-[9px] font-extrabold uppercase tracking-widest text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded">
+                                            <span className="inline-flex items-center text-[9px] font-extrabold uppercase tracking-widest text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded whitespace-nowrap">
                                                 Urgent
                                             </span>
                                         )}
                                         {req.urgency_level === 'soon' && (
-                                            <span className="text-[9px] font-extrabold uppercase tracking-widest text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                                            <span className="inline-flex items-center text-[9px] font-extrabold uppercase tracking-widest text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded whitespace-nowrap">
                                                 High Priority
                                             </span>
                                         )}
@@ -202,7 +202,7 @@ export default function StockRequestsTable({
                                 <td className="px-4 py-3.5 align-middle whitespace-nowrap">
                                     <span className="text-sm font-black text-clay-700">{formatPeso(req.total_cost)}</span>
                                 </td>
-                                <td className="px-4 py-3.5 align-middle">
+                                <td className="px-4 py-3.5 align-middle whitespace-nowrap">
                                     <div className="flex flex-col items-start gap-1">
                                         <StatusBadge status={req.status} />
                                         {req.status === 'rejected' && (req.active_revision || req.rejection_reason) && (

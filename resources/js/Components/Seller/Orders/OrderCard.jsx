@@ -103,10 +103,10 @@ export default function OrderCard({
                         <button
                             type="button"
                             onClick={() => setShowTimelineModal(true)}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold text-stone-600 bg-stone-100 hover:bg-stone-200/80 rounded-md transition cursor-pointer"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold text-stone-600 bg-stone-100 hover:bg-stone-200/80 rounded-md transition cursor-pointer whitespace-nowrap"
                             title="Click to view full activity timeline"
                         >
-                            <Activity size={10} className="text-stone-400" />
+                            <Activity size={10} className="text-stone-400 shrink-0" />
                             <span>{timelineCount} {timelineCount === 1 ? "event" : "events"}</span>
                         </button>
                     )}
@@ -120,14 +120,14 @@ export default function OrderCard({
                                     href={route("seller.pos.receipt", order.db_id)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10.5px] font-bold text-stone-600 bg-white border border-stone-200/90 rounded-md hover:bg-stone-50 hover:text-stone-900 transition shadow-2xs"
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10.5px] font-bold text-stone-600 bg-white border border-stone-200/90 rounded-md hover:bg-stone-50 hover:text-stone-900 transition shadow-2xs whitespace-nowrap"
                                     title="Print 80mm POS Receipt"
                                 >
-                                    <Printer size={11} className="text-stone-400" />
+                                    <Printer size={11} className="text-stone-400 shrink-0" />
                                     <span>80mm</span>
                                 </a>
                             )}
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border border-clay-200 bg-clay-50 text-clay-700">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border border-clay-200 bg-clay-50 text-clay-700 whitespace-nowrap">
                                 Walk-In POS
                             </span>
                         </>

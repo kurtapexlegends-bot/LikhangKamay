@@ -97,7 +97,7 @@ export default function CartSupplierGroup({
                                 <div className="space-y-0.5 sm:space-y-1 min-w-0 flex-1">
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                         <h3 className="font-bold text-stone-900 text-xs truncate max-w-sm">{item.name}</h3>
-                                        <span className="px-1.5 py-0.2 rounded-md bg-stone-100 text-stone-600 font-bold text-[9px] sm:text-[10px]">
+                                        <span className="px-1.5 py-0.2 rounded-md bg-stone-100 text-stone-600 font-bold text-[9px] sm:text-[10px] whitespace-nowrap">
                                             {item.supply_unit || 'pcs'}
                                         </span>
                                     </div>
@@ -106,8 +106,8 @@ export default function CartSupplierGroup({
                                     <div className="flex items-center gap-1.5 text-xs flex-wrap">
                                         <span className="font-bold text-stone-900">{formatCurrency(effectiveUnitPrice)}</span>
                                         {isWholesaleApplied && (
-                                            <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-md border border-emerald-200">
-                                                <Sparkles size={9} /> Bulk Rate
+                                            <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-md border border-emerald-200 whitespace-nowrap">
+                                                <Sparkles size={9} className="shrink-0" /> Bulk Rate
                                             </span>
                                         )}
                                         {!isWholesaleApplied && wholesalePrice && wholesaleMinQty && (
@@ -119,8 +119,8 @@ export default function CartSupplierGroup({
 
                                     {/* MOQ warning */}
                                     {isBelowMoq && (
-                                        <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200 w-fit">
-                                            <AlertCircle size={10} />
+                                        <div className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200 w-fit whitespace-nowrap">
+                                            <AlertCircle size={10} className="shrink-0" />
                                             <span>Minimum Order: {moq} {item.supply_unit || 'units'}</span>
                                         </div>
                                     )}

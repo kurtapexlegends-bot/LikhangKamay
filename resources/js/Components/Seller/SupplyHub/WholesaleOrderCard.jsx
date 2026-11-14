@@ -81,17 +81,17 @@ export default function WholesaleOrderCard({
                 {/* Status Badges */}
                 <div className="flex items-center gap-1.5 flex-wrap">
                     {/* Payment Badge */}
-                    <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-tight ${
+                    <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-tight whitespace-nowrap ${
                         order.payment_status === 'paid' 
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
                             : 'bg-amber-50 text-amber-700 border border-amber-200'
                     }`}>
-                        <CreditCard size={10} />
+                        <CreditCard size={10} className="shrink-0" />
                         <span>{order.payment_status === 'paid' ? 'Paid' : 'Payment Pending'}</span>
                     </span>
 
                     {/* Order Status Badge */}
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap ${
                         order.status === 'Pending' 
                             ? 'bg-amber-100 text-amber-900' 
                             : order.status === 'Accepted' || order.status === 'Processing'
@@ -133,8 +133,8 @@ export default function WholesaleOrderCard({
                     <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
                         <span className="text-xs font-bold text-stone-850 truncate">{order.customer}</span>
                         {order.buyer_shop_name && !order.customer?.toLowerCase().includes(order.buyer_shop_name.toLowerCase()) && (
-                            <span className="inline-flex items-center gap-1 rounded bg-stone-200/70 px-1.5 py-0.2 text-[9px] font-bold text-stone-700">
-                                <Store size={9} />
+                            <span className="inline-flex items-center gap-1 rounded bg-stone-200/70 px-1.5 py-0.2 text-[9px] font-bold text-stone-700 whitespace-nowrap">
+                                <Store size={9} className="shrink-0" />
                                 {order.buyer_shop_name}
                             </span>
                         )}

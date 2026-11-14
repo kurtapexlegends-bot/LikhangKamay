@@ -79,8 +79,8 @@ export default function ProductTable({
                         onSort={requestSort}
                         align="center"
                     />
-                    <th className="px-5 py-4 text-center">Status</th>
-                    <th className="px-5 py-4 text-center">Actions</th>
+                    <th className="px-5 py-4 text-center whitespace-nowrap">Status</th>
+                    <th className="px-5 py-4 text-center whitespace-nowrap">Actions</th>
                 </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -90,7 +90,7 @@ export default function ProductTable({
                             key={product.id}
                             className="hover:bg-gray-50/50 transition"
                         >
-                            <td className="px-5 py-3">
+                            <td className="px-5 py-3 whitespace-nowrap">
                                 <Checkbox
                                     checked={selectedProductIds.includes(product.id)}
                                     onChange={() => toggleProductSelection(product.id)}
@@ -117,13 +117,13 @@ export default function ProductTable({
                                     </div>
                                 </div>
                             </td>
-                            <td className="px-5 py-3 font-bold text-gray-700 text-sm text-center">
+                            <td className="px-5 py-3 font-bold text-gray-700 text-sm text-center whitespace-nowrap">
                                 {product.has_discount ? (
                                     <div>
                                         <span className="text-clay-700 font-bold">₱{Number(product.effective_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                         <div className="flex items-center justify-center gap-1 mt-0.5">
                                             <span className="text-[10px] text-gray-400 line-through">₱{Number(product.price).toLocaleString()}</span>
-                                            <span className="text-[9px] bg-clay-100 text-clay-700 px-1 py-0.2 rounded font-bold">
+                                            <span className="text-[9px] bg-clay-100 text-clay-700 px-1.5 py-0.5 rounded font-bold whitespace-nowrap">
                                                 -{product.discount_info?.percentage_off}%
                                             </span>
                                         </div>
@@ -132,10 +132,10 @@ export default function ProductTable({
                                     `₱${Number(product.price).toLocaleString()}`
                                 )}
                             </td>
-                            <td className="px-5 py-3 font-semibold text-gray-500 text-sm text-center">
+                            <td className="px-5 py-3 font-semibold text-gray-500 text-sm text-center whitespace-nowrap">
                                 ₱{Number(product.cost_price || 0).toLocaleString()}
                             </td>
-                            <td className="px-5 py-3">
+                            <td className="px-5 py-3 whitespace-nowrap">
                                 <div className="flex items-center justify-center">
                                     <QuickRestock
                                         item={product}
@@ -146,10 +146,10 @@ export default function ProductTable({
                                     />
                                 </div>
                             </td>
-                            <td className="px-5 py-3 font-medium text-gray-600 text-sm text-center">
+                            <td className="px-5 py-3 font-medium text-gray-600 text-sm text-center whitespace-nowrap">
                                 {product.sold || 0}
                             </td>
-                            <td className="px-5 py-3">
+                            <td className="px-5 py-3 whitespace-nowrap">
                                 <div className="flex flex-col items-center gap-1">
                                     {(product.status === "rejected" || product.status === "flagged") && canEditProducts && onResubmitClick ? (
                                         <button
@@ -201,7 +201,7 @@ export default function ProductTable({
                                     )}
                                 </div>
                             </td>
-                            <td className="px-5 py-3 text-center">
+                            <td className="px-5 py-3 text-center whitespace-nowrap">
                                 <div className="flex items-center justify-center gap-1">
                                     <button
                                         type="button"

@@ -33,10 +33,10 @@ const PaymentStatusBadge = ({ status, method }) => {
 
     return (
         <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${bg} ${text} ${border}`}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap shrink-0 ${bg} ${text} ${border}`}
         >
-            <CreditCard size={10} />
-            {label} - {method || "COD"}
+            <CreditCard size={10} className="shrink-0" />
+            <span>{label} - {method || "COD"}</span>
         </span>
     );
 };

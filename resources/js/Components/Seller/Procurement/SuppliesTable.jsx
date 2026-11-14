@@ -226,19 +226,19 @@ export default function SuppliesTable({
                 <div className="px-5 py-2.5 bg-stone-50/80 border-b border-stone-150 flex flex-wrap items-center gap-2 text-xs">
                     <span className="text-[10px] font-black uppercase tracking-wider text-stone-400">Active Filters:</span>
                     {selectedCategory !== 'all' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-clay-50 border border-clay-200 text-clay-800 text-[11px] font-bold">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-clay-50 border border-clay-200 text-clay-800 text-[11px] font-bold whitespace-nowrap">
                             Category: {selectedCategory}
                             <button onClick={() => setSelectedCategory('all')} className="hover:text-clay-950"><X size={12} /></button>
                         </span>
                     )}
                     {stockStatusFilter !== 'all' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-bold">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-bold whitespace-nowrap">
                             Status: {stockStatusFilter === 'low_stock' ? 'Low Stock' : 'In Stock'}
                             <button onClick={() => setStockStatusFilter('all')} className="hover:text-amber-950"><X size={12} /></button>
                         </span>
                     )}
                     {unitTypeFilter !== 'all' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-100 border border-stone-200 text-stone-800 text-[11px] font-bold">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-100 border border-stone-200 text-stone-800 text-[11px] font-bold whitespace-nowrap">
                             Unit: {unitTypeFilter}
                             <button onClick={() => setUnitTypeFilter('all')} className="hover:text-stone-950"><X size={12} /></button>
                         </span>

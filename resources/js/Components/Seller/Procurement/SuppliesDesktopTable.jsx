@@ -22,14 +22,14 @@ export default function SuppliesDesktopTable({
             <table className="w-full text-left border-collapse">
                 <thead>
                     <tr className="border-b border-stone-200/80 bg-stone-50/50 text-[11px] font-bold text-stone-500 uppercase tracking-wider">
-                        <th className="px-4 py-3 font-semibold">SKU</th>
-                        <th className="px-4 py-3 font-semibold">Name</th>
-                        <th className="px-4 py-3 font-semibold">Category</th>
-                        <th className="px-4 py-3 font-semibold text-center">Stock</th>
-                        <th className="px-4 py-3 font-semibold">Unit Cost</th>
-                        <th className="px-4 py-3 font-semibold">Supplier</th>
-                        <th className="px-4 py-3 font-semibold">Status</th>
-                        <th className="px-4 py-3 font-semibold text-right">Actions</th>
+                        <th className="px-4 py-3 font-semibold whitespace-nowrap">SKU</th>
+                        <th className="px-4 py-3 font-semibold whitespace-nowrap">Name</th>
+                        <th className="px-4 py-3 font-semibold whitespace-nowrap">Category</th>
+                        <th className="px-4 py-3 font-semibold text-center whitespace-nowrap">Stock</th>
+                        <th className="px-4 py-3 font-semibold whitespace-nowrap">Unit Cost</th>
+                        <th className="px-4 py-3 font-semibold whitespace-nowrap">Supplier</th>
+                        <th className="px-4 py-3 font-semibold whitespace-nowrap">Status</th>
+                        <th className="px-4 py-3 font-semibold text-right whitespace-nowrap">Actions</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100 text-xs">
@@ -43,7 +43,7 @@ export default function SuppliesDesktopTable({
                                     key={supply.id} 
                                     className="hover:bg-stone-50/80 transition-colors group"
                                 >
-                                    <td className="px-4 py-3 font-mono text-[11px] text-stone-400 font-bold">{supply.sku || '-'}</td>
+                                    <td className="px-4 py-3 font-mono text-[11px] text-stone-400 font-bold whitespace-nowrap">{supply.sku || '-'}</td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-xl bg-clay-100 flex items-center justify-center text-clay-700 overflow-hidden border border-clay-200 shrink-0">
@@ -61,12 +61,12 @@ export default function SuppliesDesktopTable({
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3">
-                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-200">
+                                    <td className="px-4 py-3 whitespace-nowrap">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-stone-100 text-stone-600 border border-stone-200 whitespace-nowrap">
                                             {supply.category}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-center">
+                                    <td className="px-4 py-3 text-center whitespace-nowrap">
                                         <QuickRestock 
                                             item={supply}
                                             canEdit={canEditProcurement}
@@ -75,22 +75,22 @@ export default function SuppliesDesktopTable({
                                             type="supply"
                                         />
                                     </td>
-                                    <td className="px-4 py-3 font-semibold text-stone-700">
+                                    <td className="px-4 py-3 font-semibold text-stone-700 whitespace-nowrap">
                                         {supply.unit_cost ? `₱${parseFloat(supply.unit_cost).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '-'}
                                     </td>
-                                    <td className="px-4 py-3 text-stone-600 font-medium">{supply.supplier || '-'}</td>
-                                    <td className="px-4 py-3">
+                                    <td className="px-4 py-3 text-stone-600 font-medium whitespace-nowrap">{supply.supplier || '-'}</td>
+                                    <td className="px-4 py-3 whitespace-nowrap">
                                         {supply.quantity <= supply.min_stock ? (
-                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
-                                                <AlertTriangle size={10} /> Low Stock
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200 whitespace-nowrap">
+                                                <AlertTriangle size={10} className="shrink-0" /> Low Stock
                                             </span>
                                         ) : (
-                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-700 border border-green-200 whitespace-nowrap">
                                                 In Stock
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-4 py-3 text-right">
+                                    <td className="px-4 py-3 text-right whitespace-nowrap">
                                         <div className="flex items-center justify-end gap-1">
                                             <Link
                                                 href={route('seller.supply-hub.index', { search: supply.name })}

@@ -23,13 +23,14 @@ export default function QuickRestock({ item, canEdit, onRestock, unit = 'units',
                     <PopoverButton
                         disabled={!canEdit}
                         title={canEdit ? "Click to quick restock" : "Read only"}
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all hover:ring-2 hover:ring-offset-1 focus:outline-none ${
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all hover:ring-2 hover:ring-offset-1 focus:outline-none whitespace-nowrap inline-flex items-center justify-center gap-1 ${
                             stockValue < (item.min_stock || 10) 
                                 ? "bg-rose-50 text-rose-600 border-rose-100 hover:ring-rose-200" 
                                 : "bg-emerald-50 text-emerald-600 border-emerald-100 hover:ring-emerald-200"
                         }`}
                     >
-                        {stockValue} {unit}
+                        <span>{stockValue}</span>
+                        <span>{unit}</span>
                     </PopoverButton>
 
                     <Transition

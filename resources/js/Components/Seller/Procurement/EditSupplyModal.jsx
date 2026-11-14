@@ -78,7 +78,7 @@ export default function EditSupplyModal({
                         <div>
                             <div className="flex items-center gap-2">
                                 <h2 className="text-base font-bold text-stone-900 tracking-tight">Update Supply Details</h2>
-                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider bg-stone-100 text-stone-700 border border-stone-200">
+                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider bg-stone-100 text-stone-700 border border-stone-200 whitespace-nowrap">
                                     {supply?.sku || 'Item'}
                                 </span>
                             </div>
@@ -252,7 +252,7 @@ export default function EditSupplyModal({
                                 <DollarSign size={14} className="text-clay-600" />
                                 <span>Unit Cost &amp; Inventory Valuation</span>
                             </div>
-                            <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                            <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 whitespace-nowrap">
                                 PHP (₱)
                             </span>
                         </div>

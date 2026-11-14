@@ -42,23 +42,23 @@ function StaffMemberList({ staffMembers, emptyMessage }) {
                                             <p className="truncate text-xs text-stone-500 font-medium">{staffMember.email}</p>
                                         </div>
                                     </div>
-                                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-widest ${stateClasses[staffMember.account_state_tone] || stateClasses.neutral}`}>
+                                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-widest whitespace-nowrap ${stateClasses[staffMember.account_state_tone] || stateClasses.neutral}`}>
                                         {staffMember.account_state}
                                     </span>
                                 </div>
                                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                                    <span className="inline-flex items-center rounded-md border border-[#E8D9CB] bg-[#F2EAE1] px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-[#7A5037]">
+                                    <span className="inline-flex items-center rounded-md border border-[#E8D9CB] bg-[#F2EAE1] px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-[#7A5037] whitespace-nowrap">
                                         {formatStaffPreset(staffMember.staff_role_preset_key)}
                                     </span>
                                     {(moduleSummary.canEditCount + moduleSummary.readOnlyCount) > 0 && (
-                                        <span className="inline-flex items-center rounded-md border border-stone-200 bg-white px-2.5 py-1 text-[10px] font-medium tracking-wider text-stone-600">
+                                        <span className="inline-flex items-center rounded-md border border-stone-200 bg-white px-2.5 py-1 text-[10px] font-medium tracking-wider text-stone-600 whitespace-nowrap">
                                             {moduleSummary.canEditCount} edit / {moduleSummary.readOnlyCount} view
                                         </span>
                                     )}
-                                    <span className="inline-flex items-center rounded-md border border-stone-200 bg-stone-100 px-2.5 py-1 text-[10px] font-medium tracking-wider text-stone-600">
+                                    <span className="inline-flex items-center rounded-md border border-stone-200 bg-stone-100 px-2.5 py-1 text-[10px] font-medium tracking-wider text-stone-600 whitespace-nowrap">
                                         {staffMember.employee_linked ? (staffMember.employee_name || 'Employee linked') : 'No employee record'}
                                     </span>
-                                    <span className={`inline-flex items-center rounded-md border px-2.5 py-1 text-[10px] font-medium tracking-wider ${staffMember.email_verified ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>
+                                    <span className={`inline-flex items-center rounded-md border px-2.5 py-1 text-[10px] font-medium tracking-wider whitespace-nowrap ${staffMember.email_verified ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>
                                         {staffMember.email_verified ? 'Email verified' : 'Email pending'}
                                     </span>
                                 </div>
@@ -254,7 +254,7 @@ export default function UserTable({
                                                  <div className="space-y-0.5">
                                                      <div className="flex flex-wrap items-center gap-1.5">
                                                          <p className="text-xs font-semibold text-stone-900">{user.shop_name || 'Unnamed Shop'}</p>
-                                                         <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                                                         <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${
                                                              user.staff_count > 0 
                                                                  ? 'bg-[#F2EAE1] border-[#E8D9CB] text-[#7A5037]' 
                                                                  : 'bg-stone-50 border-stone-200 text-stone-400'
@@ -262,7 +262,7 @@ export default function UserTable({
                                                              {user.staff_count === 1 ? '1 staff' : `${user.staff_count} staff`}
                                                          </span>
                                                          {filters.search && user.matched_staff_count > 0 && (
-                                                             <span className="inline-flex items-center rounded bg-clay-50 border border-clay-100 px-1.5 py-0.5 text-[10px] font-medium text-clay-700 animate-pulse">
+                                                             <span className="inline-flex items-center rounded bg-clay-50 border border-clay-100 px-1.5 py-0.5 text-[10px] font-medium text-clay-700 animate-pulse whitespace-nowrap">
                                                                  {user.matched_staff_count} match
                                                              </span>
                                                          )}
@@ -280,33 +280,33 @@ export default function UserTable({
                                              )}
                                          </td>
 
-                                         <td className="px-5 py-4 text-center">
-                                             <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer}`}>
-                                                 {user.role === 'artisan' && <Store size={10} />}
-                                                 {user.role === 'super_admin' && <Shield size={10} />}
-                                                 {user.role === 'buyer' && <Users size={10} />}
+                                         <td className="px-5 py-4 text-center whitespace-nowrap">
+                                             <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest whitespace-nowrap ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer}`}>
+                                                 {user.role === 'artisan' && <Store size={10} className="shrink-0" />}
+                                                 {user.role === 'super_admin' && <Shield size={10} className="shrink-0" />}
+                                                 {user.role === 'buyer' && <Users size={10} className="shrink-0" />}
                                                  {user.role === 'artisan' && 'Artisan'}
                                                  {user.role === 'super_admin' && 'Admin'}
                                                  {user.role === 'buyer' && 'Buyer'}
                                              </span>
                                          </td>
 
-                                         <td className="px-5 py-4 text-center">
+                                         <td className="px-5 py-4 text-center whitespace-nowrap">
                                              <div className="flex flex-col items-center gap-1">
                                                  {user.is_banned ? (
-                                                     <span className="inline-flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 text-rose-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                                                     <span className="inline-flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 text-rose-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
                                                          Deactivated
                                                      </span>
                                                  ) : user.is_suspended ? (
-                                                     <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 text-amber-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                                                     <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 text-amber-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
                                                          Suspended ({user.days_remaining_suspension || 1}d)
                                                      </span>
                                                  ) : user.warning_count > 0 ? (
-                                                     <span className="inline-flex items-center gap-1 rounded-md border border-amber-200/80 bg-amber-50/60 text-amber-800 px-2.5 py-0.5 text-[10px] font-semibold">
+                                                     <span className="inline-flex items-center gap-1 rounded-md border border-amber-200/80 bg-amber-50/60 text-amber-800 px-2.5 py-0.5 text-[10px] font-semibold whitespace-nowrap">
                                                          {user.warning_count} Warning{user.warning_count === 1 ? '' : 's'}
                                                      </span>
                                                  ) : (
-                                                     <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
+                                                     <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider whitespace-nowrap ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
                                                          {user.account_state}
                                                      </span>
                                                  )}

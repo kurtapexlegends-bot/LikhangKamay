@@ -89,7 +89,7 @@ export default function PayoutBalancesTable({
                                         </p>
                                     </div>
                                 </div>
-                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase shrink-0 border ${
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold uppercase shrink-0 border whitespace-nowrap ${
                                     isOwed ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                 }`}>
                                     {isOwed ? 'Ready for Payout' : 'Settled'}
@@ -102,7 +102,7 @@ export default function PayoutBalancesTable({
                                 {hasAccount ? (
                                     <div className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-1.5 min-w-0">
-                                            <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border ${
+                                            <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border whitespace-nowrap ${
                                                 (artisan.payout_method || '').toLowerCase().includes('gcash')
                                                     ? 'bg-sky-50 text-sky-700 border-sky-200/70'
                                                     : (artisan.payout_method || '').toLowerCase().includes('maya')
@@ -239,7 +239,7 @@ export default function PayoutBalancesTable({
                                         {hasAccount ? (
                                             <div>
                                                 <div className="flex items-center gap-1.5">
-                                                    <span className={`inline-flex px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase border ${
+                                                    <span className={`inline-flex px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase border whitespace-nowrap ${
                                                         (artisan.payout_method || '').toLowerCase().includes('gcash')
                                                             ? 'bg-sky-50 text-sky-700 border-sky-200/70'
                                                             : (artisan.payout_method || '').toLowerCase().includes('maya')
@@ -275,8 +275,8 @@ export default function PayoutBalancesTable({
                                             </div>
                                         ) : (
                                             <div className="flex items-center gap-1.5">
-                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80">
-                                                    <AlertCircle size={10} />
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 whitespace-nowrap">
+                                                    <AlertCircle size={10} className="shrink-0" />
                                                     Needs Setup
                                                 </span>
                                                 <span className="text-stone-400 text-[11px] italic">
@@ -321,8 +321,8 @@ export default function PayoutBalancesTable({
                                                     <span>Log Payout</span>
                                                 </button>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-lg mr-1">
-                                                    <Check size={12} />
+                                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-lg mr-1 whitespace-nowrap">
+                                                    <Check size={12} className="shrink-0" />
                                                     Settled
                                                 </span>
                                             )}

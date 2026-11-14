@@ -45,7 +45,7 @@ export default function AddSupplyModal({
                         <div>
                             <div className="flex items-center gap-2">
                                 <h2 className="text-base font-bold text-stone-900 tracking-tight">Add New Supply Item</h2>
-                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-clay-50 text-clay-700 border border-clay-200/80">
+                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-clay-50 text-clay-700 border border-clay-200/80 whitespace-nowrap">
                                     Raw Material
                                 </span>
                             </div>
@@ -259,7 +259,7 @@ export default function AddSupplyModal({
                                 <DollarSign size={14} className="text-clay-600" />
                                 <span>Unit Cost &amp; Batch Valuation</span>
                             </div>
-                            <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                            <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 whitespace-nowrap">
                                 PHP (₱)
                             </span>
                         </div>

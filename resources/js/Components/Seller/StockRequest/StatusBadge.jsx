@@ -7,7 +7,7 @@ export default function StatusBadge({ status }) {
     const dotColor = getStatusBadgeDotColor(status);
 
     return (
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-all ${style}`}>
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-all whitespace-nowrap shrink-0 ${style}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${dotColor} shrink-0`} />
             <span className="truncate">{label}</span>
         </span>

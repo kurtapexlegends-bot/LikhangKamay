@@ -155,13 +155,13 @@ export default function TransactionLedgerTable({
 
                                         {/* Category Column (Centered) */}
                                         <td className="px-5 py-3.5 align-middle text-center whitespace-nowrap">
-                                            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider ${typeTone(item.type)}`}>
+                                            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 ${typeTone(item.type)}`}>
                                                 {isPayroll ? (
-                                                    <Users size={12} strokeWidth={2.5} className="text-stone-600" />
+                                                    <Users size={12} strokeWidth={2.5} className="text-stone-600 shrink-0" />
                                                 ) : isSale || isPayout ? (
-                                                    <Banknote size={12} strokeWidth={2.5} className={isSale ? "text-teal-600" : "text-blue-600"} />
+                                                    <Banknote size={12} strokeWidth={2.5} className={`shrink-0 ${isSale ? "text-teal-600" : "text-blue-600"}`} />
                                                 ) : (
-                                                    <FileText size={12} strokeWidth={2.5} className="text-clay-700" />
+                                                    <FileText size={12} strokeWidth={2.5} className="text-clay-700 shrink-0" />
                                                 )}
                                                 <span>
                                                     {isPayroll
@@ -226,7 +226,7 @@ export default function TransactionLedgerTable({
 
                                         {/* Status Column (Centered) */}
                                         <td className="px-5 py-3.5 align-middle text-center whitespace-nowrap">
-                                            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ${statusTone(item.status)}`}>
+                                            <span className={`inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0 ${statusTone(item.status)}`}>
                                                 {isPayout ? 'Transferred' : String(item.status).replace(/_/g, ' ')}
                                             </span>
                                         </td>

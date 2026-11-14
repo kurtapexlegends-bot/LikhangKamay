@@ -352,12 +352,12 @@ export default function AddressLocationPicker({
                             <div className="flex items-center gap-2">
                                 <h3 className="text-base font-bold text-stone-900">Doorstep Location Map</h3>
                                 {isResolvingAddress ? (
-                                    <span className="inline-flex items-center gap-1 rounded-md bg-clay-50 px-2 py-0.5 text-[10px] font-bold text-clay-800 border border-clay-200">
-                                        <Loader2 className="w-3 h-3 animate-spin text-clay-600" />
+                                    <span className="inline-flex items-center gap-1 rounded-md bg-clay-50 px-2 py-0.5 text-[10px] font-bold text-clay-800 border border-clay-200 whitespace-nowrap">
+                                        <Loader2 className="w-3 h-3 animate-spin text-clay-600 shrink-0" />
                                         Auto-filling...
                                     </span>
                                 ) : (
-                                    <span className="rounded-md bg-clay-50 px-2 py-0.5 text-[10px] font-bold text-clay-800 border border-clay-200">
+                                    <span className="inline-flex items-center rounded-md bg-clay-50 px-2 py-0.5 text-[10px] font-bold text-clay-800 border border-clay-200 whitespace-nowrap">
                                         Courier Accuracy
                                     </span>
                                 )}
@@ -382,16 +382,16 @@ export default function AddressLocationPicker({
                             <MapPin className="w-4 h-4 text-clay-600 shrink-0" />
                             <span className="text-xs font-bold text-stone-900">Pin Delivery Location</span>
                             {isResolvingAddress ? (
-                                <span className="inline-flex items-center gap-1 rounded-md bg-clay-50 px-2 py-0.5 text-[10px] font-semibold text-clay-700 border border-clay-200">
-                                    <Loader2 className="w-3 h-3 animate-spin text-clay-600" />
+                                <span className="inline-flex items-center gap-1 rounded-md bg-clay-50 px-2 py-0.5 text-[10px] font-semibold text-clay-700 border border-clay-200 whitespace-nowrap">
+                                    <Loader2 className="w-3 h-3 animate-spin text-clay-600 shrink-0" />
                                     Auto-filling...
                                 </span>
                             ) : hasCoordinates ? (
-                                <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
+                                <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200 whitespace-nowrap">
                                     Pinned
                                 </span>
                             ) : (
-                                <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
+                                <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200 whitespace-nowrap">
                                     Tap to Pin
                                 </span>
                             )}

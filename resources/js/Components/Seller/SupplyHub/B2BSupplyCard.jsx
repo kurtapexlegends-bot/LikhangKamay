@@ -97,12 +97,12 @@ function B2BSupplyCard({
 
                 {/* Top Badges */}
                 <div className="absolute top-1.5 left-1.5 right-1.5 sm:top-2 sm:left-2 sm:right-2 z-10 flex items-center justify-between pointer-events-none gap-1">
-                    <span className="bg-stone-900/80 backdrop-blur-xs text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-md shadow-2xs">
+                    <span className="bg-stone-900/80 backdrop-blur-xs text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-md shadow-2xs whitespace-nowrap">
                         Min. {minOrderQty} {formatSupplyUnit(item.supply_unit, minOrderQty)}
                     </span>
 
                     {discountPercentage && discountPercentage > 0 && (
-                        <span className="bg-rose-600 text-white text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-full shadow-xs">
+                        <span className="bg-rose-600 text-white text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-full shadow-xs whitespace-nowrap">
                             -{discountPercentage}%
                         </span>
                     )}
@@ -110,8 +110,8 @@ function B2BSupplyCard({
 
                 {/* Quick View Hover Pill */}
                 <div className="absolute inset-0 bg-stone-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                    <span className="bg-white/95 text-stone-900 text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-md flex items-center gap-1.5">
-                        <Eye size={13} className="text-clay-600" /> View Details
+                    <span className="bg-white/95 text-stone-900 text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-md inline-flex items-center gap-1.5 whitespace-nowrap">
+                        <Eye size={13} className="text-clay-600 shrink-0" /> View Details
                     </span>
                 </div>
             </div>

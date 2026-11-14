@@ -383,8 +383,8 @@ export default function DriverDeliveries({
                                                     <div className="absolute inset-0 rounded-2xl bg-clay-400/20 animate-ping opacity-30" />
                                                     {renderVehicleIcon(driverProfile.vehicle_type, "text-clay-700 relative z-10", 24)}
                                                 </div>
-                                                <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold mb-1.5">
-                                                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                                <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold mb-1.5 whitespace-nowrap">
+                                                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                                                     <span>Standing By for Dispatches</span>
                                                 </div>
                                                 <h3 className="text-sm sm:text-base font-bold text-stone-900 mb-1">

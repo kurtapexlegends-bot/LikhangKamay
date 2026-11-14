@@ -264,14 +264,14 @@ export default function MyListings({
                         <table className="w-full text-left text-xs text-stone-600">
                             <thead className="border-b border-stone-200 bg-stone-50/80 font-bold uppercase tracking-wider text-stone-500 text-[10px]">
                                 <tr>
-                                    <th className="px-5 py-3.5">Material / Item</th>
-                                    <th className="px-4 py-3.5">Category</th>
-                                    <th className="px-4 py-3.5">Standard Price</th>
-                                    <th className="px-4 py-3.5">Supply Status</th>
-                                    <th className="px-4 py-3.5">Min. Order</th>
-                                    <th className="px-4 py-3.5">Bulk Discount</th>
-                                    <th className="px-4 py-3.5">Stock</th>
-                                    <th className="px-5 py-3.5 text-right">Actions</th>
+                                    <th className="px-5 py-3.5 whitespace-nowrap">Material / Item</th>
+                                    <th className="px-4 py-3.5 whitespace-nowrap">Category</th>
+                                    <th className="px-4 py-3.5 whitespace-nowrap">Standard Price</th>
+                                    <th className="px-4 py-3.5 whitespace-nowrap">Supply Status</th>
+                                    <th className="px-4 py-3.5 whitespace-nowrap">Min. Order</th>
+                                    <th className="px-4 py-3.5 whitespace-nowrap">Bulk Discount</th>
+                                    <th className="px-4 py-3.5 whitespace-nowrap">Stock</th>
+                                    <th className="px-5 py-3.5 text-right whitespace-nowrap">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-stone-150 font-medium">
@@ -304,24 +304,24 @@ export default function MyListings({
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3.5 text-stone-700">{product.category}</td>
-                                            <td className="px-4 py-3.5 font-bold text-stone-900">{formatCurrency(product.price)}</td>
-                                            <td className="px-4 py-3.5">
+                                            <td className="px-4 py-3.5 text-stone-700 whitespace-nowrap">{product.category}</td>
+                                            <td className="px-4 py-3.5 font-bold text-stone-900 whitespace-nowrap">{formatCurrency(product.price)}</td>
+                                            <td className="px-4 py-3.5 whitespace-nowrap">
                                                 {product.is_b2b_supply ? (
-                                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                                                        <Check size={10} />
+                                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+                                                        <Check size={10} className="shrink-0" />
                                                         Wholesale Active
                                                     </span>
                                                 ) : (
-                                                    <span className="inline-flex items-center rounded-full bg-stone-100 border border-stone-200 px-2 py-0.5 text-[10px] font-semibold text-stone-500">
+                                                    <span className="inline-flex items-center rounded-full bg-stone-100 border border-stone-200 px-2 py-0.5 text-[10px] font-semibold text-stone-500 whitespace-nowrap">
                                                         Retail Only
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3.5 text-stone-800 font-semibold">
+                                            <td className="px-4 py-3.5 text-stone-800 font-semibold whitespace-nowrap">
                                                 {product.is_b2b_supply ? `${product.moq} ${product.supply_unit}` : '—'}
                                             </td>
-                                            <td className="px-4 py-3.5">
+                                            <td className="px-4 py-3.5 whitespace-nowrap">
                                                 {product.is_b2b_supply && product.wholesale_price && product.wholesale_min_qty ? (
                                                     <div className="space-y-0.5">
                                                         <p className="font-bold text-emerald-700">{formatCurrency(product.wholesale_price)}</p>
@@ -331,10 +331,10 @@ export default function MyListings({
                                                     <span className="text-stone-400 text-[11px]">No volume discount</span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3.5 font-semibold text-stone-800">
+                                            <td className="px-4 py-3.5 font-semibold text-stone-800 whitespace-nowrap">
                                                 {product.stock} {product.supply_unit || 'pcs'}
                                             </td>
-                                            <td className="px-5 py-3.5 text-right">
+                                            <td className="px-5 py-3.5 text-right whitespace-nowrap">
                                                 <button
                                                     type="button"
                                                     onClick={() => openEditModal(product)}
@@ -374,15 +374,15 @@ export default function MyListings({
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between gap-1">
-                                            <span className="inline-block rounded bg-stone-100 px-1.5 py-0.5 text-[9px] font-bold text-stone-600">
+                                            <span className="inline-block rounded bg-stone-100 px-1.5 py-0.5 text-[9px] font-bold text-stone-600 whitespace-nowrap">
                                                 {product.category}
                                             </span>
                                             {product.is_b2b_supply ? (
-                                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                                                    <Check size={9} /> Wholesale Active
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+                                                    <Check size={9} className="shrink-0" /> Wholesale Active
                                                 </span>
                                             ) : (
-                                                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-medium text-stone-500">
+                                                <span className="inline-flex items-center rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-medium text-stone-500 whitespace-nowrap">
                                                     Retail Only
                                                 </span>
                                             )}

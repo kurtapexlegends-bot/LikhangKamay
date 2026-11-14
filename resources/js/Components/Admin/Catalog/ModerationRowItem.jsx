@@ -5,24 +5,24 @@ export function StatusPill({ status, rejectionReason, sellerNotes }) {
     return (
         <div className="flex flex-col items-center">
             {status === 'Active' ? (
-                <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-emerald-100/40">
-                    <CheckCircle2 size={12} /> Active
+                <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-emerald-100/40 whitespace-nowrap shrink-0">
+                    <CheckCircle2 size={12} className="shrink-0" /> Active
                 </span>
             ) : status === 'pending_review' ? (
-                <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-amber-100/40">
-                    <Clock size={12} /> Pending Review
+                <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-amber-100/40 whitespace-nowrap shrink-0">
+                    <Clock size={12} className="shrink-0" /> Pending Review
                 </span>
             ) : status === 'rejected' ? (
-                <span className="inline-flex items-center gap-1.5 bg-red-55/10 text-red-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-red-100/40">
-                    <XCircle size={12} /> Needs Revision
+                <span className="inline-flex items-center gap-1.5 bg-red-55/10 text-red-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-red-100/40 whitespace-nowrap shrink-0">
+                    <XCircle size={12} className="shrink-0" /> Needs Revision
                 </span>
             ) : status === 'flagged' ? (
-                <span className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-rose-200/40">
-                    <ShieldAlert size={12} /> Flagged
+                <span className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-rose-200/40 whitespace-nowrap shrink-0">
+                    <ShieldAlert size={12} className="shrink-0" /> Flagged
                 </span>
             ) : (
-                <span className="inline-flex items-center gap-1.5 bg-stone-50 text-stone-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-stone-200/40">
-                    <AlertTriangle size={12} /> {status}
+                <span className="inline-flex items-center gap-1.5 bg-stone-50 text-stone-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-stone-200/40 whitespace-nowrap shrink-0">
+                    <AlertTriangle size={12} className="shrink-0" /> {status}
                 </span>
             )}
             {rejectionReason && (

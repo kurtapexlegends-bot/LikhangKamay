@@ -79,7 +79,7 @@ export default function MaterialDetailModal({
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 sm:p-5 border-b border-stone-150 shrink-0">
                     <div className="flex items-center gap-2 min-w-0">
-                        <span className="rounded-lg bg-clay-100 text-clay-700 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider shrink-0">
+                        <span className="rounded-lg bg-clay-100 text-clay-700 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider shrink-0 whitespace-nowrap">
                             {item.category}
                         </span>
                         <h3 className="font-bold text-stone-900 text-sm truncate">{item.name}</h3>

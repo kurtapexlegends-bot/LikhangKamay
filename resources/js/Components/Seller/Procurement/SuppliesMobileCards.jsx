@@ -50,11 +50,11 @@ export default function SuppliesMobileCards({
                                 </div>
                                 <div>
                                     {supply.quantity <= supply.min_stock ? (
-                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-red-50 text-red-700 border border-red-200 shrink-0">
-                                            <AlertTriangle size={9} /> Low Stock
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-red-50 text-red-700 border border-red-200 shrink-0 whitespace-nowrap">
+                                            <AlertTriangle size={9} className="shrink-0" /> Low Stock
                                         </span>
                                     ) : (
-                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-green-50 text-green-700 border border-green-200 shrink-0">
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-green-50 text-green-700 border border-green-200 shrink-0 whitespace-nowrap">
                                             In Stock
                                         </span>
                                     )}

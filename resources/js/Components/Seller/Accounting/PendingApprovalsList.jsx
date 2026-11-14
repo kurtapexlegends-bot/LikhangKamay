@@ -167,11 +167,11 @@ export default function PendingApprovalsList({
                                     >
                                         {/* Type Column (Centered badge) */}
                                         <td className="px-5 py-3.5 align-middle text-center whitespace-nowrap">
-                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${typeTone(item.type)}`}>
+                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider whitespace-nowrap shrink-0 ${typeTone(item.type)}`}>
                                                 {isPayroll ? (
-                                                    <Users size={13} strokeWidth={2.5} className="text-stone-600" />
+                                                    <Users size={13} strokeWidth={2.5} className="text-stone-600 shrink-0" />
                                                 ) : (
-                                                    <FileText size={13} strokeWidth={2.5} className="text-clay-700" />
+                                                    <FileText size={13} strokeWidth={2.5} className="text-clay-700 shrink-0" />
                                                 )}
                                                 <span>{isPayroll ? 'Payroll' : 'Materials'}</span>
                                             </span>
@@ -219,19 +219,19 @@ export default function PendingApprovalsList({
                                         {/* Status / Urgency Column (Centered) */}
                                         <td className="px-5 py-3.5 align-middle text-center whitespace-nowrap">
                                             {isPayroll ? (
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200">
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200 whitespace-nowrap">
                                                     Pending Review
                                                 </span>
                                             ) : item.urgency_level === 'immediate' ? (
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap">
                                                     Urgent
                                                 </span>
                                             ) : item.urgency_level === 'soon' ? (
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200">
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200 whitespace-nowrap">
                                                     Priority
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-stone-100 text-stone-700 border border-stone-200">
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-stone-100 text-stone-700 border border-stone-200 whitespace-nowrap">
                                                     Routine
                                                 </span>
                                             )}
