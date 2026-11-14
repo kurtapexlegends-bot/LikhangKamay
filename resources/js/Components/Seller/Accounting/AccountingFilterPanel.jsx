@@ -166,10 +166,10 @@ export default function AccountingFilterPanel({
                 </div>
             </div>
 
-            {/* 3. Sales Payment Channel Audit Filter */}
+            {/* 3. Sales Payment Channel Filter */}
             <div>
                 <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5">
-                    Sales Payment Channel (Audit)
+                    Sales Channel
                 </label>
                 <div className="relative">
                     <select
@@ -184,10 +184,10 @@ export default function AccountingFilterPanel({
                         className="pr-8 text-xs py-2 w-full min-h-[40px] bg-white border border-stone-200 hover:border-stone-300 rounded-xl font-bold text-stone-700 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all cursor-pointer appearance-none px-3"
                     >
                         <option value="all">All Payment Channels</option>
-                        <option value="online_all">System Online Store (All)</option>
-                        <option value="online_gcash">System GCash</option>
-                        <option value="online_maya">System Maya</option>
-                        <option value="online_cod">System COD</option>
+                        <option value="online_all">Online Store (All)</option>
+                        <option value="online_gcash">Online GCash</option>
+                        <option value="online_maya">Online Maya</option>
+                        <option value="online_cod">Cash on Delivery</option>
                         <option value="pos_all">Walk-In POS (All)</option>
                         <option value="pos_cash">POS Cash</option>
                         <option value="pos_gcash">POS GCash</option>
@@ -249,10 +249,10 @@ export default function AccountingFilterPanel({
         paymentChannelFilter && paymentChannelFilter !== 'all' && {
             label: `Channel: ${
                 {
-                    online_all: 'System Online',
-                    online_gcash: 'System GCash',
-                    online_maya: 'System Maya',
-                    online_cod: 'System COD',
+                    online_all: 'Online Store',
+                    online_gcash: 'Online GCash',
+                    online_maya: 'Online Maya',
+                    online_cod: 'Cash on Delivery',
                     pos_all: 'Walk-In POS',
                     pos_cash: 'POS Cash',
                     pos_gcash: 'POS GCash',

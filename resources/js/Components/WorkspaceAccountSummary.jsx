@@ -11,7 +11,7 @@ export const getWorkspaceAccountLabel = (user) => {
             accountant: 'Accountant',
             stock_clerk: 'Stock Clerk',
             customer_support: 'Customer Care',
-            hr: 'People & Payroll',
+            hr: 'Employees & Payroll',
             accounting: 'Finance Review',
             procurement: 'Procurement',
             custom: 'Custom Access',

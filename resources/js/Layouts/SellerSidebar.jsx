@@ -477,7 +477,7 @@ export default function SellerSidebar({
                                 isCollapsed={isCollapsed}
                             >
                                 {visibleModulesSet.has('hr') && (
-                                    <NavItem href={route('hr.index')} icon={Users} active={active === 'hr'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'People & Payroll')} onMouseLeave={handleTooltipLeave}>People & Payroll</NavItem>
+                                    <NavItem href={route('hr.index')} icon={Users} active={active === 'hr'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Employees & Payroll')} onMouseLeave={handleTooltipLeave}>Employees & Payroll</NavItem>
                                 )}
                                 {visibleModulesSet.has('accounting') && (
                                     <NavItem href={route('accounting.index')} icon={Banknote} active={active === 'accounting'} onClick={onClose} isCollapsed={isCollapsed} onMouseEnter={(e) => handleTooltipShow(e, 'Finance')} onMouseLeave={handleTooltipLeave}>Finance</NavItem>

@@ -332,7 +332,7 @@ export default function InHouseDriverSelector({
                             No studio drivers found
                         </p>
                         <p className="text-[11px] text-stone-400 mt-1 max-w-xs mx-auto">
-                            Add staff members with the role &quot;Logistics &amp; Driver&quot; in People &amp; Payroll to dispatch orders with your own fleet.
+                            Add staff members with the role &quot;Logistics &amp; Driver&quot; in Employees &amp; Payroll to dispatch orders with your own fleet.
                         </p>
                     </div>
                 ) : (

@@ -16,9 +16,8 @@ import PendingApprovalsList from '@/Components/Seller/Accounting/PendingApproval
 import TransactionLedgerTable from '@/Components/Seller/Accounting/TransactionLedgerTable';
 import ReleaseRequestDetails from '@/Components/Seller/Accounting/ReleaseRequestDetails';
 import AccountingFilterPanel from '@/Components/Seller/Accounting/AccountingFilterPanel';
-import SalesChannelBreakdown from '@/Components/Seller/Accounting/SalesChannelBreakdown';
 
-export default function FundRelease({ auth, pendingRequests, history, finances, channelBreakdown = {} }) {
+export default function FundRelease({ auth, pendingRequests, history, finances }) {
     const { openSidebar } = useSellerWorkspaceShell();
     const { url } = usePage();
     const { flash } = usePage().props;
@@ -210,20 +209,6 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
         });
     };
 
-    const handleSelectChannel = (channelKey) => {
-        setActiveTab('history');
-        setEntryTypeFilter('sale');
-        setPaymentChannelFilter(channelKey);
-        closeReviewModal();
-        reload({
-            tab: 'history',
-            type: 'sale',
-            payment_channel: channelKey,
-            page_pending: 1,
-            page_history: 1,
-        });
-    };
-
     useEffect(() => {
         const urlParams = new URLSearchParams(url.includes('?') ? url.substring(url.indexOf('?')) : '');
         const urlSearch = urlParams.get('search') || '';
@@ -364,13 +349,6 @@ export default function FundRelease({ auth, pendingRequests, history, finances, 
                             finances={finances}
                             canEditAccounting={canEditAccounting}
                             onEditBaseFunds={() => setShowBaseFundsModal(true)}
-                        />
-
-                        {/* Sales Payment Channel Audit Breakdown */}
-                        <SalesChannelBreakdown
-                            channelBreakdown={channelBreakdown}
-                            activeChannel={paymentChannelFilter}
-                            onSelectChannel={handleSelectChannel}
                         />
 
                         {/* Missing Payout Alert */}

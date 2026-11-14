@@ -91,7 +91,7 @@ export const moduleLabel = {
     products: 'Products',
     reviews: 'Reviews',
     shop_settings: 'Shop Settings',
-    hr: 'People & Payroll',
+    hr: 'Employees & Payroll',
     accounting: 'Finance',
     stock_requests: 'Restock Requests',
     subscription: 'Subscription',
