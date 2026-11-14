@@ -1,3 +1,4 @@
+/* global route */
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { Head, router } from '@inertiajs/react';
 import ConfirmationModal from '@/Components/ConfirmationModal';

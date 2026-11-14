@@ -1,3 +1,4 @@
+/* global route */
 import React, { useState, useMemo } from 'react';
 import CompactPagination from '@/Components/CompactPagination';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';

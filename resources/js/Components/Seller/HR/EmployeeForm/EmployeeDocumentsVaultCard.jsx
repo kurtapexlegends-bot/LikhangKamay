@@ -98,6 +98,7 @@ export default function EmployeeDocumentsVaultCard({
     const { addToast } = useToast();
     const uid = useId();
     const fileInputRef = useRef(null);
+    const uploadedPresignRef = useRef(null);
 
     const isStagedMode = !employeeId;
     const resolvedTypes = useMemo(() => (
@@ -143,6 +144,7 @@ export default function EmployeeDocumentsVaultCard({
         setSelectedFile(null);
         setUploadError('');
         setIsPreparingFile(false);
+        uploadedPresignRef.current = null;
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -152,6 +154,7 @@ export default function EmployeeDocumentsVaultCard({
         const inputEl = e.target;
         const rawFile = inputEl.files?.[0];
         setUploadError('');
+        uploadedPresignRef.current = null;
         if (!rawFile) {
             setSelectedFile(null);
             return;
@@ -212,7 +215,12 @@ export default function EmployeeDocumentsVaultCard({
 
         setIsUploading(true);
         try {
-            const { key, originalFilename } = await uploadEmployeeDocumentToPresign(selectedFile);
+            let uploaded = uploadedPresignRef.current;
+            if (!uploaded || uploaded.file !== selectedFile) {
+                const { key, originalFilename } = await uploadEmployeeDocumentToPresign(selectedFile);
+                uploaded = { file: selectedFile, key, originalFilename };
+                uploadedPresignRef.current = uploaded;
+            }
 
             router.post(
                 route('hr.employees.documents.store', employeeId),
@@ -221,13 +229,17 @@ export default function EmployeeDocumentsVaultCard({
                     title: resolvedTitle,
                     expires_at: expiresAt || undefined,
                     notes: notes.trim() || undefined,
-                    document_key: key,
-                    original_filename: originalFilename,
+                    document_key: uploaded.key,
+                    original_filename: uploaded.originalFilename,
                 },
                 {
                     preserveScroll: true,
                     preserveState: true,
-                    onSuccess: () => {
+                    onSuccess: (page) => {
+                        if (page?.props?.flash?.error) {
+                            setUploadError(String(page.props.flash.error));
+                            return;
+                        }
                         addToast('Employee document uploaded.', 'success');
                         resetUploadFields();
                         setIsUploadOpen(false);
@@ -422,11 +434,12 @@ export default function EmployeeDocumentsVaultCard({
                             <div className="flex items-center gap-2">
                                 <button
                                     type="button"
+                                    disabled={isUploading}
                                     onClick={() => {
                                         resetUploadFields();
                                         setIsUploadOpen(false);
                                     }}
-                                    className="rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-bold text-stone-600 hover:bg-stone-50 transition min-h-[38px]"
+                                    className="rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-bold text-stone-600 hover:bg-stone-50 disabled:opacity-50 transition min-h-[38px]"
                                 >
                                     Cancel
                                 </button>

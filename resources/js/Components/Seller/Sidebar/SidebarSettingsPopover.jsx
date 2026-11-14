@@ -67,7 +67,7 @@ export default function SidebarSettingsPopover({
                         
                         <div className="space-y-2">
                             <ModuleToggle 
-                                label="Employees & Payroll" 
+                                label="Employees & Payroll"
                                 description={isElite ? "Always enabled in Elite." : "Manage employees, payroll prep, and workspace access."}
                                 icon={Users}
                                 enabled={modules.hr} 

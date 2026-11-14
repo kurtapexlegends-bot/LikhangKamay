@@ -25,7 +25,8 @@ export const isSupportedEmployeeDocument = (file) => {
 
 export const resolveEmployeeDocumentContentType = (file) => {
     if (file?.type && file.type.trim() !== '') {
-        return file.type;
+        const normalized = file.type.trim().toLowerCase();
+        return normalized === 'image/jpg' ? 'image/jpeg' : normalized;
     }
 
     const ext = getFileExtension(file?.name);
@@ -95,16 +96,18 @@ export async function uploadEmployeeDocumentToPresign(file, signal) {
         { signal }
     );
 
-    const { url, key, is_direct_cloud: isDirectCloud } = presignResponse.data || {};
+    const { url, key, is_direct_cloud: isDirectCloud, contentType: signedContentType } = presignResponse.data || {};
     if (!url || !key) {
         throw new Error('Failed to obtain upload destination for employee document.');
     }
+
+    const putContentType = signedContentType || contentType;
 
     if (isDirectCloud) {
         const putResponse = await fetch(url, {
             method: 'PUT',
             headers: {
-                'Content-Type': contentType,
+                'Content-Type': putContentType,
             },
             body: file,
             signal,
@@ -116,7 +119,7 @@ export async function uploadEmployeeDocumentToPresign(file, signal) {
     } else {
         await window.axios.put(url, file, {
             headers: {
-                'Content-Type': contentType,
+                'Content-Type': putContentType,
             },
             signal,
         });

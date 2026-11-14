@@ -89,7 +89,7 @@ export default function EmployeeFormModal({
                 documentsAbortControllerRef.current = null;
             }
         };
-    }, [isOpen, mode, employee?.id, employee?.documents_count, fetchEmployeeDocuments]);
+    }, [isOpen, mode, employee?.id, fetchEmployeeDocuments]);
 
     const clearStagedDocuments = React.useCallback(() => {
         stagedObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
@@ -344,23 +344,24 @@ export default function EmployeeFormModal({
 
             if (stagedDocuments.length > 0) {
                 setIsUploadingStaged(true);
+                const updatedDocs = [...stagedDocuments];
                 try {
-                    const updatedDocs = [];
-                    for (const doc of stagedDocuments) {
+                    for (let i = 0; i < updatedDocs.length; i += 1) {
+                        const doc = updatedDocs[i];
                         if (doc.document_key) {
-                            updatedDocs.push(doc);
                             continue;
                         }
                         const { key, originalFilename } = await uploadEmployeeDocumentToPresign(doc.file);
-                        updatedDocs.push({
+                        updatedDocs[i] = {
                             ...doc,
                             document_key: key,
                             original_filename: originalFilename,
-                        });
+                        };
                     }
                     resolvedStagedDocs = updatedDocs;
                     setStagedDocuments(updatedDocs);
                 } catch (err) {
+                    setStagedDocuments(updatedDocs);
                     const errMsg = err?.response?.data?.error || err?.message || 'Failed to upload attached employee document.';
                     addToast(String(errMsg), 'error');
                     return;
@@ -388,12 +389,12 @@ export default function EmployeeFormModal({
             post(route('hr.store'), {
                 preserveScroll: true,
                 onSuccess: (page) => {
+                    clearStagedDocuments();
+                    onClose();
                     if (page?.props?.flash?.error) {
                         addToast(page.props.flash.error, 'error');
                         return;
                     }
-                    clearStagedDocuments();
-                    onClose();
                     addToast(page?.props?.flash?.success || (isProvisioningLogin ? 'Employee and staff login created. Verification code sent.' : 'Employee added.'), 'success');
                 },
                 onError: () => {
@@ -406,11 +407,11 @@ export default function EmployeeFormModal({
             patch(route('hr.update', employee.id), {
                 preserveScroll: true,
                 onSuccess: (page) => {
+                    onClose();
                     if (page?.props?.flash?.error) {
                         addToast(page.props.flash.error, 'error');
                         return;
                     }
-                    onClose();
                     addToast(page?.props?.flash?.success || 'Employee details updated.', 'success');
                 },
                 onError: () => {
