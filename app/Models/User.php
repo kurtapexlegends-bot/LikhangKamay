@@ -694,7 +694,11 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
      */
     public function requiresCheckoutFaceVerification(): bool
     {
-        if ($this->is_test || $this->kyc_liveness_verified_at !== null) {
+        if ($this->is_test || !Schema::hasColumn('users', 'requires_checkout_face_check')) {
+            return false;
+        }
+
+        if (Schema::hasColumn('users', 'kyc_liveness_verified_at') && $this->kyc_liveness_verified_at !== null) {
             return false;
         }
 

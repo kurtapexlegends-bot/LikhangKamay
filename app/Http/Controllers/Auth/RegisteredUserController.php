@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -97,16 +98,30 @@ class RegisteredUserController extends Controller
             $livenessVerifiedAt,
             $requiresCheckoutFaceCheck
         ) {
+            $biometricAttributes = [];
+            if (Schema::hasColumn('users', 'kyc_selfie_path') && $kycSelfiePath !== null) {
+                $biometricAttributes['kyc_selfie_path'] = $kycSelfiePath;
+            }
+            if (Schema::hasColumn('users', 'kyc_liveness_verified_at')) {
+                $biometricAttributes['kyc_liveness_verified_at'] = $livenessVerifiedAt;
+            }
+            if (Schema::hasColumn('users', 'requires_checkout_face_check')) {
+                $biometricAttributes['requires_checkout_face_check'] = $livenessVerifiedAt ? false : $requiresCheckoutFaceCheck;
+            }
+            if (Schema::hasColumn('users', 'face_descriptor') && $faceDescriptor !== null) {
+                $biometricAttributes['face_descriptor'] = $faceDescriptor;
+            }
+
             if ($existingUser && is_null($existingUser->email_verified_at)) {
                 $existingUser->update([
                     ...User::persistableNameAttributes($name),
                     'password' => Hash::make($request->password),
                     'role' => $role,
                     'shop_name' => $request->shop_name,
-                    'kyc_selfie_path' => $kycSelfiePath ?? $existingUser->kyc_selfie_path,
-                    'kyc_liveness_verified_at' => $livenessVerifiedAt ?? $existingUser->kyc_liveness_verified_at,
-                    'requires_checkout_face_check' => $livenessVerifiedAt ? false : $requiresCheckoutFaceCheck,
-                    'face_descriptor' => $faceDescriptor ?? $existingUser->face_descriptor,
+                    ...(Schema::hasColumn('users', 'kyc_selfie_path') ? ['kyc_selfie_path' => $kycSelfiePath ?? $existingUser->kyc_selfie_path] : []),
+                    ...(Schema::hasColumn('users', 'kyc_liveness_verified_at') ? ['kyc_liveness_verified_at' => $livenessVerifiedAt ?? $existingUser->kyc_liveness_verified_at] : []),
+                    ...(Schema::hasColumn('users', 'requires_checkout_face_check') ? ['requires_checkout_face_check' => $livenessVerifiedAt ? false : $requiresCheckoutFaceCheck] : []),
+                    ...(Schema::hasColumn('users', 'face_descriptor') ? ['face_descriptor' => $faceDescriptor ?? $existingUser->face_descriptor] : []),
                 ]);
 
                 if ($role === 'artisan') {
@@ -129,10 +144,7 @@ class RegisteredUserController extends Controller
                 'password' => Hash::make($request->password),
                 'role' => $role,
                 'shop_name' => $request->shop_name,
-                'kyc_selfie_path' => $kycSelfiePath,
-                'kyc_liveness_verified_at' => $livenessVerifiedAt,
-                'requires_checkout_face_check' => $requiresCheckoutFaceCheck,
-                'face_descriptor' => $faceDescriptor,
+                ...$biometricAttributes,
             ]);
 
             if ($role === 'artisan') {

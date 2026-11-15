@@ -10,6 +10,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
@@ -116,6 +117,8 @@ class SocialAuthController extends Controller
             if (
                 in_array($existingUser->role, ['user', 'buyer'], true)
                 && !$existingUser->is_test
+                && Schema::hasColumn('users', 'kyc_liveness_verified_at')
+                && Schema::hasColumn('users', 'requires_checkout_face_check')
                 && $existingUser->kyc_liveness_verified_at === null
                 && !$existingUser->requires_checkout_face_check
             ) {
@@ -237,7 +240,9 @@ class SocialAuthController extends Controller
             $userData['shop_name'] = $request->shop_name;
         }
 
-        $userData['requires_checkout_face_check'] = !$isArtisan;
+        if (Schema::hasColumn('users', 'requires_checkout_face_check')) {
+            $userData['requires_checkout_face_check'] = !$isArtisan;
+        }
 
         $user = \Illuminate\Support\Facades\DB::transaction(function () use ($userData, $isArtisan, $request) {
             $user = User::create($userData);

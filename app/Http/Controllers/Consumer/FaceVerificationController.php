@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\FaceDescriptorService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -38,16 +39,27 @@ class FaceVerificationController extends Controller
             ]);
         }
 
-        if ($user->kyc_selfie_path) {
+        if (Schema::hasColumn('users', 'kyc_selfie_path') && $user->kyc_selfie_path) {
             Storage::disk('public')->delete($user->kyc_selfie_path);
         }
 
-        $user->update([
-            'kyc_selfie_path' => $selfiePath,
-            'kyc_liveness_verified_at' => now(),
-            'requires_checkout_face_check' => false,
-            'face_descriptor' => $descriptor ?? $user->face_descriptor,
-        ]);
+        $updates = [];
+        if (Schema::hasColumn('users', 'kyc_selfie_path')) {
+            $updates['kyc_selfie_path'] = $selfiePath;
+        }
+        if (Schema::hasColumn('users', 'kyc_liveness_verified_at')) {
+            $updates['kyc_liveness_verified_at'] = now();
+        }
+        if (Schema::hasColumn('users', 'requires_checkout_face_check')) {
+            $updates['requires_checkout_face_check'] = false;
+        }
+        if (Schema::hasColumn('users', 'face_descriptor')) {
+            $updates['face_descriptor'] = $descriptor ?? $user->face_descriptor;
+        }
+
+        if (!empty($updates)) {
+            $user->update($updates);
+        }
 
         return back()->with('success', 'Quick face check completed. You will not be asked again during checkout.');
     }

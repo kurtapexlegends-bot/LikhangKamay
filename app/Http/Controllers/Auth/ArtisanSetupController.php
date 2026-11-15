@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -643,12 +644,18 @@ class ArtisanSetupController extends Controller
         if (!$faceVerificationLocked && $request->filled('selfie_data_url')) {
             $selfiePath = $faceService->storeSelfieDataUrl((string) $request->input('selfie_data_url'), "u{$user->id}");
             if ($selfiePath) {
-                if ($user->kyc_selfie_path) {
+                if (Schema::hasColumn('users', 'kyc_selfie_path') && $user->kyc_selfie_path) {
                     Storage::disk('public')->delete($user->kyc_selfie_path);
                 }
-                $updates['kyc_selfie_path'] = $selfiePath;
-                $updates['kyc_liveness_verified_at'] = now();
-                $updates['requires_checkout_face_check'] = false;
+                if (Schema::hasColumn('users', 'kyc_selfie_path')) {
+                    $updates['kyc_selfie_path'] = $selfiePath;
+                }
+                if (Schema::hasColumn('users', 'kyc_liveness_verified_at')) {
+                    $updates['kyc_liveness_verified_at'] = now();
+                }
+                if (Schema::hasColumn('users', 'requires_checkout_face_check')) {
+                    $updates['requires_checkout_face_check'] = false;
+                }
             }
         }
 
@@ -656,7 +663,9 @@ class ArtisanSetupController extends Controller
             $incomingDesc = $faceService->normalizeDescriptor($request->input('face_descriptor'));
             if ($incomingDesc) {
                 $selfieDescriptor = $incomingDesc;
-                $updates['face_descriptor'] = $incomingDesc;
+                if (Schema::hasColumn('users', 'face_descriptor')) {
+                    $updates['face_descriptor'] = $incomingDesc;
+                }
             }
         }
 
