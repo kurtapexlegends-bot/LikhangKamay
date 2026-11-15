@@ -6,7 +6,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import Checkbox from '@/Components/Checkbox';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { Eye, EyeOff, Store, Loader2, Mail, Lock, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Store, Truck, Loader2, Mail, Lock, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Login({ status, canResetPassword }) {
@@ -264,13 +264,22 @@ export default function Login({ status, canResetPassword }) {
                         </Link>
                     </p>
                     
-                    <Link 
-                        href="/artisan/register" 
-                        className="group flex items-center gap-2 text-[11px] font-bold text-stone-600 bg-stone-50 border border-stone-200/80 px-5 py-3 rounded-full hover:bg-clay-50 hover:text-clay-700 hover:border-clay-200 transition-all duration-300 shadow-sm hover:shadow uppercase tracking-wider"
-                    >
-                        <Store size={14} className="text-stone-400 group-hover:text-clay-500 transition-colors" />
-                        <span>Register as an Artisan</span>
-                    </Link>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full">
+                        <Link 
+                            href={route('artisan.register')} 
+                            className="group flex items-center justify-center gap-2 text-[11px] font-bold text-stone-600 bg-stone-50 border border-stone-200/80 px-4 py-2.5 rounded-xl hover:bg-clay-50 hover:text-clay-700 hover:border-clay-200 transition-all duration-300 shadow-sm hover:shadow uppercase tracking-wider"
+                        >
+                            <Store size={14} className="text-stone-400 group-hover:text-clay-500 transition-colors" />
+                            <span>Artisan Studio</span>
+                        </Link>
+                        <Link 
+                            href={route('supplier.register')} 
+                            className="group flex items-center justify-center gap-2 text-[11px] font-bold text-amber-900 bg-amber-50/70 border border-amber-200/80 px-4 py-2.5 rounded-xl hover:bg-amber-100 hover:border-amber-300 transition-all duration-300 shadow-sm hover:shadow uppercase tracking-wider"
+                        >
+                            <Truck size={14} className="text-amber-700 group-hover:text-amber-900 transition-colors" />
+                            <span>Material Supplier</span>
+                        </Link>
+                    </div>
                 </motion.div>
             </motion.div>
 

@@ -110,4 +110,56 @@ class SocialAuthTest extends TestCase
         $response->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($user);
     }
+
+    public function test_supplier_can_redirect_to_google_provider_with_supplier_role(): void
+    {
+        $response = $this->get(route('auth.social.supplier', ['provider' => 'google']));
+
+        $response->assertStatus(302);
+        $this->assertEquals('supplier', session('social_auth_role'));
+        $this->assertStringContainsString('accounts.google.com', $response->headers->get('Location') ?? '');
+    }
+
+    public function test_new_supplier_can_complete_profile_and_redirects_to_setup(): void
+    {
+        $sessionData = [
+            'provider' => 'google',
+            'id' => 'google-supplier-777',
+            'email' => 'supplier.b2b@philippinesclay.com',
+            'name' => 'Maria Roxas',
+            'avatar' => 'https://lh3.googleusercontent.com/a/supplier.jpg',
+            'role' => 'supplier',
+            'remember' => false,
+        ];
+
+        $response = $this->withSession([
+            'social_auth' => $sessionData,
+            'social_auth_role' => 'supplier',
+        ])->post(route('auth.complete-profile.store'), [
+            'first_name' => 'Maria',
+            'last_name' => 'Roxas',
+            'company_name' => 'Cavite Refractory & Clay Minerals',
+            'password' => 'BusinessPassword123!',
+            'password_confirmation' => 'BusinessPassword123!',
+            'terms' => true,
+        ]);
+
+        $response->assertRedirect(route('supplier.setup', absolute: false));
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'supplier.b2b@philippinesclay.com',
+            'role' => 'supplier',
+            'shop_name' => 'Cavite Refractory & Clay Minerals',
+            'artisan_status' => 'pending',
+            'setup_completed_at' => null,
+            'social_provider' => 'google',
+            'social_id' => 'google-supplier-777',
+        ]);
+
+        $supplier = User::where('email', 'supplier.b2b@philippinesclay.com')->first();
+        $this->assertNotNull($supplier);
+        $this->assertTrue($supplier->isSupplier());
+        $this->assertNotNull($supplier->email_verified_at); // Auto-verified by Google OAuth
+        $this->assertAuthenticatedAs($supplier);
+    }
 }

@@ -9,29 +9,35 @@ import LegalModal from '@/Components/LegalModal';
 import SellerTermsModal from '@/Components/SellerTermsModal';
 import PasswordStrengthIndicator from '@/Components/PasswordStrengthIndicator';
 import { Head, useForm } from '@inertiajs/react';
-import { Eye, EyeOff, Loader2, CheckCircle, Store, Mail, Lock, User, Briefcase, XCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, CheckCircle, Store, Mail, Lock, User, Briefcase, Building2, XCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function CompleteProfile({ email, suggestedName, suggestedFirstName, suggestedLastName, provider, isArtisan = false, legalPolicies = null }) {
+export default function CompleteProfile({ email, suggestedName, suggestedFirstName, suggestedLastName, provider, isArtisan = false, isSupplier = false, legalPolicies = null }) {
     const suggestedNameParts = typeof suggestedName === 'string'
         ? suggestedName.trim().split(/\s+/).filter(Boolean)
         : [];
+
+    const isBusiness = isArtisan || isSupplier;
 
     const { data, setData, post, processing, errors, setError, clearErrors } = useForm({
         first_name: suggestedFirstName || suggestedNameParts[0] || '',
         last_name: suggestedLastName || suggestedNameParts.slice(1).join(' ') || '',
         shop_name: '',
+        company_name: '',
         password: '',
         password_confirmation: '',
         terms: false,
     });
 
-    const [legalModal, setLegalModal] = useState({ isOpen: false, type: isArtisan ? 'seller' : 'terms' });
+    const initialLegalType = isSupplier ? 'supplier' : (isArtisan ? 'seller' : 'terms');
+    const [legalModal, setLegalModal] = useState({ isOpen: false, type: initialLegalType });
     const [isGuidingTermsAcceptance, setIsGuidingTermsAcceptance] = useState(false);
     const [acceptedLegalDocuments, setAcceptedLegalDocuments] = useState(
-        isArtisan
-            ? { seller: false, sellerPrivacy: false }
-            : { terms: false, privacy: false }
+        isSupplier
+            ? { supplier: false, supplierPrivacy: false }
+            : (isArtisan
+                ? { seller: false, sellerPrivacy: false }
+                : { terms: false, privacy: false })
     );
 
     const firstNameRef = useRef(null);
@@ -88,17 +94,19 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
             if (!firstInvalidRef) firstInvalidRef = firstNameRef;
         }
 
-        if (isArtisan) {
-            if (!data.shop_name || data.shop_name.trim() === '') {
-                localErrors.shop_name = 'Shop name is required';
+        if (isBusiness) {
+            const businessName = isSupplier ? (data.company_name || data.shop_name) : data.shop_name;
+            if (!businessName || businessName.trim() === '') {
+                const errorKey = isSupplier ? 'company_name' : 'shop_name';
+                localErrors[errorKey] = isSupplier ? 'Company name is required' : 'Shop name is required';
                 if (!firstInvalidRef) firstInvalidRef = shopNameRef;
-            } else if (isShopNameTaken) {
+            } else if (isArtisan && isShopNameTaken) {
                 localErrors.shop_name = 'This shop name is already taken';
                 if (!firstInvalidRef) firstInvalidRef = shopNameRef;
             }
         }
 
-        const minPassLength = isArtisan ? 12 : 8;
+        const minPassLength = isBusiness ? (isSupplier ? 8 : 12) : 8;
         if (!data.password) {
             localErrors.password = 'Password is required';
             if (!firstInvalidRef) firstInvalidRef = passwordRef;
@@ -127,10 +135,10 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
     };
 
     const providerLabel = provider === 'google' ? 'Google' : 'Facebook';
-    const primaryLegalType = isArtisan ? 'seller' : 'terms';
-    const secondaryLegalType = isArtisan ? 'sellerPrivacy' : 'privacy';
-    const primaryLegalLabel = isArtisan ? 'Seller Agreement' : 'Terms of Service';
-    const secondaryLegalLabel = isArtisan ? 'Data Privacy Policy' : 'Privacy Policy';
+    const primaryLegalType = isSupplier ? 'supplier' : (isArtisan ? 'seller' : 'terms');
+    const secondaryLegalType = isSupplier ? 'supplierPrivacy' : (isArtisan ? 'sellerPrivacy' : 'privacy');
+    const primaryLegalLabel = isSupplier ? 'Wholesale Supplier Agreement' : (isArtisan ? 'Seller Agreement' : 'Terms of Service');
+    const secondaryLegalLabel = isSupplier ? 'Supplier Data Privacy Policy' : (isArtisan ? 'Data Privacy Policy' : 'Privacy Policy');
     const canEnableTermsCheckbox = acceptedLegalDocuments[primaryLegalType] && acceptedLegalDocuments[secondaryLegalType];
 
     const openLegalModal = (type) => {
@@ -334,7 +342,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 className="block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white border-stone-200/80"
                                 autoComplete="family-name"
                                 onChange={(e) => setData('last_name', e.target.value)}
-                                onKeyDown={isArtisan ? handleKeyDown(shopNameRef) : handleKeyDown(passwordRef)}
+                                onKeyDown={isBusiness ? handleKeyDown(shopNameRef) : handleKeyDown(passwordRef)}
                                 hasError={!!errors.last_name}
                                 required
                                 floatingLabel="Last Name"
@@ -344,8 +352,8 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                         </div>
                     </motion.div>
 
-                    {/* Shop Name Field (only for Artisans) */}
-                    {isArtisan && (
+                    {/* Shop / Enterprise Name Field (for Artisans & Suppliers) */}
+                    {isBusiness && (
                         <motion.div variants={itemVariants}>
                             <TextInput
                                 ref={shopNameRef}
@@ -353,25 +361,28 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                 name="shop_name"
                                 value={data.shop_name}
                                 className={`block w-full bg-stone-50/40 hover:bg-white/80 focus:bg-white ${
-                                    isShopNameTaken || errors.shop_name ? 'border-rose-350 focus:border-rose-500' : 'border-stone-200/80'
+                                    isShopNameTaken || errors.shop_name || errors.company_name ? 'border-rose-350 focus:border-rose-500' : 'border-stone-200/80'
                                 }`}
                                 autoComplete="organization"
-                                onChange={(e) => setData('shop_name', e.target.value)}
+                                onChange={(e) => {
+                                    setData('shop_name', e.target.value);
+                                    if (isSupplier) setData('company_name', e.target.value);
+                                }}
                                 onKeyDown={handleKeyDown(passwordRef)}
-                                hasError={!!errors.shop_name}
+                                hasError={!!errors.shop_name || !!errors.company_name}
                                 required
-                                floatingLabel="Shop Name"
-                                icon={Briefcase}
+                                floatingLabel={isSupplier ? "Company / Enterprise Name" : "Shop Name"}
+                                icon={isSupplier ? Building2 : Briefcase}
                             />
                             
-                            {isValidatingShop && (
+                            {isArtisan && isValidatingShop && (
                                 <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-stone-100 bg-stone-50 text-stone-500 animate-in fade-in slide-in-from-top-1 duration-300">
                                     <Loader2 size={14} className="shrink-0 animate-spin text-stone-400" />
                                     <span>Checking shop availability...</span>
                                 </div>
                             )}
 
-                            {!isValidatingShop && data.shop_name.trim().length > 2 && (
+                            {isArtisan && !isValidatingShop && data.shop_name.trim().length > 2 && (
                                 <div className={`mt-1.5 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border animate-in fade-in slide-in-from-top-1 duration-300 ${
                                     !isShopNameTaken 
                                         ? 'text-emerald-700 bg-emerald-50 border-emerald-100/60' 
@@ -390,7 +401,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                     )}
                                 </div>
                             )}
-                            <InputError message={errors.shop_name} className="mt-2" />
+                            <InputError message={errors.shop_name || errors.company_name} className="mt-2" />
                         </motion.div>
                     )}
 
@@ -531,6 +542,8 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                                         <Loader2 size={14} className="animate-spin" />
                                         <span>Processing...</span>
                                     </>
+                                ) : isSupplier ? (
+                                    'Continue to Supplier Setup'
                                 ) : isArtisan ? (
                                     'Continue to Shop Setup'
                                 ) : (
@@ -543,7 +556,7 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
             </motion.div>
 
             {/* Legal Modal */}
-            {isArtisan ? (
+            {isBusiness ? (
                 <SellerTermsModal
                     show={legalModal.isOpen}
                     type={legalModal.type}

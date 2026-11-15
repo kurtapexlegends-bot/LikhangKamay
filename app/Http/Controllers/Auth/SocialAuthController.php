@@ -73,6 +73,22 @@ class SocialAuthController extends Controller
     }
 
     /**
+     * Redirect to OAuth provider (for suppliers)
+     */
+    public function redirectSupplier(string $provider)
+    {
+        if (!in_array($provider, $this->providers)) {
+            return redirect()->route('login')->with('error', 'Unsupported provider.');
+        }
+
+        return $this->buildProviderRedirect(
+            $provider,
+            'supplier',
+            request()->boolean('remember')
+        );
+    }
+
+    /**
      * Handle OAuth callback
      */
     public function callback(Request $request, string $provider, AuthRedirectService $authRedirectService)
@@ -167,12 +183,17 @@ class SocialAuthController extends Controller
             return redirect()->route('login')->with('error', 'Social sign-in session expired. Please try again.');
         }
 
-        $isArtisan = ($socialData['role'] ?? 'buyer') === 'artisan';
+        $role = $socialData['role'] ?? 'buyer';
+        $isArtisan = $role === 'artisan';
+        $isSupplier = $role === 'supplier';
         [$suggestedFirstName, $suggestedLastName] = PersonName::split($socialData['name']);
         $policyService = app(\App\Services\PolicyService::class);
-        $legalPolicies = $policyService->getSerializedActivePolicies($isArtisan
-            ? [\App\Models\PlatformPolicy::TYPE_SELLER_AGREEMENT, \App\Models\PlatformPolicy::TYPE_SELLER_PRIVACY]
-            : [\App\Models\PlatformPolicy::TYPE_TERMS_OF_SERVICE, \App\Models\PlatformPolicy::TYPE_PRIVACY_POLICY]);
+        $policyTypes = match ($role) {
+            'supplier' => [\App\Models\PlatformPolicy::TYPE_SUPPLIER_AGREEMENT, \App\Models\PlatformPolicy::TYPE_SUPPLIER_PRIVACY],
+            'artisan' => [\App\Models\PlatformPolicy::TYPE_SELLER_AGREEMENT, \App\Models\PlatformPolicy::TYPE_SELLER_PRIVACY],
+            default => [\App\Models\PlatformPolicy::TYPE_TERMS_OF_SERVICE, \App\Models\PlatformPolicy::TYPE_PRIVACY_POLICY],
+        };
+        $legalPolicies = $policyService->getSerializedActivePolicies($policyTypes);
 
         return Inertia::render('Auth/CompleteProfile', [
             'email' => $socialData['email'],
@@ -181,6 +202,7 @@ class SocialAuthController extends Controller
             'suggestedLastName' => $suggestedLastName,
             'provider' => $socialData['provider'],
             'isArtisan' => $isArtisan,
+            'isSupplier' => $isSupplier,
             'legalPolicies' => $legalPolicies,
         ]);
     }
@@ -196,10 +218,22 @@ class SocialAuthController extends Controller
             return redirect()->route('login')->with('error', 'Session expired. Please try again.');
         }
 
-        $isArtisan = ($socialData['role'] ?? 'buyer') === 'artisan';
+        $role = $socialData['role'] ?? 'buyer';
+        $isArtisan = $role === 'artisan';
+        $isSupplier = $role === 'supplier';
 
-        // Different validation for artisan vs buyer
-        if ($isArtisan) {
+        // Different validation for supplier vs artisan vs buyer
+        if ($isSupplier) {
+            $request->validate([
+                'first_name' => 'required_without:name|string|max:255',
+                'last_name' => 'nullable|string|max:255',
+                'name' => 'required_without:first_name|string|max:255',
+                'company_name' => ['required_without:shop_name', 'nullable', 'string', 'max:50'],
+                'shop_name' => ['required_without:company_name', 'nullable', 'string', 'max:50'],
+                'password' => ['required', 'string', 'confirmed', \App\Support\PasswordRules::business()],
+                'terms' => 'accepted',
+            ]);
+        } elseif ($isArtisan) {
             $request->validate([
                 'first_name' => 'required_without:name|string|max:255',
                 'last_name' => 'nullable|string|max:255',
@@ -229,22 +263,27 @@ class SocialAuthController extends Controller
             ...User::persistableNameAttributes($name),
             'email' => $socialData['email'],
             'password' => Hash::make($request->password),
-            'role' => $isArtisan ? 'artisan' : 'buyer',
+            'role' => $isSupplier ? User::ROLE_SUPPLIER : ($isArtisan ? 'artisan' : 'buyer'),
             'social_provider' => $socialData['provider'],
             'social_id' => $socialData['id'],
             'avatar' => $socialData['avatar'],
             'email_verified_at' => now(), // Auto-verify social users
         ];
 
-        if ($isArtisan) {
+        if ($isSupplier) {
+            $companyName = trim((string) ($request->company_name ?: $request->shop_name));
+            $userData['shop_name'] = $companyName;
+            $userData['artisan_status'] = 'pending';
+            $userData['setup_completed_at'] = null;
+        } elseif ($isArtisan) {
             $userData['shop_name'] = $request->shop_name;
         }
 
         if (rescue(fn() => Schema::hasColumn('users', 'requires_checkout_face_check'), false)) {
-            $userData['requires_checkout_face_check'] = !$isArtisan;
+            $userData['requires_checkout_face_check'] = !$isArtisan && !$isSupplier;
         }
 
-        $user = \Illuminate\Support\Facades\DB::transaction(function () use ($userData, $isArtisan, $request) {
+        $user = \Illuminate\Support\Facades\DB::transaction(function () use ($userData, $isArtisan, $isSupplier, $request) {
             $user = User::create($userData);
 
             if ($isArtisan) {
@@ -256,13 +295,23 @@ class SocialAuthController extends Controller
                 ]);
             }
 
+            if ($isSupplier) {
+                \App\Models\ArtisanStatusLog::create([
+                    'user_id' => $user->id,
+                    'previous_status' => null,
+                    'new_status' => 'pending',
+                ]);
+            }
+
             return $user;
         });
 
         $policyService = app(\App\Services\PolicyService::class);
-        $policyTypes = $isArtisan
-            ? [\App\Models\PlatformPolicy::TYPE_SELLER_AGREEMENT, \App\Models\PlatformPolicy::TYPE_SELLER_PRIVACY]
-            : [\App\Models\PlatformPolicy::TYPE_TERMS_OF_SERVICE, \App\Models\PlatformPolicy::TYPE_PRIVACY_POLICY];
+        $policyTypes = match ($role) {
+            'supplier' => [\App\Models\PlatformPolicy::TYPE_SUPPLIER_AGREEMENT, \App\Models\PlatformPolicy::TYPE_SUPPLIER_PRIVACY],
+            'artisan' => [\App\Models\PlatformPolicy::TYPE_SELLER_AGREEMENT, \App\Models\PlatformPolicy::TYPE_SELLER_PRIVACY],
+            default => [\App\Models\PlatformPolicy::TYPE_TERMS_OF_SERVICE, \App\Models\PlatformPolicy::TYPE_PRIVACY_POLICY],
+        };
         foreach ($policyTypes as $policyType) {
             $policyService->recordUserConsent($user, $policyType, 'social_registration', $request);
         }
@@ -286,7 +335,7 @@ class SocialAuthController extends Controller
             'current_session_id' => $request->session()->getId(),
         ]);
 
-        return $isArtisan
+        return ($isArtisan || $isSupplier)
             ? redirect()->to($authRedirectService->pathForVerifiedUser($user))
             : redirect()->intended($authRedirectService->pathForVerifiedUser($user));
     }

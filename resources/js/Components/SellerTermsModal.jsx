@@ -7,13 +7,19 @@ export default function SellerTermsModal({ show, onClose, onAccept, onBack, type
     const [hasReachedBottom, setHasReachedBottom] = useState(false);
     const [isAutoAdvancing, setIsAutoAdvancing] = useState(false);
     const autoAdvanceTimerRef = useRef(null);
-    const isPrivacy = type === 'sellerPrivacy';
-    const dynamicPolicy = policies?.[isPrivacy ? 'seller_privacy' : 'seller_agreement'] || null;
+    const isPrivacy = type === 'sellerPrivacy' || type === 'supplierPrivacy';
+    const isSupplier = type === 'supplier' || type === 'supplierPrivacy';
+    const policyKey = isSupplier 
+        ? (isPrivacy ? 'supplier_privacy' : 'supplier_agreement')
+        : (isPrivacy ? 'seller_privacy' : 'seller_agreement');
+    const dynamicPolicy = policies?.[policyKey] || null;
     const dynamicSections = Array.isArray(dynamicPolicy?.sections) && dynamicPolicy.sections.length > 0
         ? dynamicPolicy.sections
         : null;
     const hasNext = hasNextStep !== null ? hasNextStep : (step ? step < totalSteps : !isPrivacy);
-    const nextLabel = isPrivacy ? 'Next: Seller Agreement' : 'Next: Data Privacy Policy';
+    const nextLabel = isPrivacy 
+        ? (isSupplier ? 'Next: Supplier Agreement' : 'Next: Seller Agreement') 
+        : (isSupplier ? 'Next: Supplier Privacy Policy' : 'Next: Data Privacy Policy');
 
     const clearAutoAdvanceTimer = () => {
         if (autoAdvanceTimerRef.current) {
@@ -96,7 +102,11 @@ export default function SellerTermsModal({ show, onClose, onAccept, onBack, type
                             </button>
                         )}
                         <h3 className="text-lg font-serif font-bold text-stone-900">
-                            {dynamicPolicy?.title || (isPrivacy ? 'Seller Data Privacy Policy' : 'Artisan Seller Agreement')}
+                            {dynamicPolicy?.title || (
+                                isSupplier 
+                                    ? (isPrivacy ? 'Supplier Data Privacy Policy' : 'Wholesale Supplier Agreement')
+                                    : (isPrivacy ? 'Seller Data Privacy Policy' : 'Artisan Seller Agreement')
+                            )}
                         </h3>
                     </div>
                     <button onClick={onClose} className="text-stone-400 hover:text-stone-600 transition">
@@ -122,6 +132,82 @@ export default function SellerTermsModal({ show, onClose, onAccept, onBack, type
                                 </section>
                             ))}
                         </>
+                    ) : isSupplier ? (
+                        isPrivacy ? (
+                            <>
+                                <section>
+                                    <h4 className="font-bold text-stone-900 mb-2">1. Commercial Data We Collect</h4>
+                                    <p>We collect corporate details (registered business name, trade name, DTI/SEC certificate, Mayor's Permit, Tax Identification Number), primary contact information (authorized representative name, corporate email, mobile dispatch number), warehouse physical coordinates (for logistics pickup matching), and settlement banking/e-wallet credentials.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-bold text-stone-900 mb-2">2. Studio Delivery Data Restrictions (RA 10173)</h4>
+                                    <p>To facilitate raw material dispatches, suppliers and their authorized drivers receive recipient studio information (workshop name, delivery address, recipient contact name, and phone number). In accordance with Republic Act 10173, suppliers agree to utilize this studio data strictly for material delivery and order coordination. Retaining studio recipient data for unauthorized marketing or sharing it with external entities is strictly prohibited.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-bold text-stone-900 mb-2">3. How We Use Supplier Data</h4>
+                                    <p>Supplier information is processed solely to: authenticate business legitimacy and tax compliance, manage warehouse logistics routing and dispatch tracking, disburse escrow payments, generate statutory BIR tax receipts, and resolve commercial delivery claims.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-bold text-stone-900 mb-2">4. Security of Commercial Information</h4>
+                                    <p>All corporate documents, business registration files, and settlement bank accounts are stored using bank-grade encryption in transit and at rest. Payment processing is managed via PCI-DSS certified financial partners. Access to vendor documentation is restricted strictly to authorized platform auditors.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-bold text-stone-900 mb-2">5. Data Retention Periods</h4>
+                                    <p>Commercial supplier records are retained throughout active partnership and for a statutory period of 5 years following account closure to comply with Philippine Bureau of Internal Revenue (BIR) accounting and audit standards.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-bold text-stone-900 mb-2">6. Your Rights Under RA 10173</h4>
+                                    <p>Authorized enterprise representatives maintain the right to: inspect recorded corporate information, update or rectify warehouse/contact details, request documentation erasure upon settlement of all commercial obligations, and lodge privacy inquiries with our Data Protection Officer (likhangkamaybusiness@gmail.com) or the National Privacy Commission.</p>
+                                </section>
+                            </>
+                        ) : (
+                            <>
+                                <section>
+                                    <h4 className="font-bold text-stone-900 mb-2">1. Acceptance of Wholesale Terms</h4>
+                                    <p>This Wholesale Supplier Agreement governs commercial vendors, distributors, and raw material suppliers providing bulk pottery clay, glazes, raw minerals, kiln hardware, and pottery tools through the LikhangKamay B2B Supply Hub.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-bold text-stone-900 mb-2">2. Supplier Eligibility & Verification</h4>
+                                    <p>To register as a Wholesale Supplier, you must operate a registered business entity, provide a valid Mayor's/Business Permit or DTI/SEC registration, supply an active Tax Identification Number (TIN), maintain an active dispatch warehouse in Cavite or Greater Manila Area, and agree to comply with Philippine commercial and tax laws.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-bold text-stone-900 mb-2">3. Material Quality & Industrial Grading</h4>
+                                    <p>All raw pottery clay, feldspar, silica, slips, glazes, stains, and ceramic equipment listed must strictly conform to professional grade specifications. Suppliers warrant that listings accurately declare firing temperature ranges (e.g., Cone 06 to Cone 10), moisture percentages, mesh sizes, and non-hazardous safety grading.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-bold text-stone-900 mb-2">4. Minimum Order Quantities (MOQ) & Wholesale Pricing</h4>
+                                    <p>Suppliers have full discretion over wholesale unit pricing and Minimum Order Quantities (MOQs), specified in industrial trade units (e.g., per 25kg bag, 50kg sack, metric ton, or case). Arbitrary price adjustments on already-confirmed bulk orders are strictly prohibited.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-bold text-stone-900 mb-2">5. Packaging & Palletized Freight Standards</h4>
+                                    <p>Suppliers are responsible for secure commercial packaging suitable for regional transport. Bulk dry powders must be packed in heavy-duty multi-ply moisture-resistant sacks. Liquid glazes must be secured in sealed industrial pails. Palletized shipments must be shrink-wrapped and strapped to prevent moisture damage or spillage during dispatch.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-bold text-stone-900 mb-2">6. Studio Delivery & 24-Hour Inspection Window</h4>
+                                    <p>Upon physical drop-off at the artisan studio workshop, the receiving artisan studio is granted a 24-hour verification window to inspect bags, sacks, and equipment for transit spillage, moisture damage, or grade discrepancies before final order completion.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-bold text-stone-900 mb-2">7. Escrow Settlement & Payouts</h4>
+                                    <p>Payments for wholesale orders are held securely in platform escrow and cleared upon expiration of the 24-hour inspection window. Net payouts are transferred weekly to the supplier's verified business settlement account. Wholesale suppliers are exempt from artisan monthly subscription tiers.</p>
+                                </section>
+
+                                <section>
+                                    <h4 className="font-bold text-stone-900 mb-2">8. Defective Goods & Spillage Claims</h4>
+                                    <p>In the event that raw materials arrive damaged, torn, or chemically off-spec, supported by photo/video documentation submitted within the 24-hour inspection window, the supplier agrees to promptly dispatch a replacement batch or authorize a proportional credit adjustment.</p>
+                                </section>
+                            </>
+                        )
                     ) : isPrivacy ? (
                         <>
                             <section>

@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePage } from '@inertiajs/react';
 
-const AUTH_PREFIXES = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/artisan/register'];
+const AUTH_PREFIXES = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/artisan/register', '/supplier/register', '/supplier/pending'];
 
 function isAuthRoute(url) {
     const path = url.split('?')[0];

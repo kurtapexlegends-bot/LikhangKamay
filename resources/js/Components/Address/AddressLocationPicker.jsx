@@ -46,10 +46,12 @@ export default function AddressLocationPicker({
     readOnly = false,
     height = '240px',
     className = '',
+    maxBounds = null,
 }) {
     const mapContainerRef = useRef(null);
     const mapInstanceRef = useRef(null);
     const markerRef = useRef(null);
+    const lastValidCoordRef = useRef(isValidCoordinate(latitude, longitude) ? [Number(latitude), Number(longitude)] : null);
     const [isLocating, setIsLocating] = useState(false);
     const [isResolvingAddress, setIsResolvingAddress] = useState(false);
     const [isPrecisionOpen, setIsPrecisionOpen] = useState(false);
@@ -131,16 +133,24 @@ export default function AddressLocationPicker({
         if (!mapInstanceRef.current) {
             const [initialLat, initialLng] = getInitialCenter();
 
-            const map = L.map(mapContainerRef.current, {
+            const mapOptions = {
                 center: [initialLat, initialLng],
                 zoom: hasCoordinates ? 16 : 14,
+                minZoom: 9,
                 zoomControl: !readOnly,
                 attributionControl: false,
                 dragging: !readOnly && (!L.Browser.mobile || isPrecisionOpen),
                 scrollWheelZoom: !readOnly,
                 doubleClickZoom: !readOnly,
                 touchZoom: !readOnly,
-            });
+            };
+
+            if (maxBounds) {
+                mapOptions.maxBounds = maxBounds;
+                mapOptions.maxBoundsViscosity = 1.0;
+            }
+
+            const map = L.map(mapContainerRef.current, mapOptions);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
@@ -164,8 +174,25 @@ export default function AddressLocationPicker({
             if (!readOnly) {
                 marker.on('dragend', (e) => {
                     const coord = e.target.getLatLng();
+                    if (maxBounds && !L.latLngBounds(maxBounds).contains(coord)) {
+                        if (typeof window !== 'undefined') {
+                            window.dispatchEvent(new CustomEvent('app-toast', {
+                                detail: {
+                                    type: 'warning',
+                                    message: 'Pinned location is outside the supported operating area.',
+                                }
+                            }));
+                        }
+                        if (lastValidCoordRef.current) {
+                            marker.setLatLng(lastValidCoordRef.current);
+                        }
+                        return;
+                    }
+
                     const nextLat = Number(coord.lat.toFixed(7));
                     const nextLng = Number(coord.lng.toFixed(7));
+                    lastValidCoordRef.current = [nextLat, nextLng];
+
                     if (onLocationSelectRef.current) {
                         onLocationSelectRef.current({ latitude: nextLat, longitude: nextLng });
                     }
@@ -173,9 +200,23 @@ export default function AddressLocationPicker({
                 });
 
                 map.on('click', (e) => {
+                    if (maxBounds && !L.latLngBounds(maxBounds).contains(e.latlng)) {
+                        if (typeof window !== 'undefined') {
+                            window.dispatchEvent(new CustomEvent('app-toast', {
+                                detail: {
+                                    type: 'warning',
+                                    message: 'Pinned location is outside the supported operating area.',
+                                }
+                            }));
+                        }
+                        return;
+                    }
+
                     const nextLat = Number(e.latlng.lat.toFixed(7));
                     const nextLng = Number(e.latlng.lng.toFixed(7));
+                    lastValidCoordRef.current = [nextLat, nextLng];
                     marker.setLatLng([nextLat, nextLng]);
+
                     if (onLocationSelectRef.current) {
                         onLocationSelectRef.current({ latitude: nextLat, longitude: nextLng });
                     }
@@ -272,6 +313,20 @@ export default function AddressLocationPicker({
                 setIsLocating(false);
                 const userLat = Number(position.coords.latitude.toFixed(7));
                 const userLng = Number(position.coords.longitude.toFixed(7));
+
+                if (maxBounds && !L.latLngBounds(maxBounds).contains([userLat, userLng])) {
+                    if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('app-toast', {
+                            detail: {
+                                type: 'warning',
+                                message: 'Detected device location is outside the supported operating area.',
+                            }
+                        }));
+                    }
+                    return;
+                }
+
+                lastValidCoordRef.current = [userLat, userLng];
 
                 if (mapInstanceRef.current && markerRef.current) {
                     markerRef.current.setLatLng([userLat, userLng]);
