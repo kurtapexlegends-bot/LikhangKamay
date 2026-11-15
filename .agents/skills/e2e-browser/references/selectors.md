@@ -119,6 +119,21 @@ This reference eliminates blind accessibility tree dumps by providing pre-verifi
 - **Admin Arbitrate Full Refund Button:** `button:has-text("Approve Full Refund")`
 - **Admin Decline Claim Button:** `button:has-text("Decline Claim (Pay Shop)")`
 
+### Help Center, FAQ Hub & Support Desk (`/help`, `SupportContactModal.jsx`)
+- **Help Center Route Entrypoints:** `a[href*="/help"]`, `button:has-text("Help Center")`
+- **Help Center Search Input:** `input[placeholder*="Search questions"]`
+- **Help Center Expand/Collapse All:** `button:has-text("Expand All")`, `button:has-text("Collapse All")`
+- **Help Center Category Filter Pills:** `button:has-text("All")`, `button:has-text("Ordering & Cavite Delivery")`, `button:has-text("Pottery Care & Breakage")`, `button:has-text("Returns & Disputes")`, `button:has-text("Payments & Invoices")`, `button:has-text("Account & Biometrics")`, `button:has-text("Workshop Setup & Verification")`, `button:has-text("POS & Offline Sales")`, `button:has-text("Payouts & BIR Taxes")`, `button:has-text("Wholesale Supply Hub")`
+- **FAQ Accordion Item Toggle:** `button[aria-expanded]`, `button:has-text("What should I do if my pottery arrives broken or defective?")`, `button:has-text("Can I download an official BIR Sales Invoice")`
+- **Help Center Support Modal Triggers:** `button:has-text("Email Platform Support")`, `button:has-text("Artisan Merchant Desk")`
+- **Support Contact Modal Dialog:** `div[role="dialog"]:has-text("Contact Platform Support")`, `div[role="dialog"]:has-text("Artisan Merchant Desk")`
+- **Support Topic Selector:** `select[name="topic"]`
+- **Support Additional Details Textarea:** `textarea[placeholder*="Order number, specific issue"]`
+- **Support Direct Gmail Web Link:** `a:has-text("Open in Gmail (Web)")` (Points to `https://mail.google.com/mail/?view=cm&fs=1&to=likhangkamay.co@gmail.com...`)
+- **Support Copy Email Address Button:** `button:has-text("Copy Email Address")`, `button:has-text("Copied")`
+- **Help Center Quick Action Links:** `a:has-text("Browse Pottery Catalog")`, `a:has-text("Track Orders & Deliveries")`, `a:has-text("Studio Orders & Fulfillment")`, `a:has-text("Workshop Settings")`
+- **Seller Header Profile Dropdown Order:** `a[href*="/seller/settings"]:has-text("Settings")` (placed before Help Center, unbolded), `a[href*="/help?tab=artisan"]:has-text("Help Center")`
+
 ---
 
 ## 2. Local Defense Assets & Two-Tier Upload Protocol

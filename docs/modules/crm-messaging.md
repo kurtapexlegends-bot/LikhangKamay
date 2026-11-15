@@ -84,6 +84,16 @@ The real-time interface is driven by dedicated broadcasting events:
     *   Interactive filter pills categorize notifications into `All`, `Unread`, `Orders`, and `Messages` (or role-specific categories like `Attention` for Super Admin).
 *   **Cross-Portal Buyer Navigation**: In [BuyerUserMenu.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Buyer/BuyerUserMenu.jsx), buyers can directly navigate to their profile modal (`[Profile]` with User icon) or reviews management desk (`[My Reviews]` with Star icon) alongside a dynamic email verification security indicator pill (`Security: Verified` in emerald or `Unverified` in amber).
 
+### Help Center, FAQ Hub & Support Contact Escalation (`/help`)
+*   **Persona Isolation**: Served by [HelpCenterController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Core/HelpCenterController.php) at `/help` (`help.index`). Strictly scopes visible content by user role (`allowedPersona = 'buyer' | 'artisan' | 'all'`):
+    *   **Buyers** receive Buyer Guide FAQs (Cavite delivery, fragile warranty, return window, biometrics, BIR VAT invoices) and direct purchase escalation shortcuts (`Message Artisan`, `Track Orders & Deliveries`). The cross-persona tab switcher is hidden to keep the experience focused.
+    *   **Artisans** receive Studio Help Center FAQs (workshop verification, POS sales & voids, payouts & BIR 2307, wholesale supply) and studio fulfillment shortcuts (`Studio Orders & Fulfillment` routing to `orders.index`, `Workshop Settings`).
+    *   **Super Admins** receive full dual-persona access (`allowedPersona = 'all'`) with live tab switching.
+    *   **Guests** default to Buyer Guide with the option to view Artisan Guide via `?tab=artisan`.
+*   **Domain Directory**: Categorized FAQs and metadata are centralized in [HelpCenterDirectory.php](file:///c:/laragon/www/LikhangKamay/app/Support/HelpCenterDirectory.php).
+*   **Frontend UI & Accordion Controls**: Managed by [HelpCenter.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Consumer/Help/HelpCenter.jsx) with mobile horizontal category pill scroller and single-click "Expand All / Collapse All" toggle.
+*   **Gmail Web Support Escalation**: [SupportContactModal.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Consumer/Help/SupportContactModal.jsx) replaces raw `mailto:` links with direct Gmail Web compose URLs (`https://mail.google.com/mail/?view=cm&fs=1&to=likhangkamay.co@gmail.com...`) and a one-click clipboard copy action, eliminating intrusive OS desktop mail client popups (e.g. Outlook on Windows).
+
 ### WebSocket Broadcast Channels
 Real-time client listener channels are defined and authorized within [channels.php](file:///c:/laragon/www/LikhangKamay/routes/channels.php):
 *   `App.Models.User.{id}`: Restricts database system notifications to the target user.

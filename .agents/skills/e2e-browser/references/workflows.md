@@ -4,7 +4,7 @@
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │ STREAM A: Commercial Core, Locations & Complete Dispute Resolution                      │
 ├────────────────────────────────────────────────────────────────────────────────────────┤
-│ 1. Artisan (Batch 1): Storefront, Tax/Payout, Secondary Studio, SKU Lifecycle, 3D, CSV │
+│ 1. Artisan (Batch 1): Storefront, Tax/Payout, Studio, SKU Lifecycle, Help Center, 3D │
 │ 2. Buyer (Batch 1): Addresses, Sketch Chat, Orders A (GCash), B (PIN), C (COD), Review │
 │ 3. Artisan (Batch 2): Accept Order A, BOM Deduct, Assign Rider, Lalamove C, CSV Exports │
 │ 4. Staff & Rider: Shift Clock-in, Off-Site Flag, Rider Safety, Telemetry, POD Photo A  │
@@ -16,7 +16,7 @@
 ├────────────────────────────────────────────────────────────────────────────────────────┤
 │ 7. Staff & Artisan: Restock Request, PO Ordered, Inward Goods (+Stock), Reject Release,│
 │    Supply Hub Wholesale Listing, MOQ Cart, B2B Checkout & Wholesale Invoice            │
-│ 8. Buyer: Faceted Filter on /shop (Municipality/Material), Wishlist Toggle to Cart, 3D │
+│ 8. Buyer: Faceted Filter (/shop), Wishlist, 3D Canvas, Help Center & FAQ Hub (/help)   │
 │ 9. Buyer: Immediate Order Cancellation (Assert +1 Stock Rollback) & Address Reorder    │
 ├────────────────────────────────────────────────────────────────────────────────────────┤
 │ STREAM C: Enterprise Governance, HR Exceptions & Staff Provisioning                    │
@@ -73,7 +73,15 @@
    - Add raw material `"Stoneware Clay"`, unit cost `₱50/kg`, safety stock alert `10kg`. Record `2kg` manual write-down. Verify top procurement KPI cards sync via `useRealtime`.
 10. **HR & Staff Administration (`/hr`):**
     - Verify `Test HR Operations Staff` and `Test Logistics Rider` exist (`Motorcycle CAV-9876`, license `N01-12-345678`).
-11. **Session Evacuation:** Execute Session Evacuation Protocol.
+11. **Help Center Studio Escalation & Header Navigation (`/help?tab=artisan`, `SellerHeader.jsx`):**
+    - Click user profile avatar dropdown in `SellerHeader.jsx`. Verify `Settings` is placed before `Help Center` with normal (unbolded) font weight.
+    - Click `Help Center` (`/help?tab=artisan`).
+    - Assert page title: `"Studio Help Center & Artisan FAQ"`.
+    - Assert `allowedPersona = 'artisan'`: verify artisan categories are present (`Workshop Setup & Verification`, `POS & Offline Sales`, `Payouts & BIR Taxes`, `Wholesale Supply Hub`), and verify cross-persona switcher tab (`Buyer Guide`) is hidden for non-admins.
+    - Test FAQ accordion expand/collapse toggle (`Expand All` / `Collapse All`).
+    - Test direct action links: `"Studio Orders & Fulfillment"` routes cleanly to `route('orders.index')` (verifying zero Ziggy route errors).
+    - Click `"Artisan Merchant Desk"` button to open `SupportContactModal.jsx` in artisan mode. Verify pre-selected topics (`Shop Verification & Documents`, `Payouts & BIR 2307`, `POS Terminal & Hardware`, `Wholesale Supply Hub`, `Other Studio Inquiry`). Verify direct Gmail Web compose link (`https://mail.google.com/mail/?view=cm...`) and `"Copy Email Address"` action (preventing raw `mailto:` Outlook popups on Windows). Dismiss modal cleanly.
+12. **Session Evacuation:** Execute Session Evacuation Protocol.
 
 ---
 
@@ -218,12 +226,20 @@
 
 ---
 
-### Step 8: Buyer Discovery, Faceted Search & Wishlist (`/shop`, `/wishlist`)
+### Step 8: Buyer Discovery, Faceted Search, Wishlist & Help Center (`/shop`, `/wishlist`, `/help`)
 *Persona:* `test.buyer@likhangkamay.local`
 
 1. **Faceted Search (`/shop`):** Filter by Municipality (`Imus`), Material (`Clay`/`Bamboo`), Sort (`Price: Low to High`). Assert `TEST-BAMBOO-01` renders.
 2. **3D Canvas & Presign (`/3d-manager`):** Assert `<canvas>` initializes without WebGL context loss, test OrbitControls drag, test `/3d-manager/presign` & `DELETE /3d-manager/{product}`.
 3. **Wishlist Heart Toggle (`/wishlist`):** Toggle heart -> verify `/wishlist` -> click `Move to Cart` -> verify subtotal recalculation.
+4. **Buyer Help Center & Support Contact Modal (`/help`, `BuyerUserMenu.jsx`, `Footer.jsx`):**
+   - From header `BuyerUserMenu.jsx` or `Footer.jsx`, navigate to `/help`.
+   - Assert page title: `"Help Center & FAQ"`.
+   - Assert `allowedPersona = 'buyer'`: verify buyer categories render (`Ordering & Cavite Delivery`, `Pottery Care & Breakage`, `Returns & Disputes`, `Payments & Invoices`, `Account & Biometrics`), and verify cross-persona switcher tab (`Artisan Guide`) is hidden for non-admins.
+   - Test category filter pills: click `"Returns & Disputes"`, verify only return-related FAQs are shown; click `"All"`, verify all buyer questions display.
+   - Test FAQ accordion expand/collapse: click `"Expand All"`, verify all answers expand; click `"Collapse All"`, verify all answers collapse.
+   - Test search input: type `"broken"`, assert `"What should I do if my pottery arrives broken or defective?"` matches; clear search.
+   - Click `"Email Platform Support"` button to open `SupportContactModal.jsx`. Verify modal header `"Contact Platform Support"`, select inquiry topic (`Order & Delivery Status`, `Damaged or Broken Pottery`, `Return or Refund Request`, `Payment or GCash Issue`, `General Inquiry`). Verify primary CTA is `"Open in Gmail (Web)"` linking to `https://mail.google.com/mail/?view=cm&fs=1&to=likhangkamay.co@gmail.com...` and secondary CTA is `"Copy Email Address"`. Dismiss modal cleanly.
 
 ---
 

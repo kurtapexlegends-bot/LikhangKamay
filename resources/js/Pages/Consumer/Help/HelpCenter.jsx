@@ -410,12 +410,13 @@ export default function HelpCenter({
                                             className="py-2.5 sm:py-3 first:pt-0 last:pb-0 transition-colors"
                                         >
                                             {/* Question Header */}
-                                            <button
-                                                type="button"
-                                                onClick={() => toggleFaq(faq.id)}
-                                                className="w-full text-left flex items-start justify-between gap-3 group focus:outline-none"
-                                            >
-                                                <div className="flex-1 min-w-0">
+                                            <div className="w-full flex items-start justify-between gap-3 group">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleFaq(faq.id)}
+                                                    aria-expanded={isOpen}
+                                                    className="flex-1 min-w-0 text-left focus:outline-none"
+                                                >
                                                     <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                                                         <span className="text-[10px] font-bold text-clay-700 bg-clay-50 px-2 py-0.5 rounded border border-clay-200/50 uppercase tracking-wide">
                                                             {faq.category}
@@ -429,7 +430,7 @@ export default function HelpCenter({
                                                     <h3 className="text-xs sm:text-sm font-bold text-stone-900 group-hover:text-clay-700 transition-colors leading-snug">
                                                         {faq.question}
                                                     </h3>
-                                                </div>
+                                                </button>
 
                                                 <div className="flex items-center gap-1 shrink-0 pt-0.5">
                                                     <button
@@ -445,16 +446,22 @@ export default function HelpCenter({
                                                             <Link2 size={13} />
                                                         )}
                                                     </button>
-                                                    <div className="p-1 text-stone-400">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleFaq(faq.id)}
+                                                        aria-expanded={isOpen}
+                                                        aria-label={isOpen ? 'Collapse answer' : 'Expand answer'}
+                                                        className="p-1 text-stone-400 hover:text-stone-600 focus:outline-none"
+                                                    >
                                                         <ChevronDown
                                                             size={15}
                                                             className={`transition-transform duration-200 ${
                                                                 isOpen ? 'rotate-180 text-clay-700' : ''
                                                             }`}
                                                         />
-                                                    </div>
+                                                    </button>
                                                 </div>
-                                            </button>
+                                            </div>
 
                                             {/* Compact Answer Body */}
                                             {isOpen && (

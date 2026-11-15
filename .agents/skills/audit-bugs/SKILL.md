@@ -43,6 +43,10 @@ Scan all asynchronous operations, API hooks, and form controllers across the sys
      - Every authenticated page requiring live updates must match a path condition in `getPollKeys()`.
      - The keys requested in `reloadKeys` MUST strictly match the exact prop names returned by the corresponding Inertia controller (e.g. `metrics` vs `stats` in `DashboardController`, `activeDeliveries` in `DriverDeliveryController`, `approvals` in `ApprovalController`).
      - Mismatched prop names result in silent data discard by Inertia without any JavaScript or PHP errors, causing the UI to appear frozen in a stale state.
+6. **Ziggy Route Name Resolution & Mailto Desktop Traps:**
+   - Scan React components for `route('...')` string invocations.
+   - Verify all route names exist in Laravel's routing table (`php artisan route:list`). In particular, ensure artisan order management references use `orders.index` (the registered route name), NOT nonexistent aliases like `seller.orders.index` which throw fatal unhandled client-side runtime errors (`Ziggy error: route '...' is not in the route list`).
+   - Scan email support links to ensure platform escalation features use direct web-based compose URLs (e.g. Gmail Web `https://mail.google.com/mail/?view=cm...`) paired with modal dialogs rather than raw `mailto:` anchors that trigger intrusive native OS prompts (e.g. Outlook dialogs on Windows).
 
 ### Vector 2: Data Lifecycle, Soft-Deletes & Orphaned Entity Traps
 Audit all domain models and queries for crashes caused by missing, deactivated, or soft-deleted relationships:

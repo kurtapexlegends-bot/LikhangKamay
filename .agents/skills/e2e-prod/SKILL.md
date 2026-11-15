@@ -31,8 +31,9 @@ description: >-
 ## 2. The 6-Phase End-to-End Execution Pipeline
 
 ### Phase 1: Guest Visitor & Visual Quality Experience
-- Navigates `/`, `/shop`, `/categories`, and Product Detail pages.
+- Navigates `/`, `/shop`, `/categories`, `/help`, and Product Detail pages.
 - Validates 3D WebGL Canvas loading and graceful fallback states.
+- Validates Help Center & FAQ Hub (`/help`) for guest visitors: verifies guest default persona (`buyer`), search input debouncing, category filter pills, accordion expand/collapse, and support contact modal launch.
 - Audits DOM for anti-AI slop (gradient card borders), engineering jargon, and decorative emojis.
 - Asserts that all public pages return HTTP 200 without React hydration crashes.
 
@@ -48,11 +49,13 @@ description: >-
 - Audits My Orders management, live courier tracking map contracts (`/my-orders/{id}/route-preview`), and verified BIR Computerized Sales Invoice printable HTML generation (`/my-orders/{id}/receipt`, returning `view('pdf.receipt')`).
 - Audits My Reviews management portal (`/my-reviews`), verifying visual parity with My Orders, sidebar artisan replies feed, content safety moderation badges (`Public Review`, `Under Moderation Review`, `Passed Safety Review`, `Hidden from Storefront`), review edit modal (`PATCH /reviews/{id}`), review deletion (`DELETE /reviews/{id}`), and notification deep-linking (`/my-reviews?review={id}`).
 - Audits Buyer User Menu and navigation bar controls: profile modal navigation (`[Profile]` with User icon), reviews portal shortcut (`[My Reviews]` with Star icon), dynamic email verification status pill (`Security: Verified` in emerald or `Unverified` in amber), and cart persistence hygiene (clearing guest session carts upon checkout/login).
+- Audits Buyer Help Center navigation: clicks Help Center in Buyer User Menu (`BuyerUserMenu.jsx`) and footer (`Footer.jsx`), asserting redirect to `/help` with `allowedPersona = 'buyer'`, presence of buyer categories (Cavite delivery, warranty, returns, payments, face check), complete absence of artisan switcher tabs for non-admins, and support modal escalation (`SupportContactModal.jsx`) with direct Gmail Web compose link (`https://mail.google.com/mail/?view=cm...`) and clipboard copy.
 - Audits Notification Dropdown: Facebook-style dual-layer in-dropdown pagination (10 notifications limit before displaying `See previous notifications` trigger), dynamic cursor pagination within popover, filter pills (`All`, `Unread`, contextual tabs), and non-intrusive full-page routing preserved for mobile viewports (`/notifications`).
 
 ### Phase 3: Artisan / Seller Studio Operations & Procurement Loop
 - Authenticates with seller credentials (`ACCOUNTS.seller`).
 - Validates Seller Dashboard loading, workshop pickup schedule configuration, and order management.
+- Audits Seller Header profile dropdown menu: verifies `Settings` is placed before `Help Center` with normal (unbolded) font weight, and clicking Help Center navigates to `/help?tab=artisan` with `allowedPersona = 'artisan'`, showing studio operational FAQs (verification, POS, payouts, BIR 2307, wholesale) with zero buyer switcher tabs and verified Ziggy route mapping for `orders.index` (`Studio Orders & Fulfillment`).
 - Tests direct S3/R2 presigned upload endpoint (`/api/uploads/presign`) to verify heavy 3D GLB assets (>4.5MB) bypass Vercel serverless payload limits.
 - **B2B Supply Hub Wholesale Ecosystem (`/supply-hub`):** Audits raw material wholesale listing (`/supply-hub/my-listings`), MOQ guardrail constraints (blocking < MOQ), B2B sourcing cart (`/supply-hub/cart`), B2B procurement checkout (`/supply-hub/checkout`), inbound sourcing order tracking with buyer delivery confirmation (`/supply-hub/orders`), and B2B wholesale sales management (`/supply-hub/sales`) with status progression (`Needs Decision`, `Accepted`, `In Production / Packing`, `In Transit`), Lalamove courier dispatching with resolved recipient fallbacks and Cavite centroid geocoding, expandable Pricing & Timeline accordions, printable wholesale invoice generation (`/supply-hub/sales/{id}/invoice`), and complete horizontal scroll hitbox isolation on status toolbar containers.
 - **Full Supply Procurement Loop (`/procurement`):** Audits staff supply restock request (`POST /procurement/supplies/{id}/request`), PO marked ordered (`POST /procurement/stock-requests/{id}/ordered`), inward goods receiving with stock increments (`POST /procurement/stock-requests/{id}/receive`), and accounting maker-checker stock request rejection (`POST /accounting/reject/{stockRequest}`).
@@ -88,6 +91,7 @@ description: >-
 - **Content Safety & Customer Review Moderation Desk:** Navigates to `/admin/compliance`, asserts empty state displays when no ticket is selected (zero ghost auto-selection), evaluates disputed customer reviews, and executes uphold/dismiss actions (`PATCH /admin/review-moderation/{id}`).
 - **Catalog Moderation Queue Takedown:** Tests direct listing takedown (`POST /admin/moderation-queue/{id}/takedown`) from the moderation queue.
 - **Transactional Email Studio:** Tests dynamic email template inspection (`/admin/settings/email-templates`), token replacement (`{{buyer_name}}`, `{{order_number}}`), and live test email dispatch (`POST /admin/settings/email-templates/dispatch`).
+- **Help Center Dual Persona Governance:** Audits `/help` under admin credentials, confirming `allowedPersona = 'all'` unlocks the dual-persona guide switcher (`[Buyer Guide]` and `[Artisan Guide]`) with complete category visibility across all platform topics.
 - Verifies Role-Based Access Control (RBAC): asserts non-admin sessions attempting to access `/admin` receive HTTP 403 or redirect.
 
 ### Phase 6: Vercel Serverless Limits, Edge Diagnostics & Live Sandboxes
