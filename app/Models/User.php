@@ -341,7 +341,13 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
         $this->notifyNow(new \App\Notifications\ResetPasswordNotification($token));
     }
 
-    // ========== ROLE HELPERS ==========
+    // ========== ROLE CONSTANTS & HELPERS ==========
+
+    public const ROLE_SUPER_ADMIN = 'super_admin';
+    public const ROLE_ARTISAN = 'artisan';
+    public const ROLE_STAFF = 'staff';
+    public const ROLE_BUYER = 'buyer';
+    public const ROLE_SUPPLIER = 'supplier';
 
     public function isAdmin(): bool
     {
@@ -351,6 +357,11 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     public function isArtisan(): bool
     {
         return $this->role === 'artisan';
+    }
+
+    public function isSupplier(): bool
+    {
+        return $this->role === 'supplier';
     }
 
     public function isStaff(): bool
@@ -366,6 +377,16 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
     public function isSellerOwner(): bool
     {
         return $this->isArtisan();
+    }
+
+    public function scopeSuppliers($query)
+    {
+        return $query->where('role', 'supplier');
+    }
+
+    public function scopeArtisans($query)
+    {
+        return $query->where('role', 'artisan');
     }
 
     // ========== RELATIONSHIPS ==========

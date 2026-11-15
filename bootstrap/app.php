@@ -41,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'staff.security' => \App\Http\Middleware\EnsureStaffSecurityGate::class,
             'staff.attendance' => \App\Http\Middleware\EnsureStaffAttendanceActive::class,
             'ensure.not.pending.artisan' => \App\Http\Middleware\EnsureNotPendingArtisan::class,
+            'supplier' => \App\Http\Middleware\EnsureSupplier::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [

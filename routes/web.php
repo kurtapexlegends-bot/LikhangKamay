@@ -133,6 +133,15 @@ Route::get('/artisan/register', function () {
     ]);
 })->middleware('guest')->name('artisan.register');
 
+// --- SUPPLIER REGISTRATION & ONBOARDING ---
+Route::get('/supplier/register', [\App\Http\Controllers\Auth\SupplierRegistrationController::class, 'create'])
+    ->middleware('guest')
+    ->name('supplier.register');
+
+Route::post('/supplier/register', [\App\Http\Controllers\Auth\SupplierRegistrationController::class, 'store'])
+    ->middleware(['guest', 'throttle:10,1'])
+    ->name('supplier.register.store');
+
 // Legal Pages
 // Webhooks (Exempt from CSRF in bootstrap/app.php)
 
@@ -140,6 +149,8 @@ Route::get('/terms', [\App\Http\Controllers\Core\LegalPolicyController::class, '
 Route::get('/privacy', [\App\Http\Controllers\Core\LegalPolicyController::class, 'privacy'])->name('privacy');
 Route::get('/seller-agreement', [\App\Http\Controllers\Core\LegalPolicyController::class, 'sellerAgreement'])->name('seller.agreement');
 Route::get('/seller-privacy', [\App\Http\Controllers\Core\LegalPolicyController::class, 'sellerPrivacy'])->name('seller.privacy');
+Route::get('/supplier-agreement', [\App\Http\Controllers\Core\LegalPolicyController::class, 'supplierAgreement'])->name('supplier.agreement');
+Route::get('/supplier-privacy', [\App\Http\Controllers\Core\LegalPolicyController::class, 'supplierPrivacy'])->name('supplier.privacy');
 Route::get('/api/policies/{type}', [\App\Http\Controllers\Core\LegalPolicyController::class, 'show'])->name('api.policies.show');
 Route::get('/help', [\App\Http\Controllers\Core\HelpCenterController::class, 'index'])->name('help.index');
 
@@ -155,6 +166,11 @@ Route::get('/auth/{provider}/artisan', [\App\Http\Controllers\Auth\SocialAuthCon
     ->where('provider', 'google|facebook')
     ->middleware('guest')
     ->name('auth.social.artisan');
+
+Route::get('/auth/{provider}/supplier', [\App\Http\Controllers\Auth\SocialAuthController::class, 'redirectSupplier'])
+    ->where('provider', 'google|facebook')
+    ->middleware('guest')
+    ->name('auth.social.supplier');
 
 Route::get('/auth/{provider}/callback', [\App\Http\Controllers\Auth\SocialAuthController::class, 'callback'])
     ->where('provider', 'google|facebook')
@@ -752,6 +768,20 @@ Route::middleware(['auth', 'staff.security', 'verified', 'super_admin'])->prefix
     Route::post('/taxonomy', [\App\Http\Controllers\Admin\CatalogController::class, 'storeTaxonomy'])->name('admin.taxonomy.store');
     Route::patch('/taxonomy/{category}', [\App\Http\Controllers\Admin\CatalogController::class, 'updateTaxonomy'])->name('admin.taxonomy.update');
     Route::delete('/taxonomy/{category}', [\App\Http\Controllers\Admin\CatalogController::class, 'destroyTaxonomy'])->name('admin.taxonomy.destroy');
+});
+
+// --- DEDICATED SUPPLIER PORTAL ---
+Route::middleware(['auth', 'verified', 'supplier'])->prefix('supplier')->name('supplier.')->group(function () {
+    Route::get('/setup', [\App\Http\Controllers\Supplier\SupplierSetupController::class, 'create'])->name('setup');
+    Route::post('/setup', [\App\Http\Controllers\Supplier\SupplierSetupController::class, 'store'])->name('setup.store');
+    Route::get('/pending', [\App\Http\Controllers\Supplier\SupplierPortalController::class, 'pending'])->name('pending');
+    Route::get('/dashboard', [\App\Http\Controllers\Supplier\SupplierPortalController::class, 'dashboard'])->name('dashboard');
+    Route::get('/materials', [\App\Http\Controllers\Supplier\SupplierPortalController::class, 'materials'])->name('materials.index');
+    Route::post('/materials', [\App\Http\Controllers\Supplier\SupplierPortalController::class, 'storeMaterial'])->name('materials.store');
+    Route::post('/materials/{product}', [\App\Http\Controllers\Supplier\SupplierPortalController::class, 'updateMaterial'])->name('materials.update');
+    Route::delete('/materials/{product}', [\App\Http\Controllers\Supplier\SupplierPortalController::class, 'destroyMaterial'])->name('materials.destroy');
+    Route::get('/orders', [\App\Http\Controllers\Supplier\SupplierPortalController::class, 'orders'])->name('orders.index');
+    Route::post('/orders/{order}/status', [\App\Http\Controllers\Supplier\SupplierPortalController::class, 'updateOrderStatus'])->name('orders.status');
 });
 
 require __DIR__.'/auth.php';

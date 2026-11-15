@@ -506,6 +506,8 @@ class Product extends Model
                 $q->where('products.is_b2b_supply', false)
                   ->orWhereNull('products.is_b2b_supply');
             }
+        })->whereDoesntHave('user', function ($q) {
+            $q->where('role', 'supplier');
         });
     }
 

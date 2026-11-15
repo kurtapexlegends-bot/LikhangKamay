@@ -25,6 +25,9 @@ class B2BSupplyHubService
         'pcs' => 'Pieces (pcs)',
         'kg' => 'Kilograms (kg)',
         'bag' => 'Bags (e.g. 25kg sack)',
+        'sack' => 'Sacks (e.g. 50kg industrial sack)',
+        'drum' => 'Drums (e.g. 200L chemical/glaze drum)',
+        'crate' => 'Crates / Pallets',
         'box' => 'Boxes / Cartons',
         'bundle' => 'Bundles (e.g. wood planks)',
         'liters' => 'Liters / Liquid bottles',
@@ -447,5 +450,32 @@ class B2BSupplyHubService
                 $q->where('user_id', $actor->id)->orWhere('artisan_id', $actor->id);
             })
             ->firstOrFail();
+    }
+
+    /**
+     * Compute current month B2B procurement order usage and quota limits.
+     * Premium artisans: capped at 10 wholesale orders per billing month.
+     * Elite (super_premium) artisans: unlimited.
+     *
+     * @return array{used: int, limit: int|null, is_unlimited: bool, can_order: bool}
+     */
+    public function getMonthlySourcingUsage(User $actor): array
+    {
+        $isElite = $actor->getEffectivePremiumTier() === 'super_premium';
+
+        $usedCount = Order::where('user_id', $actor->id)
+            ->whereHas('items', fn ($q) => $q->where('is_b2b_supply', DB::raw('true')))
+            ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
+            ->count();
+
+        $limit = $isElite ? null : 10;
+        $canOrder = $isElite || $usedCount < 10;
+
+        return [
+            'used' => $usedCount,
+            'limit' => $limit,
+            'is_unlimited' => $isElite,
+            'can_order' => $canOrder,
+        ];
     }
 }

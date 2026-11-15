@@ -3,7 +3,7 @@ import { Link } from '@inertiajs/react';
 import { X } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function GuestLayout({ children, image, quote, quoteAuthor }) {
+export default function GuestLayout({ children, image, quote, quoteAuthor, eyebrow, title }) {
     // Premium Pottery Theme Image
     const bgImage = image || "https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?q=80&w=1969&auto=format&fit=crop";
 
@@ -47,10 +47,16 @@ export default function GuestLayout({ children, image, quote, quoteAuthor }) {
 
                 {/* Middle Section: Editorial Text */}
                 <div className="relative z-20 my-auto max-w-lg">
-                    <span className="text-[10px] font-sans tracking-[0.25em] uppercase text-clay-400 font-bold mb-3 block">Artisan Craftsmanship</span>
+                    <span className="text-[10px] font-sans tracking-[0.25em] uppercase text-clay-400 font-bold mb-3 block">
+                        {eyebrow || 'Artisan Craftsmanship'}
+                    </span>
                     <h2 className="font-serif text-5xl font-bold text-white leading-[1.15] mb-6 tracking-tight">
-                        Earth shaped by hand, <br/>
-                        fired by soul.
+                        {title || (
+                            <>
+                                Earth shaped by hand, <br/>
+                                fired by soul.
+                            </>
+                        )}
                     </h2>
                     <div className="h-px w-20 bg-clay-500/50 mb-6"></div>
                 </div>

@@ -111,6 +111,7 @@ export default function Footer() {
                         <div className="flex flex-col gap-1.5 md:gap-3 text-xs md:text-sm text-gray-500">
                             <Link href={route('shop.index')} className="hover:text-clay-600 transition">Shop Ceramics</Link>
                             <Link href="/artisan/register" className="hover:text-clay-600 transition">Sell on LikhangKamay</Link>
+                            <Link href={route('supplier.register')} className="hover:text-clay-600 transition">Supply Raw Materials</Link>
                         </div>
                     </div>
 

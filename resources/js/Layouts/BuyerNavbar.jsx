@@ -36,10 +36,15 @@ export default function BuyerNavbar({ hideMobileDock = false }) {
         ? rawBuyerName.split(/\s+/).slice(0, 2).join(' ')
         : 'Account';
     const showBuyerChat = !!user && !auth?.isStaff && user.role !== 'super_admin';
-    const sellerWorkspaceHref = sellerSidebar?.canAccessWorkspace && sellerSidebar?.defaultRouteName
-        ? route(sellerSidebar.defaultRouteName)
-        : null;
-    const workspaceLabel = sellerSidebar?.actorType === 'staff' ? 'Staff Hub' : 'Seller Dashboard';
+    const isSupplier = user?.role === 'supplier';
+    const sellerWorkspaceHref = isSupplier
+        ? (user?.artisan_status === 'approved' ? route('supplier.dashboard') : route('supplier.pending'))
+        : (sellerSidebar?.canAccessWorkspace && sellerSidebar?.defaultRouteName
+            ? route(sellerSidebar.defaultRouteName)
+            : null);
+    const workspaceLabel = isSupplier
+        ? 'Supplier Portal'
+        : (sellerSidebar?.actorType === 'staff' ? 'Staff Hub' : 'Seller Dashboard');
 
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     const [term, setTerm] = useState(params.get('search') || '');

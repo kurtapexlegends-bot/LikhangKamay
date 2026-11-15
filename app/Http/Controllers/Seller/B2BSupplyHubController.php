@@ -48,11 +48,13 @@ class B2BSupplyHubController extends Controller
         }
 
         $seller = $actor->getEffectiveSeller() ?? $actor;
-        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Elite artisan shops.');
+        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Premium and Elite artisan shops.');
 
         try {
             $catalogData = $this->fetchB2BCatalog->execute($request, $actor);
-            return Inertia::render('Seller/SupplyHub/Index', $catalogData);
+            return Inertia::render('Seller/SupplyHub/Index', array_merge($catalogData, [
+                'sourcingQuota' => $this->supplyHubService->getMonthlySourcingUsage($actor),
+            ]));
         } catch (\Throwable $e) {
             Log::error('B2BSupplyHubController index error: ' . $e->getMessage(), [
                 'exception' => $e,
@@ -95,7 +97,7 @@ class B2BSupplyHubController extends Controller
         }
 
         $seller = $actor->getEffectiveSeller() ?? $actor;
-        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Elite artisan shops.');
+        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Premium and Elite artisan shops.');
 
         return Inertia::render('Seller/SupplyHub/MyListings', $this->supplyHubService->getMyListingsData($actor));
     }
@@ -126,9 +128,11 @@ class B2BSupplyHubController extends Controller
         }
 
         $seller = $actor->getEffectiveSeller() ?? $actor;
-        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Elite artisan shops.');
+        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Premium and Elite artisan shops.');
 
-        return Inertia::render('Seller/SupplyHub/Cart', $this->supplyHubService->getCartData($actor));
+        return Inertia::render('Seller/SupplyHub/Cart', array_merge($this->supplyHubService->getCartData($actor), [
+            'sourcingQuota' => $this->supplyHubService->getMonthlySourcingUsage($actor),
+        ]));
     }
 
     /**
@@ -144,7 +148,7 @@ class B2BSupplyHubController extends Controller
         }
 
         $seller = $actor->getEffectiveSeller() ?? $actor;
-        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Elite artisan shops.');
+        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Premium and Elite artisan shops.');
 
         $items = $prepareCheckout->execute($request);
 
@@ -152,7 +156,9 @@ class B2BSupplyHubController extends Controller
             return redirect()->route('seller.supply-hub.index')->with('error', 'Your procurement cart is empty.');
         }
 
-        return Inertia::render('Seller/SupplyHub/ProcurementCheckout', $this->supplyHubService->getCheckoutData($actor, $items));
+        return Inertia::render('Seller/SupplyHub/ProcurementCheckout', array_merge($this->supplyHubService->getCheckoutData($actor, $items), [
+            'sourcingQuota' => $this->supplyHubService->getMonthlySourcingUsage($actor),
+        ]));
     }
 
     /**
@@ -168,7 +174,14 @@ class B2BSupplyHubController extends Controller
         }
 
         $seller = $actor->getEffectiveSeller() ?? $actor;
-        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Elite artisan shops.');
+        abort_unless($seller->canAccessSupplyHub(), 403, 'The B2B Supply Hub and wholesale ordering are strictly reserved for Premium and Elite artisan shops.');
+
+        $usage = $this->supplyHubService->getMonthlySourcingUsage($actor);
+        if (!$usage['can_order']) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'items' => 'You have reached your Premium monthly sourcing limit of 10 B2B wholesale orders. Upgrade to Elite for unlimited procurement ordering.',
+            ]);
+        }
 
         try {
             $placeOrder->execute($request, $actor);

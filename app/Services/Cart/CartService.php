@@ -136,7 +136,11 @@ class CartService
 
             // 3. Inactive / Soft-Deleted / Banned Seller
             $seller = $liveProduct->user;
-            if (!$seller || $seller->trashed() || $seller->role !== 'artisan' || $seller->artisan_status !== 'approved' || (method_exists($seller, 'isBanned') && $seller->isBanned()) || (method_exists($seller, 'isSuspended') && $seller->isSuspended())) {
+            $isAllowedRole = $liveProduct->is_b2b_supply
+                ? in_array($seller?->role, ['artisan', 'supplier'], true)
+                : $seller?->role === 'artisan';
+
+            if (!$seller || $seller->trashed() || !$isAllowedRole || $seller->artisan_status !== 'approved' || (method_exists($seller, 'isBanned') && $seller->isBanned()) || (method_exists($seller, 'isSuspended') && $seller->isSuspended())) {
                 if (($item['is_available'] ?? true) !== false) {
                     $item['is_available'] = false;
                     $updatedCart = true;

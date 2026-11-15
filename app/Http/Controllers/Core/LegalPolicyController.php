@@ -26,6 +26,12 @@ class LegalPolicyController extends Controller
         'sellerPrivacy' => PlatformPolicy::TYPE_SELLER_PRIVACY,
         'seller-privacy' => PlatformPolicy::TYPE_SELLER_PRIVACY,
         'seller_privacy' => PlatformPolicy::TYPE_SELLER_PRIVACY,
+        'supplier' => PlatformPolicy::TYPE_SUPPLIER_AGREEMENT,
+        'supplier-agreement' => PlatformPolicy::TYPE_SUPPLIER_AGREEMENT,
+        'supplier_agreement' => PlatformPolicy::TYPE_SUPPLIER_AGREEMENT,
+        'supplierPrivacy' => PlatformPolicy::TYPE_SUPPLIER_PRIVACY,
+        'supplier-privacy' => PlatformPolicy::TYPE_SUPPLIER_PRIVACY,
+        'supplier_privacy' => PlatformPolicy::TYPE_SUPPLIER_PRIVACY,
         'returns' => PlatformPolicy::TYPE_RETURN_REFUND,
         'return_refund' => PlatformPolicy::TYPE_RETURN_REFUND,
         'return-refund' => PlatformPolicy::TYPE_RETURN_REFUND,
@@ -35,6 +41,8 @@ class LegalPolicyController extends Controller
         PlatformPolicy::TYPE_PRIVACY_POLICY => PlatformPolicy::TYPE_PRIVACY_POLICY,
         PlatformPolicy::TYPE_SELLER_AGREEMENT => PlatformPolicy::TYPE_SELLER_AGREEMENT,
         PlatformPolicy::TYPE_SELLER_PRIVACY => PlatformPolicy::TYPE_SELLER_PRIVACY,
+        PlatformPolicy::TYPE_SUPPLIER_AGREEMENT => PlatformPolicy::TYPE_SUPPLIER_AGREEMENT,
+        PlatformPolicy::TYPE_SUPPLIER_PRIVACY => PlatformPolicy::TYPE_SUPPLIER_PRIVACY,
         PlatformPolicy::TYPE_RETURN_REFUND => PlatformPolicy::TYPE_RETURN_REFUND,
     ];
 
@@ -67,6 +75,20 @@ class LegalPolicyController extends Controller
     {
         return Inertia::render('Consumer/Legal/SellerPrivacy', [
             'policy' => $this->policyService->getSerializedActivePolicy(PlatformPolicy::TYPE_SELLER_PRIVACY),
+        ]);
+    }
+
+    public function supplierAgreement(): Response
+    {
+        return Inertia::render('Consumer/Legal/SellerAgreement', [
+            'policy' => $this->policyService->getSerializedActivePolicy(PlatformPolicy::TYPE_SUPPLIER_AGREEMENT),
+        ]);
+    }
+
+    public function supplierPrivacy(): Response
+    {
+        return Inertia::render('Consumer/Legal/SellerPrivacy', [
+            'policy' => $this->policyService->getSerializedActivePolicy(PlatformPolicy::TYPE_SUPPLIER_PRIVACY),
         ]);
     }
 
