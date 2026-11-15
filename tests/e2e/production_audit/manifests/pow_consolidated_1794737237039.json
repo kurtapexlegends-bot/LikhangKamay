@@ -1,0 +1,75 @@
+{
+  "manifest_version": "5.0.0-PROD-CONSOLIDATED-POW",
+  "run_id": "pow-consolidated-dc46f371-cd72-4218-96ba-dd5a5589ed95",
+  "timestamp": "2026-11-15T10:07:17.037Z",
+  "host": "https://www.likhangkamay.app",
+  "status": "PASS_100_PERCENT_HEALTHY",
+  "summary": {
+    "total_checks": 154,
+    "passed_checks": 154,
+    "failed_checks": 0,
+    "warnings": 0,
+    "bugs_logged": 0,
+    "duration_seconds": 319.2
+  },
+  "stream_a_commercial": {
+    "order_id": 101,
+    "order_number": "ORD-6AF97AFAE4D12",
+    "sku": "TEST-BAMBOO-01",
+    "stock_audit": {
+      "stock_before": 990,
+      "stock_after": 989,
+      "delta": -1,
+      "atomic_decrement_verified": true
+    },
+    "delivery_id": 30,
+    "tracking_number": "LK-INHOUSE-ORD-6AF97AFAE4D12",
+    "driver": {
+      "email": "test.driver@likhangkamay.local",
+      "role": "driver",
+      "employee_id": 4,
+      "driver_name": "Test Logistics Rider",
+      "vehicle": "Motorcycle (CAV-9876)",
+      "is_test": true
+    },
+    "telemetry": {
+      "latitude": 14.4258,
+      "longitude": 120.9385,
+      "heading": 45,
+      "speed_kph": 28.5
+    },
+    "pod_submitted": true,
+    "final_order_status": "Completed",
+    "bir_invoice_sha256": "fbc4c6253cf018e2d0e1af0c11f3ab2c0b5db3c95f1c7b62dca3ae916393d016",
+    "proof_of_work_signature": "618dd1697c412cbaf73a8bf2bb0f350008ceabea2a03ba2eeb2e7b81cb213d0d"
+  },
+  "stream_b_b2b_wholesale": {
+    "order_id": "ORD-6AF9822C93C31",
+    "order_number": "ORD-6AF9822C93C31",
+    "material_sku": "B2B-CLAY-62",
+    "material_name": "Silang Red Mountain Terracotta Clay (25kg Sack)",
+    "buyer_artisan": "artisan.silang@likhangkamay.com",
+    "seller_artisan": "test.artisan@likhangkamay.local",
+    "stock_audit": {
+      "stock_before": 28,
+      "stock_after": 32,
+      "delta": 4,
+      "stock_increment_verified": true
+    },
+    "final_order_status": "Completed",
+    "b2b_invoice_sha256": "453f802ef97118163b45d0ac190da393d4a6c0e05b11aab4c15b5fe07f488ad0",
+    "proof_of_work_signature": "67154572576750fdc264aa1912b3db0e3d5a8c3ec9f11e7ae03f386f2d86e0cd"
+  },
+  "stream_c_governance_technical": {
+    "help_center_guest": "PASS",
+    "help_center_buyer_scoped": "PASS",
+    "help_center_artisan_scoped": "PASS",
+    "orders_route_verified": "PASS",
+    "paymongo_gcash_sandbox": "PASS",
+    "lalamove_sandbox_sync": "PASS",
+    "client_file_shield_4mb": "PASS",
+    "temp_staff_seat_provisioned_and_purged": "Employee ID: 14 (E2E-553257)",
+    "temp_voucher_provisioned_and_purged": "Voucher ID: 13 (TESTE2E10)"
+  },
+  "master_proof_of_work_signature": "c03ec0e03770ad13568b68a41198ab080a46c36aa506996c2ce32cf61e33f498"
+}

@@ -1,16 +1,16 @@
 # Production End-to-End Audit & Verification Matrix
 
-> **Target:** `http://likhangkamay.test`  
-> **Execution Date:** `2026-11-08T08:47:14.640Z`  
-> **Duration:** `228.8s`  
+> **Target:** `https://www.likhangkamay.app`  
+> **Execution Date:** `2026-11-15T09:59:00.705Z`  
+> **Duration:** `319.2s`  
 > **Status:** **PASS (100% HEALTHY)**
 
 ## 1. Executive Summary
 
 | Metric | Value |
 | :--- | :--- |
-| **Total Scenarios Evaluated** | 143 |
-| **Passed Checks** | 143 |
+| **Total Scenarios Evaluated** | 154 |
+| **Passed Checks** | 154 |
 | **Warnings** | 0 |
 | **Failed Checks** | 0 |
 | **Active Bugs Logged** | 0 |
@@ -27,13 +27,13 @@ Zero critical bugs or runtime failures detected across all user journeys.
 | Phase 1 | 1.2 Marketplace Catalog Load | **PASS** | - |
 | Phase 1 | 1.2 Search Input & Suggestions | **PASS** | Debounce search executed |
 | Phase 1 | 1.2 Sort Dropdown Exists | **PASS** | - |
-| Phase 1 | 1.3 Product Detail Media Viewer | **PASS** | Product: "Nordic Raw Clay Floor Vase", 2D gallery image verified (3D model not configured on SKU). |
+| Phase 1 | 1.3 Product Detail Media Viewer | **PASS** | Product: "Burnished Clay Water Pitcher & Jar", 2D gallery image verified (3D model not configured on SKU). |
 | Phase 1 | 1.3 Recipe Transparency Pill | **PASS** | Artisan craft specifications visible: true |
 | Phase 1 | 1.3 Add to Cart Button Rendered | **PASS** | - |
-| Phase 1 | 1.4 Artisan Profile Load | **PASS** | Target URL: http://likhangkamay.test/shop/silang-terracotta-works-ybewlf |
+| Phase 1 | 1.4 Artisan Profile Load | **PASS** | Target URL: https://www.likhangkamay.app/shop/silang-terracotta-works-42dewr |
 | Phase 1 | 1.5 Register Page Load | **PASS** | - |
 | Phase 1 | 1.5 Registration Validation Errors | **PASS** | Form validation errors properly displayed |
-| Phase 1 | 1.6 Google OAuth Redirect | **PASS** | Target URL reached: https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S1596881571% |
+| Phase 1 | 1.6 Google OAuth Redirect | **PASS** | Target URL reached: https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S-50211382%3 |
 | Phase 1 | 1.7 Forgot Password Page Load | **PASS** | - |
 | Phase 1 | 1.7 Forgot Password Submit | **PASS** | Submission handled |
 | Phase 1 | 1.8 Artisan Register Page Load | **PASS** | - |
@@ -41,7 +41,10 @@ Zero critical bugs or runtime failures detected across all user journeys.
 | Phase 1 | 1.9 Legal Page: /privacy | **PASS** | HTTP 200 |
 | Phase 1 | 1.9 Legal Page: /seller-agreement | **PASS** | HTTP 200 |
 | Phase 1 | 1.9 Legal Page: /seller-privacy | **PASS** | HTTP 200 |
-| Phase 2 | 2.1 Buyer Authentication | **PASS** | Current URL: http://likhangkamay.test/ |
+| Phase 1 | 1.10 Public Help Center & FAQ Hub Load | **PASS** | - |
+| Phase 1 | 1.10 FAQ Accordion Expand/Collapse Action | **PASS** | - |
+| Phase 1 | 1.10 Support Contact Modal & Gmail Web Link | **PASS** | Direct Gmail compose link verified (zero OS Outlook dialog) |
+| Phase 2 | 2.1 Buyer Authentication | **PASS** | Current URL: https://www.likhangkamay.app/ |
 | Phase 2 | 2.1 Buyer Session Props [Inertia Props] | **PASS** | Verified props [auth.user.email] present |
 | Phase 2 | 2.2 Shop Catalog Props [Component: Consumer/Shop/Catalog] | **PASS** | Matched expected component: Catalog |
 | Phase 2 | 2.2 Shop Catalog Props [Inertia Props] | **PASS** | Verified props [products] present |
@@ -57,26 +60,29 @@ Zero critical bugs or runtime failures detected across all user journeys.
 | Phase 2 | 2.4 Checkout Inertia Contract [Inertia Props] | **PASS** | Verified props [items, pricing] present |
 | Phase 2 | 2.4 Checkout Clean Initial State | **PASS** | - |
 | Phase 2 | 2.4 Shipping Method Selectors Present | **PASS** | Delivery selector: true, Pickup selector: true |
-| Phase 2 | 2.4 Place Order Action Present | **PASS** | Label: "Place Order", Disabled: true |
+| Phase 2 | 2.4 Place Order Action Present | **PASS** | Label: "Place Order", Disabled: false |
 | Phase 2 | 2.4b Philippine VAT-Inclusive Disclosure Present | **PASS** | 12% VAT inclusive pricing notice verified on Checkout |
 | Phase 2 | 2.5 My Orders Inertia Props [Component: Consumer/Buyer/MyOrders] | **PASS** | Matched expected component: Orders |
 | Phase 2 | 2.5 My Orders Inertia Props [Inertia Props] | **PASS** | Verified props [orders] present |
 | Phase 2 | 2.5 Order Receipt Action Present | **PASS** | - |
 | Phase 2 | 2.5b Live Delivery Tracking Component Rendered | **PASS** | Buyer order live tracking card or radar element verified |
-| Phase 2 | 2.5c BIR Official Sales Invoice Endpoint Healthy | **PASS** | BIR Receipt URL (/my-orders/97/receipt?download=1) HTTP status: 200 |
+| Phase 2 | 2.5c BIR Official Sales Invoice Endpoint Healthy | **PASS** | BIR Receipt URL (/my-orders/101/receipt?download=1) HTTP status: 200 |
 | Phase 2 | 2.6 Saved Wishlist Page Load | **PASS** | - |
 | Phase 2 | 2.6b Wishlist Heart Toggle & Remove Flow | **PASS** | Toggle On: true, Redirected to /saved: true, DOM Present: true, Click Remove: true |
 | Phase 2 | 2.7 Buyer Reviews Page Load | **PASS** | - |
-| Phase 2 | 2.7b Customer Review Submitted on Test Order | **PASS** | Review ID: 73, HTTP status: 200 |
+| Phase 2 | 2.7b Customer Review Submitted on Test Order | **PASS** | Review ID: 2, HTTP status: 200 |
 | Phase 2 | 2.8 Buyer Chat Window Load | **PASS** | - |
 | Phase 2 | 2.8 Chat Input Field Active | **PASS** | - |
 | Phase 2 | 2.8b Chat Inquiry Message Exchange | **PASS** | Message bubble rendered: true, timestamp/clock icon verified: true |
 | Phase 2 | 2.9 Notifications Page Load | **PASS** | - |
-| Phase 3 | 3.1 Seller Authentication | **PASS** | Current URL: http://likhangkamay.test/dashboard |
+| Phase 2 | 2.10 Buyer Help Center Persona Scoped | **PASS** | Allowed persona: buyer |
+| Phase 2 | 2.10 Artisan Guide Tab Hidden for Buyer | **PASS** | - |
+| Phase 2 | 2.10 Category Filter Pill Active | **PASS** | - |
+| Phase 3 | 3.1 Seller Authentication | **PASS** | Current URL: https://www.likhangkamay.app/dashboard |
 | Phase 3 | 3.1 Seller Session Props [Component: Seller/Layout/Dashboard] | **PASS** | Matched expected component: Dashboard |
 | Phase 3 | 3.1 Seller Session Props [Inertia Props] | **PASS** | Verified props [auth.user.email] present |
 | Phase 3 | 3.2 Seller Dashboard Inertia Contract [Component: Seller/Layout/Dashboard] | **PASS** | Matched expected component: Dashboard |
-| Phase 3 | 3.2 Seller Dashboard Load | **PASS** | Found 12 dashboard metric elements |
+| Phase 3 | 3.2 Seller Dashboard Load | **PASS** | Found 8 dashboard metric elements |
 | Phase 3 | 3.3 Product Catalog Inertia Contract [Component: Seller/Catalog/ProductManager] | **PASS** | Matched expected component: Product |
 | Phase 3 | 3.3 Product Catalog Inertia Contract [Inertia Props] | **PASS** | Verified props [products] present |
 | Phase 3 | 3.3 Product Catalog Load | **PASS** | - |
@@ -84,8 +90,8 @@ Zero critical bugs or runtime failures detected across all user journeys.
 | Phase 3 | 3.3 Product Search & Filter Controls Available | **PASS** | Catalog search/filter input present: true |
 | Phase 3 | 3.4 3D Asset Manager Endpoint & Contract | **PASS** | 3D Presign API HTTP status: 200 |
 | Phase 3 | 3.5 Marketing Discounts Load | **PASS** | - |
-| Phase 3 | 3.5b Temporary Voucher CRUD Created | **PASS** | Created voucher TESTE2E10 (ID: 16) |
-| Phase 3 | 3.5b Temporary Voucher CRUD Deleted | **PASS** | Deleted temporary voucher ID: 16 |
+| Phase 3 | 3.5b Temporary Voucher CRUD Created | **PASS** | Created voucher TESTE2E10 (ID: 13) |
+| Phase 3 | 3.5b Temporary Voucher CRUD Deleted | **PASS** | Deleted temporary voucher ID: 13 |
 | Phase 3 | 3.6 Sponsorships Page Load | **PASS** | - |
 | Phase 3 | 3.7 Orders Fulfillment Load | **PASS** | - |
 | Phase 3 | 3.7 Bulk Labels Action Present | **PASS** | Fulfillment queue controls and bulk actions verified |
@@ -116,15 +122,15 @@ Zero critical bugs or runtime failures detected across all user journeys.
 | Phase 3 | 3.10 Accounting Balance Cards Rendered | **PASS** | - |
 | Phase 3 | 3.11 ERP HR & Attendance Load | **PASS** | - |
 | Phase 3 | 3.11 Add Employee Action Present | **PASS** | Add employee button verified |
-| Phase 3 | 3.11c Temporary Staff Seat Provisioning | **PASS** | Modal opened & provisioned Employee ID: 24 (Code: E2E-503752) |
-| Phase 3 | 3.11c Temporary Staff Seat Teardown | **PASS** | Terminated and deleted temporary employee ID: 24 |
+| Phase 3 | 3.11c Temporary Staff Seat Provisioning | **PASS** | Modal opened & provisioned Employee ID: 14 (Code: E2E-553257) |
+| Phase 3 | 3.11c Temporary Staff Seat Teardown | **PASS** | Terminated and deleted temporary employee ID: 14 |
 | Phase 3 | 3.11b ERP Payroll Desk Load | **PASS** | - |
 | Phase 3 | 3.12 Seller Chat CRM Load | **PASS** | - |
 | Phase 3 | 3.12 Seller Reviews Inertia Contract [Component: Seller/Chat/Reviews] | **PASS** | Matched expected component: Seller/Chat/Reviews |
 | Phase 3 | 3.12 Seller Reviews Inertia Contract [Inertia Props] | **PASS** | Verified props [reviews, products] present |
 | Phase 3 | 3.12 Seller Reviews Master-Detail Layout Present | **PASS** | - |
-| Phase 3 | 3.12b Seller Customer Review Reply | **PASS** | Review #73 replied with HTTP status: 200 |
-| Phase 3 | 3.12b Customer Review Lifecycle Clean Teardown | **PASS** | Review #73 reply and buyer review successfully deleted |
+| Phase 3 | 3.12b Seller Customer Review Reply | **PASS** | Review #2 replied with HTTP status: 200 |
+| Phase 3 | 3.12b Customer Review Lifecycle Clean Teardown | **PASS** | Review #2 reply and buyer review successfully deleted |
 | Phase 3 | 3.13 Team Messages Load | **PASS** | - |
 | Phase 3 | 3.14 Subscriptions Page Load | **PASS** | - |
 | Phase 3 | 3.14 Shop Settings Page Load | **PASS** | - |
@@ -133,18 +139,23 @@ Zero critical bugs or runtime failures detected across all user journeys.
 | Phase 3 | 3.14b BIR Tax Profile Card Rendered | **PASS** | BIR Tax Profile and VAT registration card verified |
 | Phase 3 | 3.14b Commercial Bank Transfers Deprecated & Absent | **PASS** | Commercial bank transfer options properly purged |
 | Phase 3 | 3.15 Seller Audit Log Load | **PASS** | - |
-| Phase 4 | 4.1 Staff Unauthenticated Gate Protection | **PASS** | Unauthenticated redirect URL: http://likhangkamay.test/login |
-| Phase 4 | 4.2 Staff Member Authentication | **PASS** | Logged in URL: http://likhangkamay.test/staff/dashboard |
+| Phase 3 | 3.16 Artisan Help Center Persona Scoped | **PASS** | Allowed persona: artisan |
+| Phase 3 | 3.16 Studio Help Center Title Rendered | **PASS** | Title: Artisan Help Center |
+| Phase 3 | 3.16 Buyer Guide Tab Hidden for Artisan | **PASS** | - |
+| Phase 3 | 3.16 Studio Orders Route Link Verified | **PASS** | Orders route: https://www.likhangkamay.app/orders |
+| Phase 3 | 3.16 Artisan Merchant Desk Modal & Gmail Web Link | **PASS** | Direct Gmail compose link verified |
+| Phase 4 | 4.1 Staff Unauthenticated Gate Protection | **PASS** | Unauthenticated redirect URL: https://www.likhangkamay.app/login |
+| Phase 4 | 4.2 Staff Member Authentication | **PASS** | Logged in URL: https://www.likhangkamay.app/staff/dashboard |
 | Phase 4 | 4.3 Staff Dashboard Inertia Contract [Component: Staff/Dashboard] | **PASS** | Matched expected component: Staff/Dashboard |
 | Phase 4 | 4.3 Staff Dashboard Inertia Contract [Inertia Props] | **PASS** | Verified props [hub] present |
 | Phase 4 | 4.4 Staff Attendance Clock-In Endpoint | **PASS** | Attendance resume HTTP status: 200 |
 | Phase 4 | 4.5 Active Staff Heartbeat Ping | **PASS** | Heartbeat HTTP status: 200 |
 | Phase 4 | 4.5b Staff Shift Clock-Out & Attendance Teardown | **PASS** | Shift closed and signed out cleanly via interactive UI dock/modal |
-| Phase 4 | 4.6 Logistics Rider Authentication | **PASS** | Logged in URL: http://likhangkamay.test/staff/deliveries |
+| Phase 4 | 4.6 Logistics Rider Authentication | **PASS** | Logged in URL: https://www.likhangkamay.app/staff/deliveries |
 | Phase 4 | 4.7 Driver Deliveries Inertia Contract [Component: Staff/DriverDeliveries] | **PASS** | Matched expected component: Staff/DriverDeliveries |
 | Phase 4 | 4.7 Driver Deliveries Inertia Contract [Inertia Props] | **PASS** | Verified props [activeDeliveries, completedToday, driverProfile] present |
 | Phase 4 | 4.7b Driver Navigation & Telemetry Console Ready | **PASS** | In-house driver navigation and telemetry console state verified |
-| Phase 5 | 5.1 SuperAdmin Authentication | **PASS** | URL: http://likhangkamay.test/admin/dashboard |
+| Phase 5 | 5.1 SuperAdmin Authentication | **PASS** | URL: https://www.likhangkamay.app/admin/dashboard |
 | Phase 5 | 5.2 Executive Dashboard Load | **PASS** | - |
 | Phase 5 | 5.3 User Directory Load | **PASS** | - |
 | Phase 5 | 5.4 Pending Artisans Desk Load | **PASS** | - |
@@ -165,4 +176,4 @@ Zero critical bugs or runtime failures detected across all user journeys.
 | Phase 6 | 6.5 PayMongo GCash Sandbox Session Lifecycle | **PASS** | PayMongo GCash checkout session created, URL validated, and read-back verified in sandbox. |
 | Phase 6 | 6.6 Lalamove Sandbox Quotation, Booking & Webhook Sync | **PASS** | Lalamove sandbox quotation calculated, order booked with ASSIGNING_DRIVER, and webhook transitioned to COMPLETED. |
 | Phase 6 | 6.7 Client-Side File Payload Shield Contract (<4MB) | **PASS** | Client-side upload payload boundaries verified: Found 2 DOM file upload inputs. High-res photo canvas compressed to 26.1KB (<4MB ceiling). Non-image oversized payload rejected by boundary check. |
-| B2B Relay | Layer 5 B2B Sourcing & Auto-Restock Pipeline | **PASS** | Order #pow-b2b-8213ce05-df7c-49a7-a737-3244a393ef9f Completed. SHA-256: 740ef4a65ff34e46... |
+| B2B Relay | Layer 5 B2B Sourcing & Auto-Restock Pipeline | **PASS** | Order #pow-b2b-3094bbcd-a048-4e7b-8eef-820595fc4a82 Completed. SHA-256: 67154572576750fd... |

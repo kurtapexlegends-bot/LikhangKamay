@@ -8,6 +8,7 @@ import { runPhase3 } from './phase3_seller.mjs';
 import { runPhase4 } from './phase4_staff.mjs';
 import { runPhase5 } from './phase5_admin.mjs';
 import { runPhase6 } from './phase6_technical.mjs';
+import { runLiveTransactionPipeline } from './live_transaction_pipeline.mjs';
 import { runLiveB2BTransactionPipeline } from './live_b2b_transaction_pipeline.mjs';
 
 async function main() {
@@ -89,17 +90,31 @@ async function main() {
         await browser.close();
     }
 
-    // --- PHASE 7: B2B Wholesale Supply Hub Transaction Relay ---
+    // --- PHASE 7: B2C Retail Commercial Pipeline Relay ---
     try {
         console.log(`\n======================================================`);
-        console.log(`  STARTING B2B SUPPLY HUB MULTI-ARTISAN RELAY`);
+        console.log(`  STARTING PHASE 7: B2C RETAIL COMMERCIAL PIPELINE RELAY`);
+        console.log(`======================================================\n`);
+        const b2cManifest = await runLiveTransactionPipeline();
+        collector.recordResult('Phase 7', 'Layer 5 B2C Retail Commercial Pipeline Relay', b2cManifest ? 'PASS' : 'FAIL', {
+            message: `Order #${b2cManifest?.order?.order_number || b2cManifest?.orderNumber || b2cManifest?.run_id} Completed. SHA-256: ${(b2cManifest?.proof_of_work_signature || '').slice(0, 16)}...`
+        });
+    } catch (e) {
+        collector.recordResult('Phase 7', 'Layer 5 B2C Retail Commercial Pipeline Relay', 'FAIL', { message: e.message });
+        collector.recordBug('HIGH', 'B2C Retail Commercial Pipeline Relay Failed', `${PROD_URL}/checkout`, e.message);
+    }
+
+    // --- PHASE 8: B2B Wholesale Supply Hub Transaction Relay ---
+    try {
+        console.log(`\n======================================================`);
+        console.log(`  STARTING PHASE 8: B2B WHOLESALE SUPPLY HUB RELAY`);
         console.log(`======================================================\n`);
         const b2bManifest = await runLiveB2BTransactionPipeline();
-        collector.recordResult('B2B Relay', 'Layer 5 B2B Sourcing & Auto-Restock Pipeline', b2bManifest ? 'PASS' : 'FAIL', {
+        collector.recordResult('Phase 8', 'Layer 5 B2B Sourcing & Auto-Restock Pipeline', b2bManifest ? 'PASS' : 'FAIL', {
             message: `Order #${b2bManifest?.procurement_order?.order_number || b2bManifest?.run_id} Completed. SHA-256: ${(b2bManifest?.proof_of_work_signature || '').slice(0, 16)}...`
         });
     } catch (e) {
-        collector.recordResult('B2B Relay', 'Layer 5 B2B Sourcing & Auto-Restock Pipeline', 'FAIL', { message: e.message });
+        collector.recordResult('Phase 8', 'Layer 5 B2B Sourcing & Auto-Restock Pipeline', 'FAIL', { message: e.message });
         collector.recordBug('HIGH', 'B2B Sourcing Hub Transaction Relay Failed', `${PROD_URL}/supply-hub`, e.message);
     }
 

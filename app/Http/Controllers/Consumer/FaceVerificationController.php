@@ -39,21 +39,21 @@ class FaceVerificationController extends Controller
             ]);
         }
 
-        if (Schema::hasColumn('users', 'kyc_selfie_path') && $user->kyc_selfie_path) {
+        if (rescue(fn() => Schema::hasColumn('users', 'kyc_selfie_path'), false) && $user->kyc_selfie_path) {
             Storage::disk('public')->delete($user->kyc_selfie_path);
         }
 
         $updates = [];
-        if (Schema::hasColumn('users', 'kyc_selfie_path')) {
+        if (rescue(fn() => Schema::hasColumn('users', 'kyc_selfie_path'), false)) {
             $updates['kyc_selfie_path'] = $selfiePath;
         }
-        if (Schema::hasColumn('users', 'kyc_liveness_verified_at')) {
+        if (rescue(fn() => Schema::hasColumn('users', 'kyc_liveness_verified_at'), false)) {
             $updates['kyc_liveness_verified_at'] = now();
         }
-        if (Schema::hasColumn('users', 'requires_checkout_face_check')) {
+        if (rescue(fn() => Schema::hasColumn('users', 'requires_checkout_face_check'), false)) {
             $updates['requires_checkout_face_check'] = false;
         }
-        if (Schema::hasColumn('users', 'face_descriptor')) {
+        if (rescue(fn() => Schema::hasColumn('users', 'face_descriptor'), false)) {
             $updates['face_descriptor'] = $descriptor ?? $user->face_descriptor;
         }
 

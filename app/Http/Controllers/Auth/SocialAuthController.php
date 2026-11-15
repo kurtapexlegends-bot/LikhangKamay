@@ -117,8 +117,8 @@ class SocialAuthController extends Controller
             if (
                 in_array($existingUser->role, ['user', 'buyer'], true)
                 && !$existingUser->is_test
-                && Schema::hasColumn('users', 'kyc_liveness_verified_at')
-                && Schema::hasColumn('users', 'requires_checkout_face_check')
+                && rescue(fn() => Schema::hasColumn('users', 'kyc_liveness_verified_at'), false)
+                && rescue(fn() => Schema::hasColumn('users', 'requires_checkout_face_check'), false)
                 && $existingUser->kyc_liveness_verified_at === null
                 && !$existingUser->requires_checkout_face_check
             ) {
@@ -240,7 +240,7 @@ class SocialAuthController extends Controller
             $userData['shop_name'] = $request->shop_name;
         }
 
-        if (Schema::hasColumn('users', 'requires_checkout_face_check')) {
+        if (rescue(fn() => Schema::hasColumn('users', 'requires_checkout_face_check'), false)) {
             $userData['requires_checkout_face_check'] = !$isArtisan;
         }
 

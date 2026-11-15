@@ -50,6 +50,9 @@ async function runLiveHeadedWalkthrough() {
 
         await guestPage.goto(`${PROD_URL}/login`, { waitUntil: 'networkidle2' });
         await capture(guestPage, '03_guest_login_page');
+
+        await guestPage.goto(`${PROD_URL}/help`, { waitUntil: 'networkidle2' });
+        await capture(guestPage, '03b_guest_help_center');
         await guestCtx.close();
 
         // ========== 2. BUYER FLOWS ==========
@@ -69,6 +72,9 @@ async function runLiveHeadedWalkthrough() {
 
         await buyerPage.goto(`${PROD_URL}/saved`, { waitUntil: 'networkidle2' });
         await capture(buyerPage, '07_buyer_saved_wishlist');
+
+        await buyerPage.goto(`${PROD_URL}/help`, { waitUntil: 'networkidle2' });
+        await capture(buyerPage, '07b_buyer_help_center');
         await buyerCtx.close();
 
         // ========== 3. ARTISAN / SELLER ERP ==========
@@ -94,6 +100,9 @@ async function runLiveHeadedWalkthrough() {
 
         await sellerPage.goto(`${PROD_URL}/subscription`, { waitUntil: 'networkidle2' });
         await capture(sellerPage, '13_artisan_subscription');
+
+        await sellerPage.goto(`${PROD_URL}/help?tab=artisan`, { waitUntil: 'networkidle2' });
+        await capture(sellerPage, '13b_artisan_help_center');
         await sellerCtx.close();
 
         // ========== 4. ARTISAN STAFF & DRIVER OPERATIONS ==========
@@ -150,7 +159,7 @@ async function runLiveHeadedWalkthrough() {
         await adminCtx.close();
 
         console.log('\n=============================================================');
-        console.log('  LIVE WALKTHROUGH COMPLETE: ALL 23 SCREENSHOTS SAVED!');
+        console.log('  LIVE WALKTHROUGH COMPLETE: ALL 26 SCREENSHOTS SAVED!');
         console.log('=============================================================\n');
 
     } catch (e) {

@@ -238,5 +238,52 @@ export async function runPhase1(page, collector) {
         }
     }
 
+    // 1.10 Public Help Center & FAQ Hub (/help)
+    try {
+        await page.goto(`${PROD_URL}/help`, { waitUntil: 'networkidle2', timeout: 30000 });
+        await page.waitForSelector('main', { timeout: 10000 }).catch(() => null);
+        const helpLoaded = await page.$('h1') !== null;
+        collector.recordResult('Phase 1', '1.10 Public Help Center & FAQ Hub Load', helpLoaded ? 'PASS' : 'FAIL');
+
+        // Verify category pills and accordion toggle
+        const expandAllBtn = await page.evaluate(() => {
+            const buttons = Array.from(document.querySelectorAll('button'));
+            const btn = buttons.find(b => b.innerText?.includes('Expand All'));
+            if (btn) {
+                btn.click();
+                return true;
+            }
+            return false;
+        });
+        collector.recordResult('Phase 1', '1.10 FAQ Accordion Expand/Collapse Action', expandAllBtn ? 'PASS' : 'FAIL');
+
+        // Check Support Contact Modal trigger
+        const supportBtn = await page.evaluate(() => {
+            const buttons = Array.from(document.querySelectorAll('button'));
+            const btn = buttons.find(b => b.innerText?.includes('Email Platform Support') || b.innerText?.includes('Platform Support'));
+            if (btn) {
+                btn.click();
+                return true;
+            }
+            return false;
+        });
+        if (supportBtn) {
+            await new Promise(r => setTimeout(r, 600));
+            const hasGmailLink = await page.evaluate(() => {
+                const links = Array.from(document.querySelectorAll('a'));
+                return links.some(a => a.href && a.href.includes('mail.google.com/mail'));
+            });
+            collector.recordResult('Phase 1', '1.10 Support Contact Modal & Gmail Web Link', hasGmailLink ? 'PASS' : 'FAIL', {
+                message: hasGmailLink ? 'Direct Gmail compose link verified (zero OS Outlook dialog)' : 'Missing Gmail Web compose link'
+            });
+            // Dismiss modal
+            await page.keyboard.press('Escape');
+        }
+
+        await collector.scanDomQuality(page, 'Public Help Center');
+    } catch (e) {
+        collector.recordResult('Phase 1', '1.10 Public Help Center & FAQ Hub', 'FAIL', { message: e.message });
+    }
+
     console.log(`\n  PHASE 1 COMPLETE.\n`);
 }

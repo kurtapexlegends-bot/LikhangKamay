@@ -135,7 +135,7 @@ class ReviewController extends Controller
         return back()->with('success', 'Review updated successfully!');
     }
 
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
         $review = Review::where('user_id', Auth::id())->findOrFail($id);
 
@@ -146,6 +146,13 @@ class ReviewController extends Controller
         }
 
         $review->delete();
+
+        if ($request->wantsJson() || $request->expectsJson() || $request->isJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Review withdrawn successfully.',
+            ]);
+        }
 
         return back()->with('success', 'Review withdrawn successfully.');
     }

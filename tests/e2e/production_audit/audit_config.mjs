@@ -255,6 +255,7 @@ export class AuditCollector {
                         url: page.url(),
                         text
                     });
+                    const lowerText = text.toLowerCase();
                     if (text.includes('Cannot read properties') || text.includes('Uncaught') || text.includes('Invariant Violation')) {
                         this.recordBug(
                             'HIGH',
@@ -262,6 +263,14 @@ export class AuditCollector {
                             page.url(),
                             text,
                             'Fix React prop lifecycle or missing dependency.'
+                        );
+                    } else if (lowerText.includes('websocket') && (lowerText.includes('failed') || lowerText.includes('auth') || lowerText.includes('101') || lowerText.includes('closed') || lowerText.includes('handshake'))) {
+                        this.recordBug(
+                            'HIGH',
+                            `Unhandled WebSocket Authentication/Connection Failure: ${text.slice(0, 80)}`,
+                            page.url(),
+                            text,
+                            'Verify Supabase Realtime credentials and ensure token is a valid JWT.'
                         );
                     }
                 }
@@ -289,8 +298,32 @@ export class AuditCollector {
                             'CRITICAL',
                             `Server Error HTTP ${status}: ${url}`,
                             url,
-                            `Endpoint failed with HTTP ${status}`,
+                            `Endpoint failed with HTTP ${status} (${res.request().method()})`,
                             'Check Laravel server runtime logs and Postgres query constraints.'
+                        );
+                    } else if (status === 404) {
+                        this.recordBug(
+                            'HIGH',
+                            `HTTP 404 Not Found: ${url}`,
+                            url,
+                            `Resource returned HTTP 404 Not Found (${res.request().method()})`,
+                            'Verify route registration or asset existence.'
+                        );
+                    } else if (status === 405) {
+                        this.recordBug(
+                            'HIGH',
+                            `HTTP 405 Method Not Allowed: ${url}`,
+                            url,
+                            `Endpoint returned HTTP 405 Method Not Allowed (${res.request().method()})`,
+                            'Verify HTTP method handling and check redirect behavior.'
+                        );
+                    } else if (status === 422) {
+                        this.recordBug(
+                            'MEDIUM',
+                            `HTTP 422 Unprocessable Content: ${url}`,
+                            url,
+                            `Validation or payload rejection HTTP 422 (${res.request().method()}) on ${url}`,
+                            'Verify request payload keys match backend FormRequest validation schema.'
                         );
                     }
                 }

@@ -201,12 +201,19 @@ class HRController extends Controller
         ]);
     }
 
-    public function destroy(int $id, TerminateEmployeeAction $terminateEmployeeAction)
+    public function destroy(Request $request, int $id, TerminateEmployeeAction $terminateEmployeeAction)
     {
         $actor = $this->sellerActor();
         $seller = $this->sellerOwner();
 
         $result = $terminateEmployeeAction->execute($seller, $actor, $id);
+
+        if ($request->wantsJson() || $request->expectsJson() || $request->isJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $result['message'],
+            ]);
+        }
 
         return redirect()->back()->with('success', $result['message']);
     }

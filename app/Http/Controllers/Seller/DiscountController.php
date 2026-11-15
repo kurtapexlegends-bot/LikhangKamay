@@ -332,6 +332,12 @@ class DiscountController extends Controller
                 ->first();
 
             if ($existingPending) {
+                if ($request->wantsJson() || $request->expectsJson() || $request->isJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'A pending review request already exists for this discount.',
+                    ], 422);
+                }
                 return redirect()->back()->with('error', 'A pending review request already exists for this discount.');
             }
 
@@ -345,10 +351,24 @@ class DiscountController extends Controller
                 payload: $payload
             );
 
+            if ($request->wantsJson() || $request->expectsJson() || $request->isJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Discount deactivation submitted for Shop Owner / Manager review.',
+                ]);
+            }
+
             return redirect()->back()->with('success', 'Discount deactivation submitted for Shop Owner / Manager review.');
         }
 
         $this->discountService->deactivateDiscount($discount);
+
+        if ($request->wantsJson() || $request->expectsJson() || $request->isJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Discount deactivated successfully.',
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Discount deactivated successfully.');
     }

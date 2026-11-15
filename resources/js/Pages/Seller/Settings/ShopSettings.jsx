@@ -88,6 +88,11 @@ export default function ShopSettings({ auth, user, stats, locations = [], pickup
         if (!canEditShopSettings) return;
         const file = e.target.files[0];
         if (file) {
+            if (file.size > 4 * 1024 * 1024 && !file.type.startsWith('image/')) {
+                addToast('Files must be 4MB or smaller. Please choose a smaller file.', 'error');
+                e.target.value = '';
+                return;
+            }
             const compressed = await compressImage(file, 800, 800, 0.85);
             setData('avatar', compressed);
             revokePreview(avatarPreview);
@@ -99,6 +104,11 @@ export default function ShopSettings({ auth, user, stats, locations = [], pickup
         if (!canEditShopSettings) return;
         const file = e.target.files[0];
         if (file) {
+            if (file.size > 4 * 1024 * 1024 && !file.type.startsWith('image/')) {
+                addToast('Files must be 4MB or smaller. Please choose a smaller file.', 'error');
+                e.target.value = '';
+                return;
+            }
             const compressed = await compressImage(file, 1920, 1080, 0.85);
             setData('banner_image', compressed);
             revokePreview(bannerPreview);

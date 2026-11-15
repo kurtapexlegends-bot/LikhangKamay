@@ -99,16 +99,16 @@ class RegisteredUserController extends Controller
             $requiresCheckoutFaceCheck
         ) {
             $biometricAttributes = [];
-            if (Schema::hasColumn('users', 'kyc_selfie_path') && $kycSelfiePath !== null) {
+            if (rescue(fn() => Schema::hasColumn('users', 'kyc_selfie_path'), false) && $kycSelfiePath !== null) {
                 $biometricAttributes['kyc_selfie_path'] = $kycSelfiePath;
             }
-            if (Schema::hasColumn('users', 'kyc_liveness_verified_at')) {
+            if (rescue(fn() => Schema::hasColumn('users', 'kyc_liveness_verified_at'), false)) {
                 $biometricAttributes['kyc_liveness_verified_at'] = $livenessVerifiedAt;
             }
-            if (Schema::hasColumn('users', 'requires_checkout_face_check')) {
+            if (rescue(fn() => Schema::hasColumn('users', 'requires_checkout_face_check'), false)) {
                 $biometricAttributes['requires_checkout_face_check'] = $livenessVerifiedAt ? false : $requiresCheckoutFaceCheck;
             }
-            if (Schema::hasColumn('users', 'face_descriptor') && $faceDescriptor !== null) {
+            if (rescue(fn() => Schema::hasColumn('users', 'face_descriptor'), false) && $faceDescriptor !== null) {
                 $biometricAttributes['face_descriptor'] = $faceDescriptor;
             }
 
@@ -118,10 +118,10 @@ class RegisteredUserController extends Controller
                     'password' => Hash::make($request->password),
                     'role' => $role,
                     'shop_name' => $request->shop_name,
-                    ...(Schema::hasColumn('users', 'kyc_selfie_path') ? ['kyc_selfie_path' => $kycSelfiePath ?? $existingUser->kyc_selfie_path] : []),
-                    ...(Schema::hasColumn('users', 'kyc_liveness_verified_at') ? ['kyc_liveness_verified_at' => $livenessVerifiedAt ?? $existingUser->kyc_liveness_verified_at] : []),
-                    ...(Schema::hasColumn('users', 'requires_checkout_face_check') ? ['requires_checkout_face_check' => $livenessVerifiedAt ? false : $requiresCheckoutFaceCheck] : []),
-                    ...(Schema::hasColumn('users', 'face_descriptor') ? ['face_descriptor' => $faceDescriptor ?? $existingUser->face_descriptor] : []),
+                    ...(rescue(fn() => Schema::hasColumn('users', 'kyc_selfie_path'), false) ? ['kyc_selfie_path' => $kycSelfiePath ?? $existingUser->kyc_selfie_path] : []),
+                    ...(rescue(fn() => Schema::hasColumn('users', 'kyc_liveness_verified_at'), false) ? ['kyc_liveness_verified_at' => $livenessVerifiedAt ?? $existingUser->kyc_liveness_verified_at] : []),
+                    ...(rescue(fn() => Schema::hasColumn('users', 'requires_checkout_face_check'), false) ? ['requires_checkout_face_check' => $livenessVerifiedAt ? false : $requiresCheckoutFaceCheck] : []),
+                    ...(rescue(fn() => Schema::hasColumn('users', 'face_descriptor'), false) ? ['face_descriptor' => $faceDescriptor ?? $existingUser->face_descriptor] : []),
                 ]);
 
                 if ($role === 'artisan') {

@@ -165,20 +165,9 @@ export async function runPhase6(page, collector) {
         const domFileInputs = await page.$$('input[type="file"]');
         const fileInputsCount = domFileInputs.length;
 
-        const guardEvaluation = await page.evaluate(async () => {
-            const CEILING_BYTES = 4 * 1024 * 1024; // 4MB ceiling for serverless multipart payload
-            const MAX_ALLOWED_BYTES = 4.5 * 1024 * 1024;
-
-            // 1. Audit real DOM file inputs on the active page
-            const inputs = Array.from(document.querySelectorAll('input[type="file"]'));
-            const inputDetails = inputs.map(i => ({
-                accept: i.accept || '',
-                type: i.type,
-                hasAcceptConstraint: (i.accept || '').length > 0
-            }));
-
-            // 2. Real browser Canvas compression verification (Client-Side 4.5MB Payload Shield)
-            // Generate a high-resolution 2500x2500 canvas simulating an oversized camera asset (~5-25MB raw)
+        // 1. Browser Canvas compression verification
+        const compressionEvaluation = await page.evaluate(async () => {
+            const CEILING_BYTES = 4 * 1024 * 1024;
             const testCanvas = document.createElement('canvas');
             testCanvas.width = 2500;
             testCanvas.height = 2500;
@@ -192,7 +181,6 @@ export async function runPhase6(page, collector) {
                 ctx.fillRect(0, 0, 2500, 2500);
             }
 
-            // Execute client-side compression matching imageCompressor.js (target 1600x1600, 0.85 quality)
             const compressedBlob = await new Promise((resolve) => {
                 const targetCanvas = document.createElement('canvas');
                 targetCanvas.width = 1600;
@@ -204,34 +192,54 @@ export async function runPhase6(page, collector) {
                 targetCanvas.toBlob(resolve, 'image/jpeg', 0.85);
             });
 
-            const compressedBytes = compressedBlob ? compressedBlob.size : 0;
-            const compressionShieldActive = compressedBytes > 0 && compressedBytes < CEILING_BYTES;
+            return {
+                compressedBytes: compressedBlob ? compressedBlob.size : 0,
+                compressionShieldActive: compressedBlob && compressedBlob.size < CEILING_BYTES
+            };
+        });
 
-            // 3. Verify non-image 4MB payload ceiling contract
-            const nonImagePayloadBytes = 5.2 * 1024 * 1024;
-            const nonImageExceedsCeiling = nonImagePayloadBytes > CEILING_BYTES;
+        // 2. Real DOM oversized mock file attachment & rejection verification
+        const rejectionEvaluation = await page.evaluate(async () => {
+            const fileInput = document.querySelector('input[type="file"]');
+            if (!fileInput) return { inputFound: false, rejected: false, isInputCleared: false, hasToast: false };
+
+            // Create a 5.2MB mock oversized non-image file
+            const oversizedBytes = Math.floor(5.2 * 1024 * 1024);
+            const buffer = new Uint8Array(oversizedBytes);
+            const blob = new Blob([buffer], { type: 'application/pdf' });
+            const oversizedFile = new File([blob], 'oversized_document.pdf', { type: 'application/pdf' });
+
+            // Attach via DataTransfer
+            const dt = new DataTransfer();
+            dt.items.add(oversizedFile);
+            fileInput.files = dt.files;
+
+            // Dispatch change event to trigger client-side guard
+            fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+            // Give React state machine a tick to reject and clear
+            await new Promise(r => setTimeout(r, 400));
+
+            const isInputCleared = fileInput.value === '' || fileInput.files.length === 0;
+            const hasToast = !!document.body.innerText.includes('4MB');
 
             return {
-                domInputsFound: inputs.length,
-                inputDetails,
-                compressedBytes,
-                ceilingBytes: CEILING_BYTES,
-                maxAllowedBytes: MAX_ALLOWED_BYTES,
-                compressionShieldActive,
-                nonImageExceedsCeiling
+                inputFound: true,
+                isInputCleared,
+                hasToast,
+                rejected: isInputCleared || hasToast
             };
         });
 
         const isShieldActive = fileInputsCount > 0 &&
-            guardEvaluation.domInputsFound > 0 &&
-            guardEvaluation.compressionShieldActive &&
-            guardEvaluation.nonImageExceedsCeiling;
+            compressionEvaluation.compressionShieldActive &&
+            rejectionEvaluation.rejected;
 
         collector.recordResult('Phase 6', '6.7 Client-Side File Payload Shield Contract (<4MB)', isShieldActive ? 'PASS' : 'FAIL', {
-            message: `Client-side upload payload boundaries verified: Found ${fileInputsCount} DOM file upload inputs. High-res photo canvas compressed to ${(guardEvaluation.compressedBytes / 1024).toFixed(1)}KB (<4MB ceiling). Non-image oversized payload rejected by boundary check.`
+            message: `Found ${fileInputsCount} DOM file inputs. Canvas photo compressed to ${(compressionEvaluation.compressedBytes / 1024).toFixed(1)}KB (<4MB). Real 5.2MB DOM file input attachment rejected (Cleared: ${rejectionEvaluation.isInputCleared}, Toast: ${rejectionEvaluation.hasToast}).`
         });
         if (!isShieldActive) {
-            collector.recordBug('HIGH', 'Client-Side Upload Payload Shield Failed', `${PROD_URL}/shop-settings`, 'File payload boundaries did not enforce 4MB ceiling.');
+            collector.recordBug('HIGH', 'Client-Side Upload Payload Shield Failed', `${PROD_URL}/shop-settings`, 'File payload boundaries did not reject 5.2MB mock DOM attachment.');
         }
     } catch (e) {
         collector.recordResult('Phase 6', '6.7 Client-Side File Payload Shield Contract (<4MB)', 'FAIL', { message: e.message });
