@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class BuyerInitiateDispute
@@ -116,17 +117,26 @@ class BuyerInitiateDispute
                     }
                 }
 
-                $dispute = Dispute::create([
+                $disputeAttributes = [
                     'order_id' => $order->id,
                     'status' => 'pending',
                     'reason' => $reason,
                     'proof_photos' => $storedPaths,
                     'platform_policy_id' => $evaluation['policy_id'] ?? null,
                     'policy_version' => $evaluation['policy_version'] ?? null,
-                    'damage_reason_code' => $evaluation['damage_reason_code'] ?? null,
-                    'criteria_checklist' => $evaluation['criteria_checklist'] ?? null,
-                    'photo_angles' => !empty($photoAngles) ? $photoAngles : null,
-                ]);
+                ];
+
+                if (Schema::hasColumn('disputes', 'damage_reason_code')) {
+                    $disputeAttributes['damage_reason_code'] = $evaluation['damage_reason_code'] ?? null;
+                }
+                if (Schema::hasColumn('disputes', 'criteria_checklist')) {
+                    $disputeAttributes['criteria_checklist'] = $evaluation['criteria_checklist'] ?? null;
+                }
+                if (Schema::hasColumn('disputes', 'photo_angles')) {
+                    $disputeAttributes['photo_angles'] = !empty($photoAngles) ? $photoAngles : null;
+                }
+
+                $dispute = Dispute::create($disputeAttributes);
 
                 $order->update([
                     'status' => 'Refund/Return',
