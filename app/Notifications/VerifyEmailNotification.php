@@ -37,12 +37,15 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
             ? strtr($template->subject, ['{verification_code}' => $this->code, '{site_name}' => 'LikhangKamay']) 
             : 'Verify Your Email - LikhangKamay';
 
+        $diffMinutes = (float) now()->diffInMinutes($this->expiresAt, false);
+        $expiresInMinutes = round(max(1.0, $diffMinutes), 2);
+
         return (new MailMessage)
             ->subject($subject)
             ->view('emails.verify-email', [
                 'code' => $this->code,
                 'expiresAt' => $this->expiresAt,
-                'expiresInMinutes' => max(1, now()->diffInMinutes($this->expiresAt, false)),
+                'expiresInMinutes' => $expiresInMinutes,
             ]);
     }
 }

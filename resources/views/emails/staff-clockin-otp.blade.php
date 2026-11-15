@@ -33,7 +33,7 @@
             <div style="display: inline-block; background-color: #F7F4F0; color: #2E2520; padding: 16px 28px; border-radius: 10px; letter-spacing: 0.35em; font-size: 32px; font-weight: 800; margin: 24px 0; border: 1px solid #E7E1D8; font-family: Courier, monospace;">{{ $code }}</div>
 
             <div style="background-color: #F7F4F0; border-left: 3px solid #C2783F; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0; font-size: 13px; color: #7C6D62; text-align: left; line-height: 1.5;">
-                This clock-in code will expire in <strong>{{ max(1, $expiresInMinutes) }} minutes</strong>. If you did not request this code, please inform your workplace manager immediately.
+                This clock-in code will expire in <strong>{{ number_format((float) max(1, $expiresInMinutes), 2) }} minutes</strong>. If you did not request this code, please inform your workplace manager immediately.
             </div>
 
             <p style="font-size: 12px; color: #8C827A; margin-top: 24px; line-height: 1.4;">

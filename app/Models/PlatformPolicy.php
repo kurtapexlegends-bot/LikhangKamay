@@ -19,6 +19,8 @@ class PlatformPolicy extends Model
     public const TYPE_PRIVACY_POLICY = 'privacy_policy';
     public const TYPE_SELLER_AGREEMENT = 'seller_agreement';
     public const TYPE_SELLER_PRIVACY = 'seller_privacy';
+    public const TYPE_SUPPLIER_AGREEMENT = 'supplier_agreement';
+    public const TYPE_SUPPLIER_PRIVACY = 'supplier_privacy';
     public const TYPE_RETURN_REFUND = 'return_refund_policy';
 
     public const ALL_TYPES = [
@@ -27,6 +29,8 @@ class PlatformPolicy extends Model
         self::TYPE_PRIVACY_POLICY,
         self::TYPE_SELLER_AGREEMENT,
         self::TYPE_SELLER_PRIVACY,
+        self::TYPE_SUPPLIER_AGREEMENT,
+        self::TYPE_SUPPLIER_PRIVACY,
     ];
 
     protected $fillable = [

@@ -12,6 +12,7 @@ import {
     RotateCcw,
     Lock,
     Store,
+    Building2,
     Eye,
     Edit3,
     Save,
@@ -25,6 +26,8 @@ const POLICY_TABS = [
     { id: 'privacy_policy', label: 'Privacy Policy', icon: Lock },
     { id: 'seller_agreement', label: 'Seller Agreement', icon: Store },
     { id: 'seller_privacy', label: 'Seller Privacy', icon: ShieldCheck },
+    { id: 'supplier_agreement', label: 'Supplier Agreement', icon: Building2 },
+    { id: 'supplier_privacy', label: 'Supplier Privacy', icon: ShieldCheck },
 ];
 
 const suggestNextVersion = (versions = []) => {

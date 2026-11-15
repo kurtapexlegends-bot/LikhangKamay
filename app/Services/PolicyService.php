@@ -931,6 +931,67 @@ In case of a data breach, we will: notify affected sellers within 72 hours, repo
 For seller-specific privacy inquiries: Email likhangkamaybusiness@gmail.com | Data Protection Officer available via Seller Dashboard | NPC: complaints@privacy.gov.ph
 MD,
             ],
+            PlatformPolicy::TYPE_SUPPLIER_AGREEMENT => [
+                'title' => 'Wholesale Supplier Agreement',
+                'version' => '1.0',
+                'structured_criteria' => null,
+                'content_markdown' => <<<'MD'
+This Wholesale Supplier Agreement ("Agreement") governs commercial vendors, distributors, and raw material suppliers ("Suppliers") providing bulk pottery clay, glazes, raw minerals, kiln hardware, and pottery tools through the LikhangKamay B2B Supply Hub.
+
+## Supplier Eligibility & Verification
+To register as a Wholesale Supplier on LikhangKamay, you must: operate a registered business entity, provide a valid Mayor's/Business Permit or DTI/SEC registration, supply an active Tax Identification Number (TIN), maintain an active dispatch warehouse in Cavite or Greater Manila Area (NCR, Laguna, Rizal, Bulacan, Batangas), and agree to comply with Philippine commercial and tax laws.
+
+## Material Quality & Industrial Grading
+All raw pottery clay, feldspar, silica, slips, glazes, stains, and ceramic equipment listed must strictly conform to professional grade specifications. Suppliers warrant that: listings accurately declare firing temperature ranges (e.g., Cone 06 earthenware to Cone 10 stoneware/porcelain), moisture percentages, and mesh sizes; materials are non-hazardous, safe for studio usage, and free from banned toxic contaminants; and batch consistency matches sample representations. Misrepresenting raw material chemical compositions or moisture grading is grounds for immediate listing removal and account review.
+
+## Minimum Order Quantities (MOQ) & Wholesale Pricing
+Suppliers have full discretion over wholesale unit pricing and Minimum Order Quantities (MOQs), specified in industrial trade units (e.g., per 25kg bag, 50kg sack, metric ton, or case). Wholesale pricing must be clearly listed with indicated tax inclusive or exclusive status. Arbitrary price adjustments on already-confirmed bulk orders are strictly prohibited.
+
+## Packaging & Palletized Freight Standards
+Suppliers are responsible for secure commercial packaging suitable for regional transport. Bulk dry powders, ball clay, and chemical frits must be packed in heavy-duty multi-ply moisture-resistant sacks. Liquid glazes and slips must be secured in sealed leak-proof industrial pails. Palletized shipments must be shrink-wrapped and strapped to prevent tipping, water intrusion, or contamination during Cavite studio dispatch.
+
+## Studio Delivery & 24-Hour Inspection Window
+Deliveries may be fulfilled via integrated commercial logistics (such as Lalamove delivery API) or the supplier's authorized fleet. Upon physical drop-off at the artisan studio workshop, the receiving artisan studio is granted a 24-hour verification window to inspect bags, sacks, and equipment for transit spillage, moisture damage, or grade discrepancies before final order completion.
+
+## Escrow Settlement & Weekly Payouts
+Buyer studio payments for wholesale supply orders are held securely in platform escrow. Upon confirmation of receipt and expiration of the 24-hour verification window without contest, funds are automatically cleared for disbursement. Net supplier payouts are transferred weekly to the supplier's verified business bank or settlement account. Unlike retail artisan storefronts, wholesale suppliers are exempt from artisan monthly subscription tiers.
+
+## Defective Goods & Spillage Claims
+In the event that raw materials arrive damaged, torn, or chemically off-spec, supported by photo/video documentation submitted within the 24-hour inspection window: the supplier agrees to promptly dispatch a replacement batch or authorize a proportional refund/credit adjustment.
+
+## Commercial Ethics & Account Standing
+LikhangKamay enforces high standards of commercial reliability. Unfulfilled confirmed orders, recurring moisture defects, or off-spec material batches will trigger platform review, dispatch holds, or permanent termination of supplier privileges.
+
+## Modifications & Regulatory Updates
+LikhangKamay reserves the right to amend this Agreement to comply with evolving Philippine commercial regulations and logistics practices. Continued participation in the B2B Supply Hub constitutes acceptance of revised terms.
+MD,
+            ],
+            PlatformPolicy::TYPE_SUPPLIER_PRIVACY => [
+                'title' => 'Supplier Data Privacy Policy',
+                'version' => '1.0',
+                'structured_criteria' => null,
+                'content_markdown' => <<<'MD'
+LikhangKamay respects the commercial and corporate privacy of our wholesale suppliers and business partners. This policy outlines how enterprise data, logistics information, and tax credentials are handled under the Data Privacy Act of 2012 (Republic Act 10173).
+
+## Commercial Data We Collect
+We collect business enterprise details (registered business name, trade name, DTI/SEC certificate, Mayor's Permit, Tax Identification Number), primary contact information (authorized representative name, corporate email, mobile dispatch number), warehouse physical coordinates (for logistics pickup matching), and settlement banking/e-wallet credentials.
+
+## Studio Delivery Data Restrictions (RA 10173)
+To facilitate raw material dispatches, suppliers and their authorized drivers receive recipient studio information (workshop name, delivery address, recipient contact name, and phone number). In accordance with Republic Act 10173, suppliers agree to utilize this studio data strictly for material delivery and order coordination. Retaining studio recipient data for unauthorized marketing or sharing it with external entities is strictly prohibited.
+
+## How We Use Supplier Data
+Supplier information is processed solely to: authenticate business legitimacy and tax compliance, manage warehouse logistics routing and dispatch tracking, disburse escrow payments, generate statutory BIR tax receipts, and resolve commercial delivery claims.
+
+## Security of Commercial Information
+All corporate documents, business registration files, and settlement bank accounts are stored using bank-grade encryption in transit and at rest. Payment processing is managed via PCI-DSS certified financial partners. Access to vendor documentation is restricted strictly to authorized platform auditors.
+
+## Data Retention Periods
+Commercial supplier records are retained throughout active partnership and for a statutory period of 5 years following account closure to comply with Philippine Bureau of Internal Revenue (BIR) accounting and audit standards.
+
+## Your Rights Under RA 10173
+Authorized enterprise representatives maintain the right to: inspect recorded corporate information, update or rectify warehouse/contact details, request documentation erasure upon settlement of all commercial obligations, and lodge privacy inquiries with our Data Protection Officer (likhangkamaybusiness@gmail.com) or the National Privacy Commission.
+MD,
+            ],
         ];
     }
 }

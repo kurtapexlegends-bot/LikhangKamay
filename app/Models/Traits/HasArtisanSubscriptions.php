@@ -148,6 +148,10 @@ trait HasArtisanSubscriptions
 
     public function canAccessSupplyHub(): bool
     {
+        if ($this->isSupplier()) {
+            return true;
+        }
+
         return $this->canUseFeature('b2b_supply_hub');
     }
 

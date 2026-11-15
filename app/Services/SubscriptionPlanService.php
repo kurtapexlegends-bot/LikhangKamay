@@ -28,7 +28,7 @@ class SubscriptionPlanService
                 'description' => 'Source raw crafting materials and list wholesale product tiers with minimum order quantities.',
                 'defaults' => [
                     'free' => false,
-                    'premium' => false,
+                    'premium' => true,
                     'super_premium' => true,
                 ],
             ],

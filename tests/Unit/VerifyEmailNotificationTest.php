@@ -30,5 +30,9 @@ class VerifyEmailNotificationTest extends TestCase
         $this->assertSame('123456', $message->viewData['code']);
         $this->assertSame(10, $message->viewData['expiresAt']->hour);
         $this->assertSame(30, $message->viewData['expiresAt']->minute);
+
+        $rendered = $message->render();
+        $this->assertMatchesRegularExpression('/\d+\.\d{2} minutes/', $rendered);
+        $this->assertDoesNotMatchRegularExpression('/\d+\.\d{3,} minutes/', $rendered);
     }
 }

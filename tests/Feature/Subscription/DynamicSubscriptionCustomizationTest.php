@@ -20,15 +20,15 @@ class DynamicSubscriptionCustomizationTest extends TestCase
             'premium_tier' => 'premium',
         ]);
 
-        // Baseline: Premium seller cannot access Supply Hub
+        // Baseline: Premium seller can access Supply Hub
         $this->actingAs($premiumSeller)
             ->get(route('seller.supply-hub.index'))
-            ->assertForbidden();
+            ->assertOk();
 
-        // Super Admin enables b2b_supply_hub for Premium tier
+        // Super Admin disables b2b_supply_hub for Premium tier
         $planService = app(SubscriptionPlanService::class);
         $premiumModules = $planService->getTierModules('premium');
-        $premiumModules['b2b_supply_hub'] = true;
+        $premiumModules['b2b_supply_hub'] = false;
 
         $response = $this->actingAs($admin)
             ->post(route('admin.settings.update'), [
@@ -42,10 +42,10 @@ class DynamicSubscriptionCustomizationTest extends TestCase
 
         $response->assertSessionHasNoErrors();
 
-        // Now Premium seller can access Supply Hub
+        // Now Premium seller is blocked from Supply Hub
         $this->actingAs($premiumSeller)
             ->get(route('seller.supply-hub.index'))
-            ->assertOk();
+            ->assertForbidden();
     }
 
     public function test_super_admin_can_disable_b2b_supply_hub_for_elite_tier(): void

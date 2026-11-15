@@ -42,7 +42,7 @@ class SubscriptionTierFeaturesTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_standard_and_premium_sellers_cannot_access_b2b_supply_hub(): void
+    public function test_standard_sellers_cannot_access_b2b_supply_hub_and_premium_can_access(): void
     {
         $freeSeller = User::factory()->artisanApproved()->create([
             'premium_tier' => 'free',
@@ -57,7 +57,7 @@ class SubscriptionTierFeaturesTest extends TestCase
 
         $this->actingAs($premiumSeller)
             ->get(route('seller.supply-hub.index'))
-            ->assertForbidden();
+            ->assertOk();
     }
 
     public function test_elite_seller_can_access_b2b_supply_hub(): void
@@ -71,14 +71,14 @@ class SubscriptionTierFeaturesTest extends TestCase
             ->assertOk();
     }
 
-    public function test_standard_and_premium_sellers_cannot_toggle_wholesale_materials(): void
+    public function test_standard_sellers_cannot_toggle_wholesale_materials(): void
     {
-        $premiumSeller = User::factory()->artisanApproved()->create([
-            'premium_tier' => 'premium',
+        $freeSeller = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'free',
         ]);
 
         $product = Product::create([
-            'user_id' => $premiumSeller->id,
+            'user_id' => $freeSeller->id,
             'name' => 'Handmade Clay Bowl',
             'sku' => 'BOWL-001',
             'slug' => 'handmade-clay-bowl',
@@ -89,7 +89,7 @@ class SubscriptionTierFeaturesTest extends TestCase
             'status' => 'Active',
         ]);
 
-        $this->actingAs($premiumSeller)
+        $this->actingAs($freeSeller)
             ->post(route('seller.supply-hub.toggle', $product->slug), [
                 'is_b2b_supply' => true,
                 'moq' => 10,
