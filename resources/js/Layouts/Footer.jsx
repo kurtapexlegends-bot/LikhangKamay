@@ -118,6 +118,7 @@ export default function Footer() {
                     <div className="text-left">
                         <h4 className="font-bold text-gray-900 mb-2 md:mb-4 uppercase tracking-wider text-[11px] md:text-xs">Support</h4>
                         <div className="flex flex-col gap-1.5 md:gap-3 text-xs md:text-sm text-gray-500">
+                            <Link href={route('help.index')} className="hover:text-clay-600 transition">Help Center / FAQ</Link>
                             <Link href={route('seller.agreement')} className="hover:text-clay-600 transition">Seller Agreement</Link>
                             <Link href={route('privacy')} className="hover:text-clay-600 transition">Privacy Policy</Link>
                             <Link href={route('terms')} className="hover:text-clay-600 transition">Terms of Service</Link>

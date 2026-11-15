@@ -55,6 +55,7 @@ graph TD
 
 ### Public Marketplace
 *   **Search and Filters**: `/shop` (bound to `throttle:marketplace.search` rate limit).
+*   **Help Center & FAQ Hub**: `/help` (`help.index`) served by [HelpCenterController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Core/HelpCenterController.php) with strict persona isolation (Buyers locked to buyer FAQs and purchase escalations; Artisans locked to studio operational FAQs, BIR VAT, POS, payouts, and merchant desk) backed by [HelpCenterDirectory.php](file:///c:/laragon/www/LikhangKamay/app/Support/HelpCenterDirectory.php) and [SupportContactModal.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Consumer/Help/SupportContactModal.jsx) with direct Gmail Web integration.
 *   **Artisan Page**: `/shop/{user:shop_slug}`
 *   **Product View**: `/product/{product}`
 *   **Serverless Warming & Diagnostics**:

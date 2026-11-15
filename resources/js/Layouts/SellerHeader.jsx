@@ -5,7 +5,7 @@ import UserAvatar from '@/Components/UserAvatar';
 import WorkspaceAccountSummary from '@/Components/WorkspaceAccountSummary';
 import WorkspaceLogoutLink from '@/Components/WorkspaceLogoutLink';
 import Breadcrumbs from '@/Components/Breadcrumbs';
-import { Menu, ChevronDown, User, LogOut, Building2, Clock, Sliders } from 'lucide-react';
+import { Menu, ChevronDown, User, LogOut, Building2, Clock, Sliders, HelpCircle } from 'lucide-react';
 import { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 
 import GlobalSearch from '@/Components/Consumer/GlobalSearch';
@@ -102,11 +102,17 @@ export default function SellerHeader({ title, subtitle, auth: propAuth, onMenuCl
                                 {(auth?.user?.role === 'artisan' || auth?.user?.is_workspace_owner) && (
                                     <Dropdown.Link
                                         href={route("seller.settings.index")}
-                                        className="flex items-center gap-2 font-bold"
+                                        className="flex items-center gap-2"
                                     >
                                         <Sliders size={16} /> Settings
                                     </Dropdown.Link>
                                 )}
+                                <Dropdown.Link
+                                    href={route("help.index", { tab: 'artisan' })}
+                                    className="flex items-center gap-2"
+                                >
+                                    <HelpCircle size={16} /> Help Center
+                                </Dropdown.Link>
                                 <WorkspaceLogoutLink className="flex items-center gap-2 text-red-600 hover:text-red-700">
                                     <LogOut size={16} /> Log Out
                                 </WorkspaceLogoutLink>

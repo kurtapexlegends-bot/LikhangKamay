@@ -3,7 +3,7 @@ import React from 'react';
 import Dropdown from '@/Components/Dropdown';
 import UserAvatar from '@/Components/UserAvatar';
 import { 
-    ChevronDown, User, ShoppingBag, Heart, Clock, Shield, LogOut 
+    ChevronDown, User, ShoppingBag, Heart, Clock, Shield, LogOut, HelpCircle 
 } from 'lucide-react';
 
 export default function BuyerUserMenu({ 
@@ -47,6 +47,9 @@ export default function BuyerUserMenu({
                             </Dropdown.Link>
                             <Dropdown.Link href={route('saved.index')}>
                                 <Heart size={16} className="inline mr-2"/> Saved
+                            </Dropdown.Link>
+                            <Dropdown.Link href={route('help.index')}>
+                                <HelpCircle size={16} className="inline mr-2"/> Help Center
                             </Dropdown.Link>
                         </>
                     ) : (
