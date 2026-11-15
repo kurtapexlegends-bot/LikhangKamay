@@ -108,3 +108,14 @@ Governed by [StockRequestController.php](file:///c:/laragon/www/LikhangKamay/app
 *   **Status Precondition**: Inward goods receiving (`POST /procurement/stock-requests/{stockRequest}/receive`) enforces strict lifecycle validation. Only stock requests in `accounting_approved`, `ordered`, `partially_received`, or `received` states are eligible for inventory intake. Unapproved or pending requests return an immediate graceful warning redirect to protect inventory balances from unauthorized or unreleased intake.
 *   **Inventory Synchronization**: When `sync_inventory = true`, inward shipments automatically increment the active [`Supply`](file:///c:/laragon/www/LikhangKamay/app/Models/Supply.php) balance under row-level pessimistic locks (`lockForUpdate()`), updating the linked finished product's stock count.
 
+---
+
+## 8. Wholesale Supplier Portal & Regional B2B Escrow
+
+Governed by [SupplierPortalController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Supplier/SupplierPortalController.php) and [EnsureSupplier.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/EnsureSupplier.php):
+
+*   **Dedicated Wholesale Role**: Accounts with `role = 'supplier'` operate through dedicated endpoints (`/supplier/*`).
+*   **Regional Dispatch Scope**: Governed by [`SupplierAddress.php`](file:///c:/laragon/www/LikhangKamay/app/Support/SupplierAddress.php), supplier warehouse fulfillments are bounded to Cavite and the Greater Manila Area (NCR, Laguna, Rizal, Bulacan, Batangas).
+*   **Verification & Document Safeguards**: [SupplierSetupController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Supplier/SupplierSetupController.php) processes the 4-document compliance suite (Mayor's Permit, DTI/SEC, Valid ID, BIR Form 2303). Uploads enforce client-side canvas compression (`compressImage`), 4MB payload limits, and direct presigned S3/R2 PUT bypass for files >1MB or PDFs.
+*   **Order Lifecycle & Escrow Auto-Completion**: Order transitions (`Accepted` -> `Processing` -> `Shipped` -> `Delivered`) set accurate lifecycle timestamps (`accepted_at`, `shipped_at`, `delivered_at`, `auto_complete_at`, `warranty_expires_at`). Auto-completion runs via console scheduler, releasing platform escrow safely. Order cancellations automatically restore reserved quantities back to `Product::stock` and persist dispatch notes.
+

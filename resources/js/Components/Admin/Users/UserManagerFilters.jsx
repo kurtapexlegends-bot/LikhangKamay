@@ -205,7 +205,7 @@ export default function UserManagerFilters({
 
     const formattedTabs = roleTabs.map((role) => ({
         key: role,
-        label: role === 'all' ? 'All' : role === 'artisan' ? 'Artisans' : role === 'buyer' ? 'Buyers' : 'Admins',
+        label: role === 'all' ? 'All' : role === 'artisan' ? 'Artisans' : role === 'supplier' ? 'Suppliers' : role === 'buyer' ? 'Buyers' : 'Admins',
     }));
 
     return (

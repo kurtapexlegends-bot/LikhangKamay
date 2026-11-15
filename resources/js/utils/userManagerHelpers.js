@@ -1,9 +1,10 @@
 import { FileText } from 'lucide-react';
 
-export const roleTabs = ['all', 'artisan', 'buyer', 'super_admin'];
+export const roleTabs = ['all', 'artisan', 'supplier', 'buyer', 'super_admin'];
 
 export const roleBadgeClasses = {
     artisan: 'bg-amber-50 text-amber-900 border-amber-200/60',
+    supplier: 'bg-teal-50 text-teal-900 border-teal-200/60',
     staff: 'bg-[#F2EAE1] text-[#7A5037] border-[#E8D9CB]',
     buyer: 'bg-stone-50 text-stone-700 border-stone-200',
     super_admin: 'bg-stone-900 text-stone-100 border-stone-800',

@@ -3,6 +3,7 @@
 namespace App\Actions\Admin\Users;
 
 use App\Models\User;
+use App\Models\ArtisanStatusLog;
 use App\Mail\ArtisanApproved;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -24,7 +25,7 @@ class BulkApproveArtisans
 
         $count = 0;
 
-        $artisans = User::where('role', 'artisan')
+        $artisans = User::whereIn('role', ['artisan', 'supplier'])
             ->where('artisan_status', 'pending')
             ->whereIn('id', $ids)
             ->get();
@@ -32,12 +33,22 @@ class BulkApproveArtisans
         foreach ($artisans as $artisan) {
 
             DB::transaction(function () use ($artisan, $adminId) {
+                ArtisanStatusLog::create([
+                    'user_id' => $artisan->id,
+                    'previous_status' => $artisan->artisan_status,
+                    'new_status' => 'approved',
+                ]);
+
                 $artisan->update([
                     'artisan_status' => 'approved',
                     'approved_at' => now(),
                     'approved_by' => $adminId,
                     'setup_completed_at' => $artisan->setup_completed_at ?? now(),
                 ]);
+
+                if (method_exists($artisan, 'resolveActiveRevisions')) {
+                    $artisan->resolveActiveRevisions();
+                }
             });
 
             $count++;

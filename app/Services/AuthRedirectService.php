@@ -56,6 +56,24 @@ class AuthRedirectService
             return redirect()->route('dashboard');
         }
 
+        if ($user->isSupplier()) {
+            session()->forget('url.intended');
+
+            if ($user->isApproved()) {
+                return redirect()->route('supplier.dashboard');
+            }
+
+            if (is_null($user->setup_completed_at) || $user->artisan_status === 'rejected') {
+                return redirect()->route('supplier.setup');
+            }
+
+            if ($user->artisan_status === 'pending') {
+                return redirect()->route('supplier.pending');
+            }
+
+            return redirect()->route('supplier.dashboard');
+        }
+
         return $this->redirectToIntendedOrRoute($user, '/');
     }
 
@@ -145,6 +163,15 @@ class AuthRedirectService
             return true;
         }
 
+        // If user is Supplier:
+        if ($user->isSupplier()) {
+            if (Str::startsWith($path, '/admin')) {
+                return false;
+            }
+
+            return true;
+        }
+
         // If user is Admin:
         if ($user->isAdmin()) {
             return true;
@@ -181,6 +208,22 @@ class AuthRedirectService
             }
 
             return route('dashboard', absolute: false);
+        }
+
+        if ($user->isSupplier()) {
+            if ($user->isApproved()) {
+                return route('supplier.dashboard', absolute: false);
+            }
+
+            if (is_null($user->setup_completed_at) || $user->artisan_status === 'rejected') {
+                return route('supplier.setup', absolute: false);
+            }
+
+            if ($user->artisan_status === 'pending') {
+                return route('supplier.pending', absolute: false);
+            }
+
+            return route('supplier.dashboard', absolute: false);
         }
 
         return '/';

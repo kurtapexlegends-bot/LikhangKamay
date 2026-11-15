@@ -297,6 +297,42 @@ class UserManagementTest extends TestCase
             );
     }
 
+    public function test_super_admin_can_filter_supplier_accounts_and_view_detail(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $supplier = User::factory()->create([
+            'role' => 'supplier',
+            'shop_name' => 'Bulk Luzon Minerals',
+            'artisan_status' => 'approved',
+        ]);
+        $artisan = User::factory()->artisanApproved()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.users.manager', ['role' => 'supplier']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Users/UserManager')
+                ->where('filters.role', 'supplier')
+                ->where('users.data', function ($users) use ($supplier, $artisan) {
+                    $ids = collect($users)->pluck('id');
+                    return $ids->contains($supplier->id) && !$ids->contains($artisan->id);
+                })
+            );
+
+        $detail = app(\App\Services\Admin\SuperAdminService::class)->getArtisanDetail($supplier->id);
+        $this->assertSame($supplier->id, $detail['id']);
+        $this->assertSame('supplier', $detail['role']);
+        $this->assertSame('Bulk Luzon Minerals', $detail['shop_name']);
+
+        // Test null created_at resilience in getArtisanDetail
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', $supplier->id)
+            ->update(['created_at' => null]);
+
+        $detailNullCreated = app(\App\Services\Admin\SuperAdminService::class)->getArtisanDetail($supplier->id);
+        $this->assertSame('N/A', $detailNullCreated['created_at']);
+    }
+
     private function createEmployee(User $owner, string $name): Employee
     {
         return Employee::create([

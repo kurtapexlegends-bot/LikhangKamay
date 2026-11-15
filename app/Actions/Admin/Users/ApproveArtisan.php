@@ -26,7 +26,7 @@ class ApproveArtisan
     {
         Gate::authorize('admin-action');
 
-        $artisan = User::where('role', 'artisan')->where('artisan_status', 'pending')->findOrFail($id);
+        $artisan = User::whereIn('role', ['artisan', 'supplier'])->where('artisan_status', 'pending')->findOrFail($id);
 
         // REQUIREMENT: Admin must have previewed all required documents before approving
         $requiredKeys = [];

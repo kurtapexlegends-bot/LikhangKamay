@@ -48,10 +48,19 @@ graph TD
 13. `EnsureNotPendingArtisan`: Restricts onboarding artisans from accessing full seller dashboards. Backed by [EnsureNotPendingArtisan.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/EnsureNotPendingArtisan.php).
 14. `EnforceSingleDeviceSession`: Invalidates previous sessions on new device authentication logins. Backed by [EnforceSingleDeviceSession.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/EnforceSingleDeviceSession.php).
 15. `TrackStaffActivity` & `UpdateLastSeen`: Telemetry loggers tracking user presence and staff interactions. Backed by [TrackStaffActivity.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/TrackStaffActivity.php) and [UpdateLastSeen.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/UpdateLastSeen.php).
+16. `EnsureSupplier`: Restricts dedicated supplier portals to accounts with `role = 'supplier'`. Manages onboarding transitions (`supplier.setup` -> `supplier.pending` -> `supplier.dashboard`). Backed by [EnsureSupplier.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/EnsureSupplier.php).
 
 ---
 
 ## 3. Route Groups & Modules
+
+### Wholesale Supplier Portal
+Protected under `['auth', 'verified', 'supplier']` with prefix `/supplier`:
+*   **Supplier Setup & Compliance**: `/supplier/setup` (`supplier.setup`, `supplier.setup.store`) served by [SupplierSetupController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Supplier/SupplierSetupController.php).
+*   **Pending Verification Gate**: `/supplier/pending` (`supplier.pending`) served by [SupplierPortalController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Supplier/SupplierPortalController.php).
+*   **Supplier Dashboard**: `/supplier/dashboard` (`supplier.dashboard`).
+*   **Wholesale Materials Catalog**: `/supplier/materials` (`supplier.materials.index`, `.store`, `.update`, `.destroy`).
+*   **Procurement Orders & Status**: `/supplier/orders` (`supplier.orders.index`, `/orders/{order}/status` `supplier.orders.status`).
 
 ### Public Marketplace
 *   **Search and Filters**: `/shop` (bound to `throttle:marketplace.search` rate limit).

@@ -91,7 +91,7 @@ class HandleInertiaRequests extends Middleware
             'unreadNotificationCount' => fn () => $user ? rescue(fn () => Cache::remember("user_{$user->id}_unread_notif_count", 10, fn () => $user->getUnreadNotificationsQuery()->count()), 0, false) : 0,
             'unreadMessageCount' => fn () => $user ? rescue(fn () => Cache::remember("user_{$user->id}_unread_msg_count", 10, fn () => \App\Models\Message::where('receiver_id', $user->id)->where('is_read', \App\Casts\PostgresCompatibleBoolean::dbVal(false))->count()), 0, false) : 0,
             'pendingArtisanCount' => fn () => $user && $user->role === 'super_admin' 
-                ? rescue(fn () => Cache::remember('admin_pending_artisan_count', 15, fn () => \App\Models\User::where('role', 'artisan')->where('artisan_status', 'pending')->whereNotNull('setup_completed_at')->count()), 0, false) 
+                ? rescue(fn () => Cache::remember('admin_pending_artisan_count', 15, fn () => \App\Models\User::whereIn('role', ['artisan', 'supplier'])->where('artisan_status', 'pending')->whereNotNull('setup_completed_at')->count()), 0, false) 
                 : 0,
             'pendingComplianceCount' => fn () => $user && $user->role === 'super_admin'
                 ? rescue(fn () => Cache::remember('admin_pending_compliance_count', 15, fn () => \App\Models\FlaggedContent::where('status', 'pending')->count() + \App\Models\ReviewDispute::whereIn('status', ['pending', 'under_review'])->count()), 0, false)

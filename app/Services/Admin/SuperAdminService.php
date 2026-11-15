@@ -143,7 +143,7 @@ class SuperAdminService
     {
         $tab = $request->get('tab', 'directory');
         $search = trim((string) $request->get('search', ''));
-        $roleFilter = in_array($request->get('role'), ['all', 'artisan', 'buyer', 'super_admin'], true) ? $request->get('role') : 'all';
+        $roleFilter = in_array($request->get('role'), ['all', 'artisan', 'supplier', 'buyer', 'super_admin'], true) ? $request->get('role') : 'all';
         $statusFilter = in_array($request->get('status'), ['active', 'suspended', 'pending_artisan'], true) ? $request->get('status') : 'all';
         $verificationFilter = in_array($request->get('verification'), ['verified', 'unverified'], true) ? $request->get('verification') : 'all';
         $startDate = $request->get('start_date');
@@ -271,17 +271,18 @@ class SuperAdminService
      */
     public function getArtisanDetail(int|string $id): array
     {
-        $user = User::where('role', 'artisan')->findOrFail($id);
+        $user = User::whereIn('role', ['artisan', 'supplier'])->findOrFail($id);
 
         return [
             'id' => $user->id,
+            'role' => $user->role,
             'name' => $user->name,
             'email' => $user->email,
             'shop_name' => $user->shop_name,
             'artisan_status' => $user->artisan_status,
             'avatar' => $user->avatar,
             'avatar_url' => $user->avatar_url,
-            'created_at' => $user->created_at->format('M d, Y'),
+            'created_at' => $user->created_at?->format('M d, Y') ?? 'N/A',
             'setup_completed_at' => $user->setup_completed_at?->format('M d, Y'),
         ];
     }
@@ -290,6 +291,7 @@ class SuperAdminService
     {
         if ($user->isAdmin()) return 'Admin';
         if ($user->isArtisan()) return 'Artisan';
+        if ($user->isSupplier()) return 'Supplier';
         if ($user->isStaff()) return 'Staff';
         return 'Buyer';
     }
@@ -300,7 +302,7 @@ class SuperAdminService
             return ['Access Suspended', 'danger'];
         }
 
-        if ($user->isArtisan()) {
+        if ($user->isArtisan() || $user->isSupplier()) {
             return match ($user->artisan_status) {
                 'approved' => ['Approved', 'success'],
                 'rejected' => ['Declined', 'danger'],
@@ -415,13 +417,14 @@ class SuperAdminService
 
     public function getPendingArtisansList()
     {
-        return User::where('role', 'artisan')
+        return User::whereIn('role', ['artisan', 'supplier'])
             ->where('artisan_status', 'pending')
             ->whereNotNull('setup_completed_at')
             ->orderBy('setup_completed_at', 'asc')
             ->get()
             ->map(fn($user) => [
                 'id' => $user->id,
+                'role' => $user->role,
                 'name' => $user->name,
                 'email' => $user->email,
                 'avatar' => $user->avatar,
@@ -476,7 +479,7 @@ class SuperAdminService
     ) {
         $query = User::query()
             ->where(function ($q) {
-                $q->whereIn('role', ['artisan', 'buyer', 'super_admin'])->orWhereNull('role');
+                $q->whereIn('role', ['artisan', 'supplier', 'buyer', 'super_admin'])->orWhereNull('role');
             })
             ->withCount('staffMembers')
             ->with(['staffMembers' => function ($q) {
@@ -489,6 +492,8 @@ class SuperAdminService
             $query->where(fn($q) => $q->where('role', 'buyer')->orWhereNull('role'));
         } elseif ($roleFilter === 'super_admin') {
             $query->where('role', 'super_admin');
+        } elseif ($roleFilter === 'supplier') {
+            $query->where('role', 'supplier');
         }
 
         if ($statusFilter === 'active') {
@@ -496,7 +501,7 @@ class SuperAdminService
         } elseif ($statusFilter === 'suspended') {
             $query->whereNotNull('banned_at');
         } elseif ($statusFilter === 'pending_artisan') {
-            $query->where('role', 'artisan')->where('artisan_status', 'pending');
+            $query->whereIn('role', ['artisan', 'supplier'])->where('artisan_status', 'pending');
         }
 
         if ($verificationFilter === 'verified') {
