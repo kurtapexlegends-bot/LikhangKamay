@@ -9,6 +9,7 @@ export default function LivenessChallengePrompt({
     step1Passed,
     currentChallenge,
     onRestart,
+    completedSubtitle = 'Live selfie recorded & verified',
 }) {
     const ChallengeIcon = currentChallenge?.icon || Sparkles;
 
@@ -64,7 +65,9 @@ export default function LivenessChallengePrompt({
                         <CheckCircle2 size={16} className="text-emerald-700" />
                         <div>
                             <h6 className="text-xs font-bold text-emerald-950">Face Check Completed</h6>
-                            <p className="text-[10px] text-emerald-700 font-medium">Photo ready for clock-in</p>
+                            <p className="text-[10px] text-emerald-700 font-medium">
+                                {completedSubtitle || 'Live selfie recorded & verified'}
+                            </p>
                         </div>
                     </div>
                     <button

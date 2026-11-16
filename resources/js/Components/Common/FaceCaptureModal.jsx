@@ -15,6 +15,7 @@ export default function FaceCaptureModal({
     submitting = false,
     errorMessage = '',
     footerNote = '',
+    completedSubtitle = 'Live selfie recorded & verified',
 }) {
     const handleFallback = () => {
         if (onFallbackAction) {
@@ -73,6 +74,7 @@ export default function FaceCaptureModal({
                             onVerified={onVerified}
                             fallbackLabel={fallbackLabel}
                             onFallbackAction={handleFallback}
+                            completedSubtitle={completedSubtitle}
                         />
                     </div>
                 )}

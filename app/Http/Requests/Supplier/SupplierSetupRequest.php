@@ -77,6 +77,26 @@ class SupplierSetupRequest extends FormRequest
                 $docValidator,
             ],
             'tin_number' => ['nullable', 'string', 'regex:/^[\d-]+$/', 'max:20'],
+            'selfie_data_url' => [
+                'nullable',
+                'string',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if ($value === null || $value === '') {
+                        return;
+                    }
+                    if (!is_string($value) || !str_starts_with($value, 'data:image/')) {
+                        $fail('The face check photo must be a valid image data URL.');
+                        return;
+                    }
+                    if (strlen($value) > 1500000) {
+                        $fail('The face check image payload is too large.');
+                    }
+                },
+            ],
+            'face_descriptor' => ['nullable'],
+            'id_face_descriptor' => ['nullable'],
+            'face_match_score' => ['nullable', 'numeric', 'between:0,100'],
+            'id_face_detected' => ['nullable', 'boolean'],
         ];
     }
 

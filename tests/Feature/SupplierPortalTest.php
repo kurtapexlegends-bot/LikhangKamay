@@ -170,6 +170,53 @@ class SupplierPortalTest extends TestCase
         $this->assertNull($supplier->fresh()->setup_completed_at);
     }
 
+    public function test_supplier_setup_processes_and_stores_live_face_verification(): void
+    {
+        Storage::fake('public');
+
+        $supplier = User::factory()->create([
+            'role' => 'supplier',
+            'artisan_status' => 'pending',
+            'setup_completed_at' => null,
+        ]);
+
+        $dummySelfieDataUrl = 'data:image/jpeg;base64,' . base64_encode(str_repeat('A', 2048));
+        $dummyDescriptor = array_fill(0, 128, 0.123456);
+
+        $payload = [
+            'phone_number' => '09171234567',
+            'province' => 'Cavite',
+            'city' => 'Dasmariñas City',
+            'barangay' => 'Salitran II',
+            'street_address' => 'Lot 4 Industrial Estate',
+            'postal_code' => '4114',
+            'business_permit' => 'legal_docs/suppliers/permit_123.pdf',
+            'valid_id' => 'legal_docs/suppliers/valid_id_123.jpg',
+            'selfie_data_url' => $dummySelfieDataUrl,
+            'face_descriptor' => $dummyDescriptor,
+            'id_face_descriptor' => $dummyDescriptor,
+            'face_match_score' => 95,
+            'id_face_detected' => true,
+        ];
+
+        $response = $this->actingAs($supplier)->post(route('supplier.setup.store'), $payload);
+
+        $response->assertRedirect(route('supplier.pending'));
+
+        $supplier->refresh();
+        $this->assertNotNull($supplier->setup_completed_at);
+        $this->assertNotNull($supplier->kyc_selfie_path);
+        $this->assertStringStartsWith('kyc_selfies/', $supplier->kyc_selfie_path);
+        $this->assertNotNull($supplier->kyc_liveness_verified_at);
+        $this->assertIsArray($supplier->face_descriptor);
+        $this->assertCount(128, $supplier->face_descriptor);
+        $this->assertIsArray($supplier->kyc_verification_meta);
+        $this->assertTrue($supplier->kyc_verification_meta['liveness_passed']);
+        $this->assertTrue($supplier->kyc_verification_meta['id_face_detected']);
+        $this->assertEquals(100, $supplier->kyc_verification_meta['match_score']);
+        Storage::disk('public')->assertExists($supplier->kyc_selfie_path);
+    }
+
     public function test_pending_supplier_is_gated_to_pending_screen(): void
     {
         $supplier = User::factory()->create([

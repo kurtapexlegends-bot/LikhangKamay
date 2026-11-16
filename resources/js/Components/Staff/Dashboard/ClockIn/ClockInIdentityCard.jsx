@@ -192,6 +192,7 @@ export default function ClockInIdentityCard({
                                     setUseOtpFallback(true);
                                     if (!otpSent) handleRequestOtp();
                                 }}
+                                completedSubtitle="Photo ready for clock-in"
                             />
                         </Suspense>
                     </ErrorBoundary>

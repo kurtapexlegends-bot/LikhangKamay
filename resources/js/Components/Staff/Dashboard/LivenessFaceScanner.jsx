@@ -12,6 +12,7 @@ export default function LivenessFaceScanner({
     computeDescriptor = false,
     fallbackLabel = null,
     onFallbackAction = null,
+    completedSubtitle = 'Live selfie recorded & verified',
 }) {
     const videoRef = useRef(null);
     const streamRef = useRef(null);
@@ -608,6 +609,7 @@ export default function LivenessFaceScanner({
                 step1Passed={step1Passed}
                 currentChallenge={currentChallenge}
                 onRestart={handleRestart}
+                completedSubtitle={completedSubtitle}
             />
 
             {/* 5-Second Slow-Connection Fallback Prompt */}

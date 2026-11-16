@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Supplier\SupplierSetupRequest;
 use App\Models\ArtisanStatusLog;
 use App\Models\User;
+use App\Services\FaceDescriptorService;
 use App\Services\StorageUrl;
 use App\Support\StructuredAddress;
 use App\Support\SupplierAddress;
@@ -16,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -68,6 +70,11 @@ class SupplierSetupController extends Controller
                 'valid_id_url' => StorageUrl::url($user->valid_id),
                 'has_tin_id' => !empty($user->tin_id),
                 'tin_id_url' => StorageUrl::url($user->tin_id),
+                'kyc_selfie_url' => StorageUrl::url($user->kyc_selfie_path),
+                'kyc_liveness_verified' => !empty($user->kyc_liveness_verified_at),
+                'match_score' => $user->kyc_verification_meta['match_score'] ?? null,
+                'id_face_detected' => $user->kyc_verification_meta['id_face_detected'] ?? null,
+                'id_face_descriptor' => $user->kyc_verification_meta['id_face_descriptor'] ?? null,
             ],
             'rejectionReason' => $user->artisan_rejection_reason,
         ]);
@@ -101,6 +108,60 @@ class SupplierSetupController extends Controller
             }
         }
 
+        // Process biometric face verification & ID match
+        $faceService = app(FaceDescriptorService::class);
+        $biometricUpdates = [];
+
+        if ($request->filled('selfie_data_url')) {
+            $selfiePath = $faceService->storeSelfieDataUrl((string) $request->input('selfie_data_url'), "u{$user->id}");
+            if ($selfiePath) {
+                if ($user->kyc_selfie_path) {
+                    rescue(fn () => Storage::disk('public')->delete($user->kyc_selfie_path), false, report: false);
+                }
+                $biometricUpdates['kyc_selfie_path'] = $selfiePath;
+                $biometricUpdates['kyc_liveness_verified_at'] = now();
+                $biometricUpdates['requires_checkout_face_check'] = false;
+            }
+        }
+
+        $selfieDescriptor = $faceService->normalizeDescriptor($user->face_descriptor);
+        if ($request->filled('face_descriptor')) {
+            $incomingDesc = $faceService->normalizeDescriptor($request->input('face_descriptor'));
+            if ($incomingDesc) {
+                $selfieDescriptor = $incomingDesc;
+                $biometricUpdates['face_descriptor'] = $incomingDesc;
+            }
+        }
+
+        $idDescriptor = $faceService->normalizeDescriptor($request->input('id_face_descriptor'))
+            ?? $faceService->normalizeDescriptor($user->kyc_verification_meta['id_face_descriptor'] ?? null);
+        $matchScore = $user->kyc_verification_meta['match_score'] ?? null;
+        $idFaceDetected = $user->kyc_verification_meta['id_face_detected'] ?? null;
+
+        if ($request->has('id_face_detected')) {
+            $idFaceDetected = $request->boolean('id_face_detected');
+        }
+
+        if ($selfieDescriptor && $idDescriptor) {
+            $distance = $faceService->euclideanDistance($selfieDescriptor, $idDescriptor);
+            $matchScore = $faceService->distanceToMatchPercentage($distance);
+            $idFaceDetected = true;
+        } elseif ($request->filled('face_match_score')) {
+            $matchScore = max(0, min(100, (int) $request->input('face_match_score')));
+        }
+
+        $livenessPassed = isset($biometricUpdates['kyc_liveness_verified_at']) || $user->kyc_liveness_verified_at !== null;
+        $existingMeta = is_array($user->kyc_verification_meta) ? $user->kyc_verification_meta : [];
+
+        $biometricUpdates['kyc_verification_meta'] = array_merge($existingMeta, [
+            'liveness_passed' => $livenessPassed,
+            'match_score' => $matchScore,
+            'id_face_detected' => $idFaceDetected,
+            'id_face_descriptor' => $idDescriptor,
+            'face_match_score' => $matchScore,
+            'verified_at' => now()->toIso8601String(),
+        ]);
+
         $normalizedAddress = StructuredAddress::formatPhilippineAddress([
             'street_address' => $validated['street_address'],
             'barangay' => $validated['barangay'],
@@ -109,10 +170,10 @@ class SupplierSetupController extends Controller
             'postal_code' => $validated['postal_code'],
         ]);
 
-        DB::transaction(function () use ($user, $validated, $docPaths, $normalizedAddress, $recordAudit) {
+        DB::transaction(function () use ($user, $validated, $docPaths, $biometricUpdates, $matchScore, $normalizedAddress, $recordAudit) {
             $previousStatus = $user->artisan_status;
 
-            $user->update([
+            $user->update(array_merge($biometricUpdates, [
                 'phone_number' => $validated['phone_number'],
                 'street_address' => $validated['street_address'],
                 'barangay' => $validated['barangay'],
@@ -129,7 +190,9 @@ class SupplierSetupController extends Controller
                 'artisan_status' => 'pending',
                 'artisan_rejection_reason' => null,
                 'setup_completed_at' => now(),
-            ]);
+            ]));
+
+            $user->resolveActiveRevisions();
 
             $user->addresses()->updateOrCreate(
                 ['user_id' => $user->id, 'label' => 'Warehouse'],
@@ -166,6 +229,9 @@ class SupplierSetupController extends Controller
                     'has_dti' => (bool) ($docPaths['dti_registration'] ?? false),
                     'has_valid_id' => (bool) ($docPaths['valid_id'] ?? false),
                     'has_tin_id' => (bool) ($docPaths['tin_id'] ?? false),
+                    'has_selfie' => (bool) ($user->kyc_selfie_path || isset($biometricUpdates['kyc_selfie_path'])),
+                    'liveness_verified' => (bool) ($user->kyc_liveness_verified_at || isset($biometricUpdates['kyc_liveness_verified_at'])),
+                    'match_score' => $matchScore,
                 ],
                 actorId: $user->id
             );

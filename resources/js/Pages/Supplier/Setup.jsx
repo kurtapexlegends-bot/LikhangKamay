@@ -15,6 +15,8 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import StepPill from '@/Pages/Auth/Partials/StepPill';
 import AddressSelect from '@/Components/Address/AddressSelect';
 import DocumentViewerModal from '@/Components/Seller/Approvals/DocumentViewerModal';
+import KycFaceAndIdCheckCard from '@/Pages/Auth/Partials/KycFaceAndIdCheckCard';
+import { compareSelfieToId, computeDistance, distanceToMatchPercentage } from '@/lib/faceVerification';
 import { compressImage } from '@/utils/imageCompressor';
 import { 
     CAVITE_BARANGAYS, 
@@ -24,6 +26,41 @@ import {
 } from '@/lib/caviteAddresses';
 
 const AddressLocationPicker = lazy(() => import('@/Components/Address/AddressLocationPicker'));
+
+// Fast client-side selfie downscaler to ensure lightweight base64 payload (<80KB)
+const compressSelfieDataUrl = (dataUrl, maxDim = 640, quality = 0.82) => {
+    if (!dataUrl || typeof window === 'undefined' || typeof document === 'undefined') {
+        return Promise.resolve(dataUrl);
+    }
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+            if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                    height = Math.round((height * maxDim) / width);
+                    width = maxDim;
+                } else {
+                    width = Math.round((width * maxDim) / height);
+                    height = maxDim;
+                }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, width);
+            canvas.height = Math.max(1, height);
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                resolve(dataUrl);
+                return;
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+    });
+};
 
 // Bounding box for Cavite and Greater Manila Area (NCR, Laguna, Rizal, Bulacan, Batangas)
 const REGIONAL_SUPPLIER_BOUNDS = [
@@ -122,6 +159,11 @@ export default function SupplierSetup({
         valid_id: null,
         tin_id: null,
         tin_number: existingData.tin_number || '',
+        selfie_data_url: null,
+        face_descriptor: null,
+        id_face_descriptor: existingData.id_face_descriptor ?? null,
+        id_face_detected: existingData.id_face_detected ?? null,
+        face_match_score: existingData.match_score ?? null,
     });
 
     // Cleanup object URLs on unmount to prevent memory leaks
@@ -179,12 +221,52 @@ export default function SupplierSetup({
         if (errors.postal_code) clearErrors('postal_code');
     };
 
-    const handleTinChange = (e) => {
-        const rawDigits = e.target.value.replace(/\D/g, '').slice(0, 12);
-        const parts = rawDigits.match(/.{1,3}/g) || [];
-        setData('tin_number', parts.join('-'));
-        if (errors.tin_number) clearErrors('tin_number');
-    };
+    const handleSelfieCaptured = useCallback(async (payload) => {
+        let photoData = payload?.photoData || null;
+        const selfieDescriptor = payload?.descriptor || null;
+
+        // Compress live selfie if oversized to guarantee Vercel & serverless safety (<80KB)
+        if (photoData && photoData.length > 120000) {
+            photoData = await compressSelfieDataUrl(photoData, 640, 640, 0.82);
+        }
+
+        let nextScore = data.face_match_score ?? existingData.match_score ?? null;
+        let nextIdDetected = data.id_face_detected ?? existingData.id_face_detected ?? null;
+        let nextIdDescriptor = data.id_face_descriptor ?? existingData.id_face_descriptor ?? null;
+
+        if (selfieDescriptor && nextIdDescriptor) {
+            const dist = computeDistance(selfieDescriptor, nextIdDescriptor);
+            nextScore = distanceToMatchPercentage(dist);
+            nextIdDetected = true;
+        } else if (selfieDescriptor) {
+            const validIdSource = docPreviews.valid_id || docFiles.valid_id || existingData.valid_id_url;
+            if (validIdSource) {
+                const isPdf = typeof validIdSource === 'string'
+                    ? validIdSource.toLowerCase().includes('.pdf')
+                    : (validIdSource.name?.toLowerCase().endsWith('.pdf') || validIdSource.type === 'application/pdf');
+                if (!isPdf) {
+                    try {
+                        const res = await compareSelfieToId(validIdSource, selfieDescriptor);
+                        nextScore = res.score;
+                        nextIdDetected = res.idFaceDetected;
+                        nextIdDescriptor = res.descriptor || null;
+                    } catch (err) {
+                        console.warn('ID comparison skipped:', err);
+                    }
+                }
+            }
+        }
+
+        setData((prev) => ({
+            ...prev,
+            selfie_data_url: photoData,
+            face_descriptor: selfieDescriptor,
+            id_face_descriptor: nextIdDescriptor,
+            id_face_detected: nextIdDetected,
+            face_match_score: nextScore,
+        }));
+        if (errors.selfie_data_url) clearErrors('selfie_data_url');
+    }, [data.face_match_score, data.id_face_detected, data.id_face_descriptor, docPreviews.valid_id, docFiles.valid_id, existingData, errors.selfie_data_url, clearErrors, setData]);
 
     const handleLocationSelect = useCallback(({ latitude, longitude, addressDetails = null }) => {
         const numLat = Number(latitude);
@@ -382,6 +464,21 @@ export default function SupplierSetup({
                 setData(docKey, fileToProcess);
             }
 
+            // 5. Automatic ID face extraction and biometric comparison if selfie exists
+            if (docKey === 'valid_id' && !isPdf && data.face_descriptor) {
+                try {
+                    const res = await compareSelfieToId(fileToProcess, data.face_descriptor);
+                    setData((prev) => ({
+                        ...prev,
+                        id_face_descriptor: res.descriptor || prev.id_face_descriptor,
+                        id_face_detected: res.idFaceDetected,
+                        face_match_score: res.score ?? prev.face_match_score,
+                    }));
+                } catch (bioErr) {
+                    console.warn('Live biometric face match check skipped:', bioErr);
+                }
+            }
+
             if (errors[docKey]) clearErrors(docKey);
         } catch (err) {
             console.error(`Document upload failed for ${docKey}:`, err);
@@ -401,7 +498,17 @@ export default function SupplierSetup({
         setDocFiles((prev) => ({ ...prev, [docKey]: null }));
         setDocPreviews((prev) => ({ ...prev, [docKey]: null }));
         setDocErrors((prev) => ({ ...prev, [docKey]: '' }));
-        setData(docKey, null);
+        if (docKey === 'valid_id') {
+            setData((prev) => ({
+                ...prev,
+                valid_id: null,
+                id_face_descriptor: null,
+                id_face_detected: null,
+                face_match_score: null,
+            }));
+        } else {
+            setData(docKey, null);
+        }
     };
 
     const formatFileSize = (bytes) => {
@@ -517,13 +624,16 @@ export default function SupplierSetup({
             return;
         }
 
-        // Calculate aggregate bytes across attached raw File instances (<4MB Vercel protection)
+        // Calculate aggregate bytes across attached raw File instances and selfie (<4MB Vercel protection)
         let totalRawBytes = 0;
         Object.values(docFiles).forEach((f) => {
             if (f instanceof File) {
                 totalRawBytes += f.size;
             }
         });
+        if (data.selfie_data_url) {
+            totalRawBytes += Math.round(data.selfie_data_url.length * 0.75);
+        }
 
         if (totalRawBytes > MAX_UPLOAD_BYTES) {
             if (typeof window !== 'undefined') {
@@ -1167,24 +1277,18 @@ export default function SupplierSetup({
                                         })}
                                     </div>
 
-                                    {/* Tax Identification Number (TIN) Text Input */}
+                                    {/* Live Face Check & ID Match Card (Replaces optional TIN input) */}
                                     <div className="pt-2">
-                                        <div className="flex items-center justify-between mb-1">
-                                            <InputLabel htmlFor="tin_number" value="Official Tax Identification Number (TIN)" />
-                                            <span className="text-[11px] font-medium text-stone-400">Numbers only • Optional</span>
-                                        </div>
-                                        <TextInput
-                                            id="tin_number"
-                                            type="text"
-                                            inputMode="numeric"
-                                            value={data.tin_number}
-                                            onChange={handleTinChange}
-                                            className="block w-full"
-                                            placeholder="123-456-789-000"
-                                            maxLength={15}
-                                            hasError={Boolean(errors.tin_number)}
+                                        <KycFaceAndIdCheckCard
+                                            selfieDataUrl={data.selfie_data_url}
+                                            kycSelfieUrl={existingData.kyc_selfie_url}
+                                            kycLivenessVerified={Boolean(existingData.kyc_liveness_verified)}
+                                            matchScore={data.face_match_score ?? existingData.match_score ?? null}
+                                            idFaceDetected={data.id_face_detected ?? existingData.id_face_detected ?? null}
+                                            hasValidId={Boolean(data.valid_id || existingData.has_valid_id || docPreviews.valid_id || docFiles.valid_id)}
+                                            onSelfieCaptured={handleSelfieCaptured}
+                                            error={errors.selfie_data_url}
                                         />
-                                        <InputError message={errors.tin_number} className="mt-1.5" />
                                     </div>
 
                                     {/* Action Buttons */}
