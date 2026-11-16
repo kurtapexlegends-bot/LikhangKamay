@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { ChevronRight, CalendarDays, Users, FolderOpen } from 'lucide-react';
 import {
     formatPeso,
@@ -36,16 +37,26 @@ export default function StaffRosterList({
                         <div
                             key={emp.id}
                             onClick={() => onSelectEmployee && onSelectEmployee(emp)}
-                            className={`relative p-4 cursor-pointer transition-colors duration-150 flex items-center justify-between gap-3 ${
+                            className={`group relative p-4 cursor-pointer transition-colors duration-150 flex items-center justify-between gap-3 ${
                                 isSelected
                                     ? 'bg-[#FCF7F2]/90'
                                     : 'hover:bg-stone-50/80'
                             }`}
                         >
-                            {/* High-visibility active indicator stripe */}
-                            {isSelected && (
+                            {/* Hover Pre-indicator */}
+                            {!isSelected && (
                                 <span
-                                    className="absolute left-0 top-2 bottom-2 w-1.5 bg-clay-600 rounded-r-full"
+                                    className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-clay-300 rounded-r-full scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-center"
+                                    aria-hidden="true"
+                                />
+                            )}
+
+                            {/* Magnetic sliding active indicator stripe */}
+                            {isSelected && (
+                                <motion.span
+                                    layoutId="activeStaffRosterPill"
+                                    className="absolute left-0 top-2 bottom-2 w-1.5 bg-clay-600 rounded-r-full shadow-2xs z-10"
+                                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
                                     aria-hidden="true"
                                 />
                             )}

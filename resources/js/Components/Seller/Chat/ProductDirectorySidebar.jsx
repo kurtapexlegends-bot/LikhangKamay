@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { Search, Star, Package, Store, X } from 'lucide-react';
 
 export default function ProductDirectorySidebar({
@@ -107,14 +108,25 @@ export default function ProductDirectorySidebar({
                     <button
                         type="button"
                         onClick={() => onSelectProduct('all')}
-                        className={`relative w-full text-left p-3 border-b border-stone-100 transition-all flex items-center gap-3 cursor-pointer ${
+                        className={`group relative w-full text-left p-3 border-b border-stone-100 transition-colors flex items-center gap-3 cursor-pointer ${
                             isAllSelected
-                                ? 'bg-clay-50/70'
+                                ? 'bg-[#FCF7F2]/90'
                                 : 'bg-white hover:bg-stone-50/80'
                         }`}
                     >
+                        {!isAllSelected && (
+                            <span
+                                className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-clay-300 rounded-r-full scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-center"
+                                aria-hidden="true"
+                            />
+                        )}
                         {isAllSelected && (
-                            <span className="absolute left-0 top-0 bottom-0 w-1 bg-clay-700 pointer-events-none" />
+                            <motion.span
+                                layoutId="activeProductDirectoryPill"
+                                className="absolute left-0 top-2 bottom-2 w-1.5 bg-clay-600 rounded-r-full shadow-2xs z-10"
+                                transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                                aria-hidden="true"
+                            />
                         )}
                         <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
                             isAllSelected
@@ -163,14 +175,25 @@ export default function ProductDirectorySidebar({
                                 key={product.id}
                                 type="button"
                                 onClick={() => onSelectProduct(product.id)}
-                                className={`relative w-full text-left p-3 border-b border-stone-100 last:border-b-0 transition-all flex items-center gap-3 cursor-pointer ${
+                                className={`group relative w-full text-left p-3 border-b border-stone-100 last:border-b-0 transition-colors flex items-center gap-3 cursor-pointer ${
                                     isSelected
-                                        ? 'bg-clay-50/70'
+                                        ? 'bg-[#FCF7F2]/90'
                                         : 'bg-white hover:bg-stone-50/70'
                                 }`}
                             >
+                                {!isSelected && (
+                                    <span
+                                        className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-clay-300 rounded-r-full scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-center"
+                                        aria-hidden="true"
+                                    />
+                                )}
                                 {isSelected && (
-                                    <span className="absolute left-0 top-0 bottom-0 w-1 bg-clay-700 pointer-events-none" />
+                                    <motion.span
+                                        layoutId="activeProductDirectoryPill"
+                                        className="absolute left-0 top-2 bottom-2 w-1.5 bg-clay-600 rounded-r-full shadow-2xs z-10"
+                                        transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                                        aria-hidden="true"
+                                    />
                                 )}
                                 <div className={`h-9 w-9 rounded-xl bg-stone-100 overflow-hidden shrink-0 flex items-center justify-center border transition-all ${
                                     isSelected ? 'border-clay-300 ring-1 ring-clay-300/40' : 'border-stone-200'

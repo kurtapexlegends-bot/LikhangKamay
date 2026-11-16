@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { Check, Clock, Printer, MessageCircle, MapPin, Route, Activity, X } from "lucide-react";
 import BuyerAvatar from "@/Components/Seller/Orders/BuyerAvatar";
 import OrderStatusBadge from "@/Components/Orders/OrderStatusBadge";
@@ -59,6 +60,26 @@ export default function OrderCard({
                     : "border-stone-200/80 bg-white hover:border-stone-300"
             }`}
         >
+            {/* Hover Pre-indicator */}
+            {!isSelected && (
+                <span
+                    className="absolute left-0 top-3.5 bottom-3.5 w-1 bg-clay-300 rounded-r-full scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-center pointer-events-none"
+                    aria-hidden="true"
+                />
+            )}
+
+            {/* Magnetic active selection indicator stripe */}
+            {isSelected && (
+                <motion.span
+                    layoutId={`activeOrderPill-${order.id}`}
+                    initial={{ scaleY: 0 }}
+                    animate={{ scaleY: 1 }}
+                    exit={{ scaleY: 0 }}
+                    className="absolute left-0 top-3 bottom-3 w-1.5 bg-clay-600 rounded-r-full shadow-2xs z-10 pointer-events-none"
+                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                    aria-hidden="true"
+                />
+            )}
             {/* Bulk Selection Checkbox */}
             <button
                 type="button"

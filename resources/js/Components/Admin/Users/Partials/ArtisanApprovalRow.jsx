@@ -6,17 +6,35 @@ import { ARTISAN_DOCUMENTS } from '@/utils/userManagerHelpers';
 export default function ArtisanApprovalRow({
     artisan,
     viewedCount,
-    openReviewModal
+    openReviewModal,
+    isSelected = false,
 }) {
     const submittedCount = ARTISAN_DOCUMENTS.filter(doc => !!artisan[doc.key]).length;
     const isReady = submittedCount > 0 && viewedCount >= submittedCount;
 
     return (
-        <div className="px-4 py-4 transition-all duration-200 hover:bg-stone-50/60 sm:px-6 relative group border-b border-stone-100 md:border-b-0 md:py-0 md:px-0">
+        <div className={`px-4 py-4 transition-colors duration-200 sm:px-6 relative group border-b border-stone-100 md:border-b-0 md:py-0 md:px-0 ${
+            isSelected ? 'bg-[#FCF7F2]/90' : 'hover:bg-stone-50/60'
+        }`}>
             {/* Desktop Grid Layout */}
             <div className="hidden md:grid md:grid-cols-12 md:items-center md:gap-4 md:py-4 md:px-6">
                 {/* Hover Accent */}
-                <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-clay-500 scale-y-0 group-hover:scale-y-100 transition-transform origin-center" />
+                {!isSelected && (
+                    <span
+                        className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-clay-300 rounded-r-full scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-center"
+                        aria-hidden="true"
+                    />
+                )}
+
+                {/* Magnetic sliding active indicator stripe */}
+                {isSelected && (
+                    <motion.span
+                        layoutId="activeArtisanApprovalPill"
+                        className="absolute left-0 top-2 bottom-2 w-1.5 bg-clay-600 rounded-r-full shadow-2xs z-10"
+                        transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                        aria-hidden="true"
+                    />
+                )}
 
                 <div className="col-span-4 flex items-center gap-4">
                     <div className="flex items-center gap-4 min-w-0">

@@ -454,6 +454,7 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                                                 artisan={artisan}
                                                 viewedCount={viewedCount}
                                                 openReviewModal={openReviewModal}
+                                                isSelected={viewingArtisan?.id === artisan.id}
                                             />
                                         );
                                     })}

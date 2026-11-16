@@ -1,6 +1,7 @@
 /* global route */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Head, router } from '@inertiajs/react';
+import { motion } from 'framer-motion';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { useToast } from '@/Components/ToastContext';
 import useIsolatedHorizontalScroll from '@/hooks/useIsolatedHorizontalScroll';
@@ -352,14 +353,28 @@ export default function DisputeEscalationDashboard({ disputes = [] }) {
                                         const photoCount = Array.isArray(dispute.proof_photos) ? dispute.proof_photos.length : 0;
 
                                         return (
-                                            <li key={dispute.id} className="relative overflow-hidden group">
+                                            <li key={dispute.id} className="relative group">
+                                                {!isSelected && (
+                                                    <span 
+                                                        className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-clay-300 rounded-r-full scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-center" 
+                                                        aria-hidden="true" 
+                                                    />
+                                                )}
+                                                {isSelected && (
+                                                    <motion.span
+                                                        layoutId="activeDisputeQueuePill"
+                                                        className="absolute left-0 top-2 bottom-2 w-1.5 bg-clay-600 rounded-r-full shadow-2xs z-10"
+                                                        transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                                                        aria-hidden="true"
+                                                    />
+                                                )}
                                                 <button
                                                     type="button"
                                                     onClick={() => handleSelectDispute(dispute)}
-                                                    className={`w-full text-left p-3.5 transition-all cursor-pointer ${
+                                                    className={`w-full text-left p-3.5 transition-colors cursor-pointer ${
                                                         isSelected
-                                                            ? 'bg-clay-50/60 border-l-4 border-l-clay-700 pl-3'
-                                                            : 'bg-white hover:bg-stone-50/70 border-l-4 border-l-transparent'
+                                                            ? 'bg-[#FCF7F2]/90 font-medium'
+                                                            : 'bg-white hover:bg-stone-50/70'
                                                     }`}
                                                 >
                                                     <div className="flex justify-between items-center mb-1.5 gap-2">

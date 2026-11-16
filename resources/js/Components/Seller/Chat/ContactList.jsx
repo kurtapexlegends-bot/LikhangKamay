@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
+import { motion } from 'framer-motion';
 import UserAvatar from '@/Components/UserAvatar';
 import { Search, Hash, Plus } from 'lucide-react';
 
@@ -58,12 +59,26 @@ export default function ContactList({
                                     <Link
                                         key={`channel-${contact.id}`}
                                         href={route('team-messages.index', { channel_id: contact.id })}
-                                        className={`flex w-full items-start gap-3 border-l-[3px] px-3.5 py-2.5 transition ${
+                                        className={`group relative flex w-full items-start gap-3 px-3.5 py-2.5 transition-colors ${
                                             isActive
-                                                ? 'border-emerald-500 bg-emerald-50/60 font-medium'
-                                                : 'border-transparent hover:bg-stone-50'
+                                                ? 'bg-[#FCF7F2]/90 font-medium'
+                                                : 'hover:bg-stone-50/80'
                                         }`}
                                     >
+                                        {!isActive && (
+                                            <span
+                                                className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-clay-300 rounded-r-full scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-center"
+                                                aria-hidden="true"
+                                            />
+                                        )}
+                                        {isActive && (
+                                            <motion.span
+                                                layoutId="activeChatContactPill"
+                                                className="absolute left-0 top-2 bottom-2 w-1.5 bg-clay-600 rounded-r-full shadow-2xs z-10"
+                                                transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                                                aria-hidden="true"
+                                            />
+                                        )}
                                         <div className="relative shrink-0 w-9 h-9 bg-stone-50 border border-stone-200 rounded-xl flex items-center justify-center text-stone-500 shadow-sm">
                                             <Hash size={16} />
                                             {contact.unread > 0 && (
@@ -103,12 +118,26 @@ export default function ContactList({
                                     <Link
                                         key={`direct-${contact.id}`}
                                         href={route('team-messages.index', { user_id: contact.id })}
-                                        className={`flex w-full items-start gap-3 border-l-[3px] px-3.5 py-2.5 transition ${
+                                        className={`group relative flex w-full items-start gap-3 px-3.5 py-2.5 transition-colors ${
                                             isActive
-                                                ? 'border-emerald-500 bg-emerald-50/60 font-medium'
-                                                : 'border-transparent hover:bg-stone-50'
+                                                ? 'bg-[#FCF7F2]/90 font-medium'
+                                                : 'hover:bg-stone-50/80'
                                         }`}
                                     >
+                                        {!isActive && (
+                                            <span
+                                                className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-clay-300 rounded-r-full scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-center"
+                                                aria-hidden="true"
+                                            />
+                                        )}
+                                        {isActive && (
+                                            <motion.span
+                                                layoutId="activeChatContactPill"
+                                                className="absolute left-0 top-2 bottom-2 w-1.5 bg-clay-600 rounded-r-full shadow-2xs z-10"
+                                                transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                                                aria-hidden="true"
+                                            />
+                                        )}
                                         <div className="relative shrink-0">
                                             <UserAvatar user={contact} className="h-9 w-9 text-xs shadow-sm" />
                                             {contact.is_online && (
