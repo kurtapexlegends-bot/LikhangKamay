@@ -246,6 +246,23 @@ class AddressGeocodingService
     {
         $lat = round($latitude, 7);
         $lng = round($longitude, 7);
+
+        if (!CaviteAddress::isWithinPhilippinesBounds($lat, $lng)) {
+            return [
+                'is_within_cavite' => false,
+                'street_address' => '',
+                'barangay' => '',
+                'city' => '',
+                'province' => '',
+                'region' => '',
+                'postal_code' => '',
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'display_name' => '',
+                'warning' => 'The detected location is outside the Philippines. LikhangKamay operations, workshops, and delivery addresses are strictly Cavite-only.',
+            ];
+        }
+
         $cacheLat = round($latitude, 5);
         $cacheLng = round($longitude, 5);
         $cacheKey = "geocode:reverse:{$cacheLat}_{$cacheLng}";

@@ -164,6 +164,116 @@ class StrictCaviteAddressValidationTest extends TestCase
         $this->assertTrue(CaviteAddress::isValidCity('General Trias'));
         $this->assertFalse(CaviteAddress::isValidCity('Makati'));
         $this->assertFalse(CaviteAddress::isValidCity('Manila'));
+
+        // Philippines bounding checks
+        $this->assertTrue(CaviteAddress::isWithinPhilippinesBounds(14.3294, 120.9367)); // Cavite
+        $this->assertTrue(CaviteAddress::isWithinPhilippinesBounds(7.0736, 125.6110));  // Davao
+        $this->assertTrue(CaviteAddress::isWithinPhilippinesBounds(20.4485, 121.9706)); // Batanes
+        $this->assertFalse(CaviteAddress::isWithinPhilippinesBounds(35.6762, 139.6503)); // Tokyo
+        $this->assertFalse(CaviteAddress::isWithinPhilippinesBounds(51.5074, -0.1278));  // London
+        $this->assertFalse(CaviteAddress::isWithinPhilippinesBounds(37.7749, -122.4194)); // San Francisco
+    }
+
+    public function test_user_can_save_address_with_valid_philippine_coordinates(): void
+    {
+        $response = $this->actingAs($this->buyer)->post(route('user-addresses.store'), [
+            'label' => 'Home',
+            'address_type' => 'home',
+            'recipient_name' => 'Cavite Buyer',
+            'phone_number' => '09171234567',
+            'street_address' => 'Blk 35 Lot 18',
+            'city' => 'Dasmariñas City',
+            'barangay' => 'San Miguel I',
+            'region' => 'Cavite',
+            'postal_code' => '4114',
+            'latitude' => 14.3294,
+            'longitude' => 120.9367,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('user_addresses', [
+            'user_id' => $this->buyer->id,
+            'city' => 'Dasmariñas City',
+            'latitude' => 14.3294,
+            'longitude' => 120.9367,
+        ]);
+    }
+
+    public function test_user_cannot_save_address_with_coordinates_outside_philippines(): void
+    {
+        $response = $this->actingAs($this->buyer)->post(route('user-addresses.store'), [
+            'label' => 'Home',
+            'address_type' => 'home',
+            'recipient_name' => 'Cavite Buyer',
+            'phone_number' => '09171234567',
+            'street_address' => 'Blk 35 Lot 18',
+            'city' => 'Dasmariñas City',
+            'barangay' => 'San Miguel I',
+            'region' => 'Cavite',
+            'postal_code' => '4114',
+            'latitude' => 35.6762, // Tokyo
+            'longitude' => 139.6503,
+        ]);
+
+        $response->assertSessionHasErrors(['latitude', 'longitude']);
+        $this->assertDatabaseCount('user_addresses', 0);
+    }
+
+    public function test_user_cannot_save_address_with_half_coordinates(): void
+    {
+        $response = $this->actingAs($this->buyer)->post(route('user-addresses.store'), [
+            'label' => 'Home',
+            'address_type' => 'home',
+            'recipient_name' => 'Cavite Buyer',
+            'phone_number' => '09171234567',
+            'street_address' => 'Blk 35 Lot 18',
+            'city' => 'Dasmariñas City',
+            'barangay' => 'San Miguel I',
+            'region' => 'Cavite',
+            'postal_code' => '4114',
+            'latitude' => 14.3294,
+            'longitude' => null,
+        ]);
+
+        $response->assertSessionHasErrors(['longitude']);
+        $this->assertDatabaseCount('user_addresses', 0);
+    }
+
+    public function test_reverse_geocode_returns_soft_fallback_warning_for_coordinates_outside_philippines(): void
+    {
+        $response = $this->actingAs($this->buyer)->getJson(route('api.geocode.reverse', [
+            'latitude' => 35.6762,
+            'longitude' => 139.6503,
+        ]));
+
+        $response->assertStatus(200);
+        $this->assertFalse($response->json('is_within_cavite'));
+        $this->assertStringContainsString('outside the Philippines', $response->json('warning'));
+    }
+
+    public function test_reverse_geocode_accepts_philippine_coordinates(): void
+    {
+        $response = $this->actingAs($this->buyer)->getJson(route('api.geocode.reverse', [
+            'latitude' => 14.3294,
+            'longitude' => 120.9367,
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'is_within_cavite',
+            'street_address',
+            'barangay',
+            'city',
+            'province',
+            'region',
+            'postal_code',
+            'latitude',
+            'longitude',
+        ]);
+        $this->assertTrue($response->json('is_within_cavite'));
+        $this->assertSame('Dasmariñas City', $response->json('city'));
     }
 
     public function test_checkout_rejects_delivery_when_dropoff_matches_seller_pickup_address(): void

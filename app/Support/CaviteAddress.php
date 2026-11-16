@@ -120,6 +120,16 @@ class CaviteAddress
     ];
 
     /**
+     * Philippines Geographic Bounding Box
+     */
+    public const PHILIPPINES_BOUNDS = [
+        'min_lat' => 4.5,
+        'max_lat' => 21.5,
+        'min_lng' => 116.0,
+        'max_lng' => 127.0,
+    ];
+
+    /**
      * Postal codes for official Cavite cities and municipalities
      */
     public const POSTAL_CODES = [
@@ -186,6 +196,15 @@ class CaviteAddress
     {
         return $lat >= self::BOUNDS['min_lat'] && $lat <= self::BOUNDS['max_lat']
             && $lng >= self::BOUNDS['min_lng'] && $lng <= self::BOUNDS['max_lng'];
+    }
+
+    /**
+     * Check if coordinates lie within Philippines geographic bounding box
+     */
+    public static function isWithinPhilippinesBounds(float $lat, float $lng): bool
+    {
+        return $lat >= self::PHILIPPINES_BOUNDS['min_lat'] && $lat <= self::PHILIPPINES_BOUNDS['max_lat']
+            && $lng >= self::PHILIPPINES_BOUNDS['min_lng'] && $lng <= self::PHILIPPINES_BOUNDS['max_lng'];
     }
 
     /**

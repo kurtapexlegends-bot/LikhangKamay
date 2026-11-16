@@ -29,6 +29,12 @@ const getCityShortLabel = (cityName) => {
     return cityName.replace(/\s+City$/i, '');
 };
 
+// Official geographic bounding box for the Philippine archipelago
+export const PHILIPPINES_BOUNDS = [
+    [4.5, 116.0],  // South-West (Mindanao / Sulu Sea / West Philippine Sea)
+    [21.5, 127.0], // North-East (Batanes / Philippine Sea)
+];
+
 const isValidCoordinate = (lat, lng) => {
     if (lat === null || lat === undefined || lat === '' || lng === null || lng === undefined || lng === '') {
         return false;
@@ -46,12 +52,17 @@ export default function AddressLocationPicker({
     readOnly = false,
     height = '240px',
     className = '',
-    maxBounds = null,
+    maxBounds = PHILIPPINES_BOUNDS,
 }) {
+    const effectiveBounds = maxBounds || PHILIPPINES_BOUNDS;
     const mapContainerRef = useRef(null);
     const mapInstanceRef = useRef(null);
     const markerRef = useRef(null);
-    const lastValidCoordRef = useRef(isValidCoordinate(latitude, longitude) ? [Number(latitude), Number(longitude)] : null);
+    const lastValidCoordRef = useRef(
+        isValidCoordinate(latitude, longitude) && L.latLngBounds(effectiveBounds).contains([Number(latitude), Number(longitude)])
+            ? [Number(latitude), Number(longitude)]
+            : null
+    );
     const [isLocating, setIsLocating] = useState(false);
     const [isResolvingAddress, setIsResolvingAddress] = useState(false);
     const [isPrecisionOpen, setIsPrecisionOpen] = useState(false);
@@ -120,11 +131,15 @@ export default function AddressLocationPicker({
     // Resolve initial center: provided coords > city center > Dasmariñas default
     const getInitialCenter = useCallback(() => {
         if (hasCoordinates) {
-            return [Number(latitude), Number(longitude)];
+            const numLat = Number(latitude);
+            const numLng = Number(longitude);
+            if (L.latLngBounds(effectiveBounds).contains([numLat, numLng])) {
+                return [numLat, numLng];
+            }
         }
         const cityCoord = getCaviteCoordinatesForCity(city);
         return [cityCoord.lat, cityCoord.lng];
-    }, [hasCoordinates, latitude, longitude, city]);
+    }, [hasCoordinates, latitude, longitude, city, effectiveBounds]);
 
     // Initialize Leaflet Map
     useEffect(() => {
@@ -136,7 +151,9 @@ export default function AddressLocationPicker({
             const mapOptions = {
                 center: [initialLat, initialLng],
                 zoom: hasCoordinates ? 16 : 14,
-                minZoom: 9,
+                minZoom: 6,
+                maxBounds: effectiveBounds,
+                maxBoundsViscosity: 1.0,
                 zoomControl: !readOnly,
                 attributionControl: false,
                 dragging: !readOnly && (!L.Browser.mobile || isPrecisionOpen),
@@ -144,11 +161,6 @@ export default function AddressLocationPicker({
                 doubleClickZoom: !readOnly,
                 touchZoom: !readOnly,
             };
-
-            if (maxBounds) {
-                mapOptions.maxBounds = maxBounds;
-                mapOptions.maxBoundsViscosity = 1.0;
-            }
 
             const map = L.map(mapContainerRef.current, mapOptions);
 
@@ -174,12 +186,12 @@ export default function AddressLocationPicker({
             if (!readOnly) {
                 marker.on('dragend', (e) => {
                     const coord = e.target.getLatLng();
-                    if (maxBounds && !L.latLngBounds(maxBounds).contains(coord)) {
+                    if (!L.latLngBounds(effectiveBounds).contains(coord)) {
                         if (typeof window !== 'undefined') {
                             window.dispatchEvent(new CustomEvent('app-toast', {
                                 detail: {
                                     type: 'warning',
-                                    message: 'Pinned location is outside the supported operating area.',
+                                    message: 'Pinned location must be within the Philippines.',
                                 }
                             }));
                         }
@@ -200,12 +212,12 @@ export default function AddressLocationPicker({
                 });
 
                 map.on('click', (e) => {
-                    if (maxBounds && !L.latLngBounds(maxBounds).contains(e.latlng)) {
+                    if (!L.latLngBounds(effectiveBounds).contains(e.latlng)) {
                         if (typeof window !== 'undefined') {
                             window.dispatchEvent(new CustomEvent('app-toast', {
                                 detail: {
                                     type: 'warning',
-                                    message: 'Pinned location is outside the supported operating area.',
+                                    message: 'Pinned location must be within the Philippines.',
                                 }
                             }));
                         }
@@ -254,6 +266,7 @@ export default function AddressLocationPicker({
             if (Math.abs(currentPos.lat - newLat) > 0.0001 || Math.abs(currentPos.lng - newLng) > 0.0001) {
                 markerRef.current.setLatLng([newLat, newLng]);
                 mapInstanceRef.current.setView([newLat, newLng], 16, { animate: true });
+                lastValidCoordRef.current = [newLat, newLng];
             }
         }
     }, [latitude, longitude, hasCoordinates]);
@@ -272,11 +285,15 @@ export default function AddressLocationPicker({
             }
         }
 
-        const resizeTimer = setTimeout(() => {
+        const triggerResize = () => {
             if (mapInstanceRef.current) {
                 mapInstanceRef.current.invalidateSize();
             }
-        }, 150);
+        };
+
+        triggerResize();
+        const resizeTimer = setTimeout(triggerResize, 150);
+        const secondResizeTimer = setTimeout(triggerResize, 350);
 
         const handleKeyDown = (e) => {
             if (e.key === 'Escape' && isPrecisionOpen) {
@@ -289,6 +306,7 @@ export default function AddressLocationPicker({
         return () => {
             document.body.style.overflow = '';
             clearTimeout(resizeTimer);
+            clearTimeout(secondResizeTimer);
             window.removeEventListener('keydown', handleKeyDown);
         };
     }, [isPrecisionOpen, readOnly]);
@@ -314,12 +332,12 @@ export default function AddressLocationPicker({
                 const userLat = Number(position.coords.latitude.toFixed(7));
                 const userLng = Number(position.coords.longitude.toFixed(7));
 
-                if (maxBounds && !L.latLngBounds(maxBounds).contains([userLat, userLng])) {
+                if (!L.latLngBounds(effectiveBounds).contains([userLat, userLng])) {
                     if (typeof window !== 'undefined') {
                         window.dispatchEvent(new CustomEvent('app-toast', {
                             detail: {
                                 type: 'warning',
-                                message: 'Detected device location is outside the supported operating area.',
+                                message: 'Detected device location is outside the Philippines. Please select an address within the Philippines.',
                             }
                         }));
                     }
@@ -365,6 +383,7 @@ export default function AddressLocationPicker({
         if (mapInstanceRef.current && markerRef.current) {
             mapInstanceRef.current.setView([coords.lat, coords.lng], 16, { animate: true });
             markerRef.current.setLatLng([coords.lat, coords.lng]);
+            lastValidCoordRef.current = [coords.lat, coords.lng];
             if (onLocationSelectRef.current) {
                 onLocationSelectRef.current({ latitude: coords.lat, longitude: coords.lng });
             }

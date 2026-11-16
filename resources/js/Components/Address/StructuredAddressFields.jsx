@@ -1,5 +1,5 @@
 /* global CustomEvent */
-import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
@@ -29,6 +29,7 @@ export default function StructuredAddressFields({
     previewLabel = 'Address Preview',
     readOnly = false,
     showPreview = true,
+    maxBounds = null,
     streetRef = null,
     cityRef = null,
     barangayRef = null,
@@ -38,6 +39,7 @@ export default function StructuredAddressFields({
     const field = useCallback((name) => fieldNames[name] || `${prefix}${name}`, [fieldNames, prefix]);
     const rawValue = useCallback((name) => data[field(name)] ?? '', [data, field]);
     const cityValue = data[field('city')];
+    const lastAutoFilledStreetRef = useRef('');
 
     // Match canonical Cavite city from options if value exists
     const matchedCity = useMemo(() => {
@@ -180,7 +182,11 @@ export default function StructuredAddressFields({
                 }
 
                 if (addressDetails.street_address) {
-                    fieldsToUpdate.street_address = addressDetails.street_address;
+                    const currentStreet = (rawValue('street_address') || '').trim();
+                    if (!currentStreet || currentStreet === lastAutoFilledStreetRef.current) {
+                        fieldsToUpdate.street_address = addressDetails.street_address;
+                        lastAutoFilledStreetRef.current = addressDetails.street_address;
+                    }
                 }
 
                 if (addressDetails.postal_code) {
@@ -324,6 +330,7 @@ export default function StructuredAddressFields({
                     city={matchedCity || rawValue('city')}
                     onLocationSelect={handleLocationSelect}
                     readOnly={readOnly}
+                    maxBounds={maxBounds}
                 />
             </Suspense>
 

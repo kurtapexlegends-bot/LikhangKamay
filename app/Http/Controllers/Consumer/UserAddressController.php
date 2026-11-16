@@ -93,9 +93,14 @@ class UserAddressController extends Controller
             'city' => 'nullable|string|max:255',
             'region' => 'nullable|string|max:255',
             'postal_code' => 'nullable|string|max:20',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
+            'latitude' => 'nullable|numeric|between:4.5,21.5|required_with:longitude',
+            'longitude' => 'nullable|numeric|between:116.0,127.0|required_with:latitude',
             'full_address' => 'nullable|string',
+        ], [
+            'latitude.between' => 'Coordinates must be within the Philippines.',
+            'longitude.between' => 'Coordinates must be within the Philippines.',
+            'latitude.required_with' => 'Both latitude and longitude coordinates must be provided together.',
+            'longitude.required_with' => 'Both latitude and longitude coordinates must be provided together.',
         ]);
     }
 
@@ -155,14 +160,29 @@ class UserAddressController extends Controller
             ]);
         }
 
+        $lat = isset($validated['latitude']) && is_numeric($validated['latitude']) ? (float) $validated['latitude'] : null;
+        $lng = isset($validated['longitude']) && is_numeric($validated['longitude']) ? (float) $validated['longitude'] : null;
+
+        if (($lat !== null || $lng !== null) && ($lat === null || $lng === null)) {
+            throw ValidationException::withMessages([
+                'latitude' => 'Both latitude and longitude coordinates must be provided together.',
+            ]);
+        }
+
+        if ($lat !== null && $lng !== null && !\App\Support\CaviteAddress::isWithinPhilippinesBounds($lat, $lng)) {
+            throw ValidationException::withMessages([
+                'latitude' => 'Pinned location coordinates must be within the Philippines.',
+            ]);
+        }
+
         $validated['street_address'] = $streetAddress;
         $validated['barangay'] = $barangay;
         $validated['city'] = $city;
         $validated['region'] = $region;
         $validated['postal_code'] = $postalCode;
         $validated['full_address'] = $structuredAddress;
-        $validated['latitude'] = isset($validated['latitude']) && is_numeric($validated['latitude']) ? (float) $validated['latitude'] : null;
-        $validated['longitude'] = isset($validated['longitude']) && is_numeric($validated['longitude']) ? (float) $validated['longitude'] : null;
+        $validated['latitude'] = $lat;
+        $validated['longitude'] = $lng;
 
         return $validated;
     }
