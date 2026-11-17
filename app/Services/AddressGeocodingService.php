@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Support\CaviteAddress;
+use App\Support\RegionalDeliveryAddress;
 use App\Support\StructuredAddress;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Str;
@@ -72,7 +73,7 @@ class AddressGeocodingService
                 }
             }
 
-            // Defensive Fallback: If street/subdivision is unmapped or fictitious, resolve to Cavite municipality centroid
+            // Defensive Fallback: If street/subdivision is unmapped or fictitious, resolve to municipality centroid
             foreach ($seedQueries as $seedQuery) {
                 $cityKey = CaviteAddress::findCaviteCityInAddress($seedQuery);
                 if ($cityKey && isset(CaviteAddress::CITY_COORDINATES[$cityKey])) {
@@ -84,6 +85,18 @@ class AddressGeocodingService
                         'display_name' => "{$canonical}, Cavite, Philippines",
                         'matched_query' => "{$canonical}, Cavite",
                         'normalized_matched_query' => StructuredAddress::normalizeForComparison("{$canonical}, Cavite"),
+                    ];
+                }
+
+                // Check Greater Luzon regional centroids (NCR, Laguna, Batangas, Rizal, Bulacan, Pampanga, etc.)
+                $regionalCentroid = RegionalDeliveryAddress::findCityCentroid($seedQuery);
+                if ($regionalCentroid) {
+                    return [
+                        'lat' => (string) $regionalCentroid['lat'],
+                        'lng' => (string) $regionalCentroid['lng'],
+                        'display_name' => "{$regionalCentroid['city']}, {$regionalCentroid['province']}, Philippines",
+                        'matched_query' => "{$regionalCentroid['city']}, {$regionalCentroid['province']}",
+                        'normalized_matched_query' => StructuredAddress::normalizeForComparison("{$regionalCentroid['city']}, {$regionalCentroid['province']}"),
                     ];
                 }
             }
@@ -422,18 +435,26 @@ class AddressGeocodingService
 
         // Outside Cavite: return detected fields but flag non-Cavite with warning
         $outsideCity = $rawCityCandidates[0] ?? '';
+        $detectedProvince = $rawProvince !== '' ? $rawProvince : $rawRegion;
+        $isWithinDeliveryScope = RegionalDeliveryAddress::isWithinDeliveryBounds($lat, $lng)
+            || RegionalDeliveryAddress::isSupportedDeliveryProvince($detectedProvince);
+
+        $outsideWarning = $isWithinDeliveryScope
+            ? 'The detected location is outside Cavite. Artisan workshops are Cavite-based; distance-based courier delivery applies.'
+            : 'The detected location is outside the supported delivery area (Cavite & Greater Luzon).';
+
         return [
             'is_within_cavite' => false,
             'street_address' => $streetAddress,
             'barangay' => $rawBarangay,
             'city' => $outsideCity,
-            'province' => $rawProvince !== '' ? $rawProvince : $rawRegion,
+            'province' => $detectedProvince,
             'region' => $rawRegion !== '' ? $rawRegion : $rawProvince,
             'postal_code' => $rawPostalCode,
             'latitude' => $lat,
             'longitude' => $lng,
             'display_name' => $displayName,
-            'warning' => 'The detected location is outside Cavite. LikhangKamay operations, workshops, and delivery addresses are strictly Cavite-only.',
+            'warning' => $outsideWarning,
         ];
     }
 }

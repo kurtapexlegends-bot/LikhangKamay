@@ -121,21 +121,24 @@ class UserAddressController extends Controller
         $postalCode = StructuredAddress::clean($validated['postal_code'] ?? null);
         $legacyFullAddress = trim((string) ($validated['full_address'] ?? ''));
 
-        if ($region !== null && !\App\Support\CaviteAddress::isCaviteRegion($region)) {
-            throw ValidationException::withMessages([
-                'region' => 'LikhangKamay operations and deliveries are strictly within the Province of Cavite.',
-            ]);
-        }
-
-        if ($city !== null && !\App\Support\CaviteAddress::isValidCity($city)) {
-            throw ValidationException::withMessages([
-                'city' => 'Please select a valid city or municipality within Cavite.',
-            ]);
-        }
-
-        $region = \App\Support\CaviteAddress::PROVINCE;
-        if ($city !== null) {
-            $city = \App\Support\CaviteAddress::resolveCanonicalCity($city) ?? $city;
+        if ($region !== null) {
+            if (\App\Support\CaviteAddress::isCaviteRegion($region)) {
+                if ($city !== null && !\App\Support\CaviteAddress::isValidCity($city)) {
+                    throw ValidationException::withMessages([
+                        'city' => 'Please select a valid city or municipality within Cavite.',
+                    ]);
+                }
+                $region = \App\Support\CaviteAddress::PROVINCE;
+                if ($city !== null) {
+                    $city = \App\Support\CaviteAddress::resolveCanonicalCity($city) ?? $city;
+                }
+            } elseif (\App\Support\RegionalDeliveryAddress::isSupportedDeliveryProvince($region)) {
+                $region = \App\Support\RegionalDeliveryAddress::canonicalizeProvince($region);
+            } else {
+                throw ValidationException::withMessages([
+                    'region' => 'LikhangKamay courier delivery is currently available within Cavite and Greater Luzon.',
+                ]);
+            }
         }
 
         $structuredAddress = StructuredAddress::formatPhilippineAddress([

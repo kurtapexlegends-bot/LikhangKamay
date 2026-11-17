@@ -5,7 +5,7 @@ import Modal from '@/Components/Modal';
 import { 
     X, Mail, Copy, Check, ExternalLink, 
     MessageSquare, Clock, ShieldCheck, HelpCircle,
-    ChevronDown, Store, ShoppingBag, Package
+    ChevronDown, Store, ShoppingBag, Package, Building2
 } from 'lucide-react';
 
 const SUPPORT_EMAIL = 'likhangkamaybusiness@gmail.com';
@@ -82,6 +82,45 @@ const ARTISAN_TOPICS = [
     },
 ];
 
+const SUPPLIER_TOPICS = [
+    {
+        id: 'orders',
+        label: 'Wholesale Orders & Dispatch',
+        subject: '[LikhangKamay Supplier] Wholesale Order & Dispatch Assistance',
+        body: 'Hello LikhangKamay Merchant Desk,\n\nI need assistance with a wholesale raw materials order or dispatch.\nCompany / Warehouse Name: \nOrder Number: \nArtisan Studio: \nDetails: \n\nThank you!',
+    },
+    {
+        id: 'payout',
+        label: 'Wholesale Payout & Settlement',
+        subject: '[LikhangKamay Supplier] Wholesale Payout & Settlement Inquiry',
+        body: 'Hello LikhangKamay Merchant Desk,\n\nI have an inquiry regarding my wholesale payout or disbursement.\nCompany Name: \nRegistered Bank / E-Wallet: \nPayout Reference / Batch: \nDetails: \n\nThank you!',
+    },
+    {
+        id: 'catalog',
+        label: 'Raw Materials Catalog & Industrial Units',
+        subject: '[LikhangKamay Supplier] Materials Catalog & Units Support',
+        body: 'Hello LikhangKamay Merchant Desk,\n\nI need support with bulk material listings, industrial packaging units, or MOQ settings.\nCompany Name: \nMaterial SKU / Name: \nDetails: \n\nThank you!',
+    },
+    {
+        id: 'verification',
+        label: 'Warehouse Permits & Compliance',
+        subject: '[LikhangKamay Supplier] Warehouse Verification & Permits',
+        body: 'Hello LikhangKamay Merchant Desk,\n\nI have a question regarding warehouse permit verification, DTI/SEC registration, or location proof.\nCompany Name: \nCavite Warehouse Location: \nDetails: \n\nThank you!',
+    },
+    {
+        id: 'vat',
+        label: 'BIR VAT & Commercial Sales Invoices',
+        subject: '[LikhangKamay Supplier] Commercial VAT Invoice & Tax Inquiry',
+        body: 'Hello LikhangKamay Merchant Desk,\n\nI need assistance with B2B commercial VAT invoices or tax receipts.\nCompany Name: \nTIN: \nOrder Number (if applicable): \nQuestion: \n\nThank you!',
+    },
+    {
+        id: 'general',
+        label: 'General B2B Inquiries',
+        subject: '[LikhangKamay Supplier] General Wholesale Inquiry',
+        body: 'Hello LikhangKamay Merchant Desk,\n\nI would like to inquire about: \n\nThank you!',
+    },
+];
+
 export default function SupportContactModal({
     show = false,
     initialPersona = 'buyer',
@@ -99,15 +138,18 @@ export default function SupportContactModal({
     // Sync with initialPersona or lockedPersona when modal opens
     useEffect(() => {
         if (show) {
-            const nextPersona = (lockedPersona || initialPersona) === 'artisan' ? 'artisan' : 'buyer';
+            const requested = lockedPersona || initialPersona;
+            const nextPersona = (requested === 'supplier' || requested === 'artisan') ? requested : 'buyer';
             setPersona(nextPersona);
-            setSelectedTopicId(nextPersona === 'artisan' ? 'payout' : 'order');
+            setSelectedTopicId(nextPersona === 'supplier' ? 'orders' : nextPersona === 'artisan' ? 'payout' : 'order');
             setShowDesktopMailto(false);
         }
     }, [show, initialPersona, lockedPersona]);
 
     const topics = useMemo(() => {
-        return persona === 'artisan' ? ARTISAN_TOPICS : BUYER_TOPICS;
+        if (persona === 'supplier') return SUPPLIER_TOPICS;
+        if (persona === 'artisan') return ARTISAN_TOPICS;
+        return BUYER_TOPICS;
     }, [persona]);
 
     const activeTopic = useMemo(() => {
@@ -117,7 +159,7 @@ export default function SupportContactModal({
     // Handle persona change
     const handlePersonaChange = (newPersona) => {
         setPersona(newPersona);
-        setSelectedTopicId(newPersona === 'artisan' ? 'payout' : 'order');
+        setSelectedTopicId(newPersona === 'supplier' ? 'orders' : newPersona === 'artisan' ? 'payout' : 'order');
     };
 
     // Construct direct Gmail web compose URL (prevents native Windows Outlook prompts)
@@ -162,13 +204,25 @@ export default function SupportContactModal({
                     <div>
                         <div className="flex items-center gap-1.5 text-[10px] font-bold text-clay-700 uppercase tracking-widest">
                             <ShieldCheck size={13} className="text-clay-600" />
-                            <span>{persona === 'artisan' ? 'Artisan Merchant Desk' : 'Customer Support Channel'}</span>
+                            <span>
+                                {persona === 'supplier'
+                                    ? 'Supplier Help Desk'
+                                    : persona === 'artisan'
+                                    ? 'Artisan Merchant Desk'
+                                    : 'Customer Support Channel'}
+                            </span>
                         </div>
                         <h3 className="font-serif text-xl sm:text-2xl font-bold text-stone-900 mt-0.5">
-                            {persona === 'artisan' ? 'Artisan Studio Support' : 'Email Platform Support'}
+                            {persona === 'supplier'
+                                ? 'B2B Supplier Support'
+                                : persona === 'artisan'
+                                ? 'Artisan Studio Support'
+                                : 'Email Platform Support'}
                         </h3>
                         <p className="text-xs text-stone-500 mt-0.5 leading-relaxed">
-                            {persona === 'artisan'
+                            {persona === 'supplier'
+                                ? 'Dedicated assistance for wholesale material orders, industrial catalog, warehouse compliance, and payouts.'
+                                : persona === 'artisan'
                                 ? 'Dedicated assistance for payouts, BIR VAT invoicing, permits, and courier dispatch.'
                                 : 'Connect directly via webmail or copy our official support address.'}
                         </p>
@@ -185,7 +239,7 @@ export default function SupportContactModal({
 
                 {/* Persona Mode Switcher Pill - Hidden when strictly locked */}
                 {!lockedPersona && (
-                    <div className="bg-stone-100 p-1 rounded-xl flex items-center border border-stone-200/70">
+                    <div className="bg-stone-100 p-1 rounded-xl flex items-center border border-stone-200/70 gap-1">
                         <button
                             type="button"
                             onClick={() => handlePersonaChange('buyer')}
@@ -196,7 +250,7 @@ export default function SupportContactModal({
                             }`}
                         >
                             <ShoppingBag size={13} />
-                            <span>Buyer Support</span>
+                            <span>Buyer</span>
                         </button>
                         <button
                             type="button"
@@ -208,7 +262,19 @@ export default function SupportContactModal({
                             }`}
                         >
                             <Store size={13} />
-                            <span>Artisan Merchant Desk</span>
+                            <span>Artisan</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handlePersonaChange('supplier')}
+                            className={`flex-1 py-1 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                                persona === 'supplier'
+                                    ? 'bg-white text-clay-700 shadow-xs'
+                                    : 'text-stone-500 hover:text-stone-900'
+                            }`}
+                        >
+                            <Building2 size={13} />
+                            <span>Supplier</span>
                         </button>
                     </div>
                 )}
@@ -228,7 +294,7 @@ export default function SupportContactModal({
                             is usually the fastest resolution.
                         </div>
                     </div>
-                ) : (
+                ) : persona === 'artisan' ? (
                     <div className="bg-emerald-50/60 border border-emerald-200/60 rounded-xl p-3 flex items-start gap-2.5">
                         <Package size={16} className="text-emerald-700 shrink-0 mt-0.5" />
                         <div className="text-xs text-emerald-900 leading-snug">
@@ -241,12 +307,29 @@ export default function SupportContactModal({
                             </Link>.
                         </div>
                     </div>
+                ) : (
+                    <div className="bg-teal-50/60 border border-teal-200/60 rounded-xl p-3 flex items-start gap-2.5">
+                        <Package size={16} className="text-teal-700 shrink-0 mt-0.5" />
+                        <div className="text-xs text-teal-900 leading-snug">
+                            <span className="font-bold">Need help with wholesale material dispatch?</span> Manage inventory batches, tracking status, and artisan studio orders in{' '}
+                            <Link
+                                href={route('supplier.orders.index')}
+                                className="font-bold underline text-teal-950 hover:text-clay-700 transition"
+                            >
+                                Workshop Orders
+                            </Link>.
+                        </div>
+                    </div>
                 )}
 
                 {/* Inquiry Topic Selection */}
                 <div>
                     <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                        {persona === 'artisan' ? 'Select Artisan Topic:' : 'What is your inquiry about?'}
+                        {persona === 'supplier'
+                            ? 'Select Supplier Topic:'
+                            : persona === 'artisan'
+                            ? 'Select Artisan Topic:'
+                            : 'What is your inquiry about?'}
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                         {topics.map((topic) => {

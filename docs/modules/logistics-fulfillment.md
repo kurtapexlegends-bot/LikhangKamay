@@ -73,8 +73,11 @@ Webhooks from the Lalamove API dispatch events that update the `status` of `Orde
     *   Rate limiting (60 req/min) provides non-intrusive toast notifications if exceeded without disrupting the user form flow.
 
 ### Address Validation & Regional Scope
-*   **Strict Cavite Scope**: LikhangKamay operations, artisan studios, buyer delivery addresses, and logistics dispatching are strictly restricted to the **Province of Cavite** (23 official cities and municipalities). Addresses outside Cavite are rejected on registration, profile update, address management, and checkout.
-*   [CaviteAddress.php](file:///c:/laragon/www/LikhangKamay/app/Support/CaviteAddress.php): Single source of truth defining valid Cavite LGUs, canonical city resolution, and regional validation guards.
+*   **Artisan Studio vs. Buyer Delivery Scope**:
+    *   **Artisan Studios**: Artisan workshops, vendor onboarding, and seller profiles remain strictly rooted in the **Province of Cavite** (23 official cities and municipalities).
+    *   **Buyer Delivery Scope (Greater Luzon Overland Delivery)**: Buyer delivery addresses are supported across the **Province of Cavite** and expanded **Greater Luzon** provinces (Metro Manila, Laguna, Batangas, Rizal, Bulacan, Pampanga, Bataan, Tarlac, Nueva Ecija, Pangasinan, Zambales, and Quezon). Delivery addresses are bounded by the overland courier bounding box (`GREATER_LUZON_BOUNDS` = Lat `13.20`–`16.50`, Lng `119.80`–`122.20`).
+*   [CaviteAddress.php](file:///c:/laragon/www/LikhangKamay/app/Support/CaviteAddress.php): Single source of truth defining valid Cavite LGUs, canonical city resolution, and artisan workshop validation guards.
+*   [RegionalDeliveryAddress.php](file:///c:/laragon/www/LikhangKamay/app/Support/RegionalDeliveryAddress.php): Defines supported Greater Luzon provinces, canonical province aliases, city centroid coordinates, and overland delivery boundary checks.
 *   [StructuredAddress.php](file:///c:/laragon/www/LikhangKamay/app/Support/StructuredAddress.php): Helper class providing standardized formatting methods for structured addresses.
 *   [CourierAddressResolver.php](file:///c:/laragon/www/LikhangKamay/app/Support/CourierAddressResolver.php): Helper class resolving address details to Lalamove location payload structures.
 

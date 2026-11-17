@@ -347,6 +347,7 @@ export default function UpdateAddressForm({ addresses = [], className = '' }) {
                             setData={setData}
                             errors={errors}
                             required
+                            allowRegional
                             streetRef={streetRef}
                             cityRef={cityRef}
                             barangayRef={barangayRef}

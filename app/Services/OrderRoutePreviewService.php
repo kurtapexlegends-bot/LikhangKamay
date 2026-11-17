@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\User;
 use App\Support\CaviteAddress;
+use App\Support\RegionalDeliveryAddress;
 use App\Support\StructuredAddress;
 use App\Services\VehicleTypeResolver;
 use Illuminate\Support\Facades\Cache;
@@ -317,7 +318,10 @@ class OrderRoutePreviewService
             Log::info("Nominatim dropoff geocode fallback for order {$order->id}: {$e->getMessage()}");
         }
 
-        $cityCoords = CaviteAddress::getCityCoordinates($order->shipping_city) ?? ['lat' => 14.3294, 'lng' => 120.9367];
+        $cityCoords = CaviteAddress::getCityCoordinates($order->shipping_city)
+            ?? RegionalDeliveryAddress::getCityCoordinates($order->shipping_city)
+            ?? RegionalDeliveryAddress::getCityCoordinates($preferredAddress)
+            ?? ['lat' => 14.3294, 'lng' => 120.9367];
 
         return [
             'lat' => (float) $cityCoords['lat'],

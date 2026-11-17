@@ -160,4 +160,92 @@ class HelpCenterDirectory
             ],
         ];
     }
+
+    /**
+     * Retrieve categorized FAQs for B2B wholesale suppliers.
+     *
+     * @param array<string, mixed> $dynamicParams
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getSupplierFaqs(array $dynamicParams = []): array
+    {
+        return [
+            [
+                'id' => 'supplier-registration-qualifications',
+                'category' => 'Warehouse Onboarding & Legal',
+                'question' => 'What are the qualifications to supply raw crafting materials on LikhangKamay?',
+                'answer' => 'Wholesale suppliers must operate a verified warehouse, depot, or supply facility within Cavite province. During onboarding, applicants upload their business permits (Cavite Mayor\'s Permit, DTI/SEC registration, BIR Form 2303, and warehouse address proof) followed by client-side face verification for swift administrative approval.',
+                'tags' => ['supplier', 'onboarding', 'warehouse', 'cavite', 'permits', 'b2b'],
+                'deep_link' => [
+                    'label' => 'Warehouse Profile',
+                    'route' => 'profile.edit',
+                ],
+            ],
+            [
+                'id' => 'supplier-legal-documents',
+                'category' => 'Warehouse Onboarding & Legal',
+                'question' => 'What documents and verifications are required for wholesale suppliers?',
+                'answer' => 'Suppliers provide 4 compliance documents: (1) Cavite LGU Mayor\'s Business Permit, (2) DTI Business Name Registration or SEC Certificate, (3) BIR Form 2303 Certificate of Registration with Taxpayer Identification Number (TIN), and (4) Proof of Warehouse Location. In addition, account holders complete a one-time live face verification check.',
+                'tags' => ['permits', 'bir', 'dti', 'face check', 'verification', 'compliance'],
+            ],
+            [
+                'id' => 'supplier-material-listing-units',
+                'category' => 'Wholesale Materials & Catalog',
+                'question' => 'How do I list bulk raw crafting materials and industrial units?',
+                'answer' => 'Through your Wholesale Catalog, you can add bulk crafting supplies such as stoneware clay, terracotta, pottery glazes, slip, plaster, stains, and kiln accessories. You can specify standard industrial units (25kg bags, 50kg sacks, metric tons, liters, drums, or piece bundles) and assign SKU codes for inventory tracking.',
+                'tags' => ['materials', 'catalog', 'industrial units', 'clay', 'glaze', 'sku'],
+                'deep_link' => [
+                    'label' => 'Manage Wholesale Catalog',
+                    'route' => 'supplier.materials.index',
+                ],
+            ],
+            [
+                'id' => 'supplier-pricing-and-moq',
+                'category' => 'Wholesale Materials & Catalog',
+                'question' => 'How do Minimum Order Quantities (MOQ) and wholesale pricing work?',
+                'answer' => 'Each material listing allows you to define a Minimum Order Quantity (MOQ) to prevent broken packaging and ensure commercial-scale viability. Artisan workshops purchasing through the B2B Supply Hub must meet or exceed your specified MOQ threshold before checkout.',
+                'tags' => ['moq', 'pricing', 'wholesale', 'bulk', 'orders'],
+                'deep_link' => [
+                    'label' => 'List New Material',
+                    'route' => 'supplier.materials.index',
+                ],
+            ],
+            [
+                'id' => 'supplier-order-fulfillment-dispatch',
+                'category' => 'Workshop Orders & Logistics',
+                'question' => 'How do I fulfill and dispatch procurement orders from Cavite artisan studios?',
+                'answer' => 'When a verified artisan studio orders wholesale materials, an alert appears in your Workshop Orders portal. Once prepared in your warehouse, you can transition order status from Pending to Confirmed, In Transit, and Delivered, logging courier dispatch details and tracking information.',
+                'tags' => ['orders', 'fulfillment', 'dispatch', 'logistics', 'workshop'],
+                'deep_link' => [
+                    'label' => 'View Workshop Orders',
+                    'route' => 'supplier.orders.index',
+                ],
+            ],
+            [
+                'id' => 'supplier-order-cancellations',
+                'category' => 'Workshop Orders & Logistics',
+                'question' => 'What happens if an artisan workshop requests an order cancellation?',
+                'answer' => 'If an artisan workshop needs to cancel an unfulfilled order, suppliers can process the cancellation with an audit reason. The system automatically rolls back reserved stock quantities, restoring wholesale inventory levels in your catalog instantly.',
+                'tags' => ['cancellation', 'stock restore', 'refund', 'inventory'],
+            ],
+            [
+                'id' => 'supplier-payout-disbursements',
+                'category' => 'B2B Payouts & Invoices',
+                'question' => 'When and how are wholesale earnings disbursed to suppliers?',
+                'answer' => 'Revenue from completed wholesale deliveries settles into your supplier account ledger. You can request direct fund disbursements to your verified Philippine bank account or digital merchant wallet (GCash / Maya) with complete transaction audit logs.',
+                'tags' => ['payouts', 'disbursements', 'earnings', 'bank transfer', 'revenue'],
+            ],
+            [
+                'id' => 'supplier-vat-sales-invoices',
+                'category' => 'B2B Payouts & Invoices',
+                'question' => 'Can I generate and issue official BIR Sales Invoices for wholesale orders?',
+                'answer' => 'Yes. Completed wholesale orders support compliant commercial sales invoices showing itemized industrial units, unit costs, 12% value-added tax (VAT) breakdown, and buyer/seller TINs to satisfy Philippine tax reporting and artisan studio expense accounting.',
+                'tags' => ['invoices', 'vat', 'bir', 'tax', 'sales invoice', 'receipt'],
+                'deep_link' => [
+                    'label' => 'View Completed Orders',
+                    'route' => 'supplier.orders.index',
+                ],
+            ],
+        ];
+    }
 }

@@ -33,15 +33,6 @@ class CheckoutShippingService
         return Cache::remember($cacheKey, now()->addMinutes(10), function () use ($seller, $destination, $currency, $vehicleInfo) {
             $serviceType = $vehicleInfo['service_type'];
 
-            if ($this->shouldUseFlatFallback()) {
-                return [
-                    'amount' => $this->flatFallbackAmount($serviceType),
-                    'currency' => $currency,
-                    'source' => 'fallback_flat',
-                    'vehicle_info' => $vehicleInfo,
-                ];
-            }
-
             $pickupCandidates = $seller->getCourierPickupAddressCandidates();
             $preferredPickupAddress = trim((string) ($seller->getPreferredCourierPickupAddress() ?? ($pickupCandidates[0] ?? '')));
 
@@ -59,9 +50,10 @@ class CheckoutShippingService
 
             if (empty($pickupCandidates) || empty($dropoffCandidates)) {
                 return [
-                    'amount' => $this->flatFallbackAmount(),
+                    'amount' => $this->flatFallbackAmount($serviceType),
                     'currency' => $currency,
                     'source' => 'fallback_flat',
+                    'vehicle_info' => $vehicleInfo,
                 ];
             }
 
@@ -111,42 +103,46 @@ class CheckoutShippingService
                         'amount' => 0.0,
                         'currency' => $currency,
                         'source' => 'pickup',
-                    ];
-                }
-
-                $quotation = $this->lalamoveService()->createQuotation([
-                    'serviceType' => $serviceType,
-                    'language' => 'en_PH',
-                    'stops' => [
-                        [
-                            'coordinates' => [
-                                'lat' => $pickupCoordinates['lat'],
-                                'lng' => $pickupCoordinates['lng'],
-                            ],
-                            'address' => $pickupAddress,
-                        ],
-                        [
-                            'coordinates' => [
-                                'lat' => $dropoffCoordinates['lat'],
-                                'lng' => $dropoffCoordinates['lng'],
-                            ],
-                            'address' => $dropoffAddress,
-                        ],
-                    ],
-                ]);
-
-                $quotedTotal = round((float) data_get($quotation, 'priceBreakdown.total', 0), 2);
-
-                if ($quotedTotal > 0) {
-                    return [
-                        'amount' => $quotedTotal,
-                        'currency' => (string) (data_get($quotation, 'priceBreakdown.currency', $currency) ?: $currency),
-                        'source' => 'lalamove_quote',
                         'vehicle_info' => $vehicleInfo,
                     ];
                 }
+
+                // If Lalamove credentials are configured and not in unit testing, attempt live quote
+                if (!$this->shouldUseFlatFallback()) {
+                    $quotation = $this->lalamoveService()->createQuotation([
+                        'serviceType' => $serviceType,
+                        'language' => 'en_PH',
+                        'stops' => [
+                            [
+                                'coordinates' => [
+                                    'lat' => $pickupCoordinates['lat'],
+                                    'lng' => $pickupCoordinates['lng'],
+                                ],
+                                'address' => $pickupAddress,
+                            ],
+                            [
+                                'coordinates' => [
+                                    'lat' => $dropoffCoordinates['lat'],
+                                    'lng' => $dropoffCoordinates['lng'],
+                                ],
+                                'address' => $dropoffAddress,
+                            ],
+                        ],
+                    ]);
+
+                    $quotedTotal = round((float) data_get($quotation, 'priceBreakdown.total', 0), 2);
+
+                    if ($quotedTotal > 0) {
+                        return [
+                            'amount' => $quotedTotal,
+                            'currency' => (string) (data_get($quotation, 'priceBreakdown.currency', $currency) ?: $currency),
+                            'source' => 'lalamove_quote',
+                            'vehicle_info' => $vehicleInfo,
+                        ];
+                    }
+                }
             } catch (\Throwable) {
-                // Fall back to deterministic local estimate below.
+                // Fall back to deterministic distance estimate below.
             }
 
             try {

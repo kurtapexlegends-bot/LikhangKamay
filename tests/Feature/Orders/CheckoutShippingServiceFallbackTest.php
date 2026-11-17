@@ -83,7 +83,7 @@ class CheckoutShippingServiceFallbackTest extends TestCase
         app()['env'] = $oldEnv;
     }
 
-    public function test_quote_shipping_returns_422_with_clear_error_when_outside_cavite(): void
+    public function test_quote_shipping_calculates_dynamically_for_greater_luzon_outside_cavite(): void
     {
         $buyer = User::factory()->create(['role' => 'buyer']);
         $seller = User::factory()->artisanApproved()->create();
@@ -104,14 +104,45 @@ class CheckoutShippingServiceFallbackTest extends TestCase
             'shipping_street_address' => '123 Rizal Ave',
             'shipping_barangay' => 'Barangay 1',
             'shipping_city' => 'Manila',
-            'shipping_region' => 'Metro Manila', // Non-Cavite!
+            'shipping_region' => 'Metro Manila',
             'shipping_postal_code' => '1000',
+            'shipping_address_type' => 'home',
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertGreaterThan(0, (float) $response->json('total_shipping_fee'));
+        $this->assertNotEmpty($response->json('groups'));
+    }
+
+    public function test_quote_shipping_returns_422_when_outside_greater_luzon_bounds(): void
+    {
+        $buyer = User::factory()->create(['role' => 'buyer']);
+        $seller = User::factory()->artisanApproved()->create();
+        $product = \App\Models\Product::factory()->create([
+            'user_id' => $seller->id,
+            'name' => 'Handmade Pot',
+            'sku' => 'POT-001',
+            'category' => 'Pottery',
+            'price' => 200,
+            'stock' => 5,
+        ]);
+
+        $response = $this->actingAs($buyer)->postJson(route('checkout.shipping-quote'), [
+            'shipping_method' => 'Delivery',
+            'items' => [
+                ['id' => $product->id, 'qty' => 1, 'variant' => 'Standard'],
+            ],
+            'shipping_street_address' => '123 Mango Ave',
+            'shipping_barangay' => 'Lahug',
+            'shipping_city' => 'Cebu City',
+            'shipping_region' => 'Cebu',
+            'shipping_postal_code' => '6000',
             'shipping_address_type' => 'home',
         ]);
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['shipping_region']);
-        $this->assertStringContainsString('strictly within the Province of Cavite', $response->json('errors.shipping_region.0'));
+        $this->assertStringContainsString('available within Cavite and Greater Luzon', $response->json('errors.shipping_region.0'));
     }
 
     public function test_quote_shipping_returns_422_when_address_is_identical_to_workshop_location(): void

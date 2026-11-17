@@ -79,7 +79,7 @@ class StrictCaviteAddressValidationTest extends TestCase
         ]);
     }
 
-    public function test_user_cannot_save_non_cavite_region_address(): void
+    public function test_user_cannot_save_unsupported_delivery_region_address(): void
     {
         $response = $this->actingAs($this->buyer)->post(route('user-addresses.store'), [
             'label' => 'Home',
@@ -87,14 +87,39 @@ class StrictCaviteAddressValidationTest extends TestCase
             'recipient_name' => 'Cavite Buyer',
             'phone_number' => '09171234567',
             'street_address' => '123 Main St',
-            'city' => 'Dasmariñas City',
-            'barangay' => 'San Miguel I',
-            'region' => 'Laguna',
-            'postal_code' => '4024',
+            'city' => 'Cebu City',
+            'barangay' => 'Lahug',
+            'region' => 'Cebu',
+            'postal_code' => '6000',
         ]);
 
         $response->assertSessionHasErrors(['region']);
         $this->assertDatabaseCount('user_addresses', 0);
+    }
+
+    public function test_user_can_save_greater_luzon_outside_cavite_address(): void
+    {
+        $response = $this->actingAs($this->buyer)->post(route('user-addresses.store'), [
+            'label' => 'Metro Manila Office',
+            'address_type' => 'office',
+            'recipient_name' => 'Luzon Buyer',
+            'phone_number' => '09171234567',
+            'street_address' => '123 Ayala Ave',
+            'city' => 'Makati City',
+            'barangay' => 'San Lorenzo',
+            'region' => 'Metro Manila',
+            'postal_code' => '1223',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('user_addresses', [
+            'user_id' => $this->buyer->id,
+            'city' => 'Makati City',
+            'region' => 'Metro Manila',
+            'postal_code' => '1223',
+        ]);
     }
 
     public function test_user_cannot_save_non_cavite_city_address(): void
@@ -128,7 +153,28 @@ class StrictCaviteAddressValidationTest extends TestCase
         $response->assertSessionHasErrors(['region', 'city']);
     }
 
-    public function test_checkout_rejects_non_cavite_shipping_address(): void
+    public function test_checkout_rejects_unsupported_delivery_region_outside_greater_luzon(): void
+    {
+        $response = $this->actingAs($this->buyer)->post(route('checkout.store'), [
+            'items' => [['id' => $this->product->id, 'qty' => 1]],
+            'shipping_method' => 'Delivery',
+            'payment_method' => 'COD',
+            'recipient_name' => 'Juan Dela Cruz',
+            'phone_number' => '09171234567',
+            'shipping_street_address' => '123 Mango Ave',
+            'shipping_barangay' => 'Lahug',
+            'shipping_city' => 'Cebu City',
+            'shipping_region' => 'Cebu',
+            'shipping_postal_code' => '6000',
+            'shipping_address_type' => 'home',
+            'total' => 550.00,
+        ]);
+
+        $response->assertSessionHasErrors(['shipping_region']);
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_checkout_accepts_greater_luzon_shipping_address_with_dynamic_distance_shipping_fee(): void
     {
         $response = $this->actingAs($this->buyer)->post(route('checkout.store'), [
             'items' => [['id' => $this->product->id, 'qty' => 1]],
@@ -138,15 +184,20 @@ class StrictCaviteAddressValidationTest extends TestCase
             'phone_number' => '09171234567',
             'shipping_street_address' => '123 Rizal Ave',
             'shipping_barangay' => 'Poblacion',
-            'shipping_city' => 'Calamba',
+            'shipping_city' => 'Calamba City',
             'shipping_region' => 'Laguna',
             'shipping_postal_code' => '4027',
             'shipping_address_type' => 'home',
-            'total' => 550.00,
+            'total' => 700.00,
         ]);
 
-        $response->assertSessionHasErrors(['shipping_region', 'shipping_city']);
-        $this->assertDatabaseCount('orders', 0);
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('orders', 1);
+
+        $order = \App\Models\Order::first();
+        $this->assertSame('Laguna', $order->shipping_region);
+        $this->assertSame('Calamba City', $order->shipping_city);
+        $this->assertGreaterThan(0, (float) $order->shipping_fee_amount);
     }
 
     public function test_cavite_address_support_methods(): void

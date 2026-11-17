@@ -10,6 +10,7 @@ export default function AddressSelect({
     disabled = false,
     hasError = false,
     buttonRef = null,
+    allowCustom = false,
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -23,6 +24,12 @@ export default function AddressSelect({
 
         const query = search.toLowerCase();
         return options.filter((option) => option.toLowerCase().includes(query));
+    }, [options, search]);
+
+    const hasExactMatch = useMemo(() => {
+        if (!search.trim()) return true;
+        const query = search.trim().toLowerCase();
+        return options.some((opt) => opt.toLowerCase() === query);
     }, [options, search]);
 
     useEffect(() => {
@@ -90,7 +97,16 @@ export default function AddressSelect({
                     </div>
 
                     <ul className="max-h-[200px] overflow-y-auto">
-                        {filteredOptions.length === 0 ? (
+                        {allowCustom && search.trim() && !hasExactMatch && (
+                            <li
+                                onClick={() => handleSelect(search.trim())}
+                                className="cursor-pointer px-4 py-2.5 text-sm font-semibold text-clay-700 bg-clay-50/70 hover:bg-clay-100 flex items-center justify-between border-b border-gray-100 transition"
+                            >
+                                <span>Use "{search.trim()}"</span>
+                                <span className="text-[11px] text-clay-500 font-normal">Custom</span>
+                            </li>
+                        )}
+                        {filteredOptions.length === 0 && (!allowCustom || !search.trim()) ? (
                             <li className="px-4 py-3 text-center text-sm text-gray-400">No results found</li>
                         ) : (
                             filteredOptions.map((option) => (

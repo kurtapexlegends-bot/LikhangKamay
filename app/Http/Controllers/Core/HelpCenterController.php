@@ -38,11 +38,15 @@ class HelpCenterController extends Controller
         $role = $user?->role;
 
         // Strict Persona Isolation:
-        // - Artisans / Staff are strictly locked to 'artisan'
+        // - Suppliers are strictly locked to 'supplier'
+        // - Artisans / Staff / Riders are strictly locked to 'artisan'
         // - Buyers are strictly locked to 'buyer'
         // - Super Admins can toggle 'all'
-        // - Guests default to 'buyer', but can view 'artisan' if requested via ?tab=artisan
-        if (in_array($role, ['artisan', 'staff', 'rider'], true) || (bool) $user?->is_workspace_owner) {
+        // - Guests default to 'buyer', but can view requested tab if valid
+        if ($role === 'supplier') {
+            $allowedPersona = 'supplier';
+            $tab = 'supplier';
+        } elseif (in_array($role, ['artisan', 'staff', 'rider'], true) || (bool) $user?->is_workspace_owner) {
             $allowedPersona = 'artisan';
             $tab = 'artisan';
         } elseif ($role === 'buyer') {
@@ -54,13 +58,14 @@ class HelpCenterController extends Controller
         } else {
             // Guest browsing
             $requestedTab = $request->query('tab');
-            $allowedPersona = ($requestedTab === 'artisan') ? 'artisan' : 'buyer';
+            $allowedPersona = in_array($requestedTab, ['artisan', 'supplier'], true) ? $requestedTab : 'buyer';
             $tab = $allowedPersona;
         }
 
         return Inertia::render('Consumer/Help/HelpCenter', [
             'buyerFaqs' => HelpCenterDirectory::getBuyerFaqs($dynamicParams),
             'artisanFaqs' => HelpCenterDirectory::getArtisanFaqs($dynamicParams),
+            'supplierFaqs' => HelpCenterDirectory::getSupplierFaqs($dynamicParams),
             'initialTab' => $tab,
             'allowedPersona' => $allowedPersona,
             'initialSearch' => $request->query('search', ''),

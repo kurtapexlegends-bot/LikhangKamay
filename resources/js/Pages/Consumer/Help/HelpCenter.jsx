@@ -6,7 +6,7 @@ import {
     HelpCircle, ChevronDown, Link2, Check, 
     ThumbsUp, ThumbsDown, ArrowRight, MessageSquare, Mail,
     Package, ShieldCheck, CreditCard, RefreshCw, FileText,
-    ChevronsUpDown, ChevronUp
+    ChevronsUpDown, ChevronUp, Building2
 } from 'lucide-react';
 import SupportContactModal from '@/Components/Consumer/Help/SupportContactModal';
 
@@ -20,20 +20,28 @@ const CATEGORY_ICONS = {
     'POS & In-Store Sales': Store,
     'Payouts & Finance': CreditCard,
     'Inventory & Supplies': Package,
+    'Warehouse Onboarding & Legal': FileText,
+    'Wholesale Materials & Catalog': Package,
+    'Workshop Orders & Logistics': Store,
+    'B2B Payouts & Invoices': CreditCard,
 };
 
 export default function HelpCenter({
     buyerFaqs = [],
     artisanFaqs = [],
+    supplierFaqs = [],
     initialTab = 'buyer',
     allowedPersona = 'buyer',
     initialSearch = '',
 }) {
     // If persona is strictly locked, lock the active tab
     const effectiveInitialTab = useMemo(() => {
+        if (allowedPersona === 'supplier') return 'supplier';
         if (allowedPersona === 'artisan') return 'artisan';
         if (allowedPersona === 'buyer') return 'buyer';
-        return initialTab === 'artisan' ? 'artisan' : 'buyer';
+        if (initialTab === 'supplier') return 'supplier';
+        if (initialTab === 'artisan') return 'artisan';
+        return 'buyer';
     }, [allowedPersona, initialTab]);
 
     const [activeTab, setActiveTab] = useState(effectiveInitialTab);
@@ -58,8 +66,10 @@ export default function HelpCenter({
     }, []);
 
     const currentFaqList = useMemo(() => {
-        return activeTab === 'artisan' ? artisanFaqs : buyerFaqs;
-    }, [activeTab, artisanFaqs, buyerFaqs]);
+        if (activeTab === 'supplier') return supplierFaqs;
+        if (activeTab === 'artisan') return artisanFaqs;
+        return buyerFaqs;
+    }, [activeTab, supplierFaqs, artisanFaqs, buyerFaqs]);
 
     // Unique categories with counts
     const categoriesWithCounts = useMemo(() => {
@@ -151,11 +161,21 @@ export default function HelpCenter({
                 {/* Back Link */}
                 <div className="mb-4 sm:mb-6">
                     <Link
-                        href={activeTab === 'artisan' ? route('dashboard') : route('shop.index')}
+                        href={
+                            activeTab === 'supplier'
+                                ? route('supplier.dashboard')
+                                : activeTab === 'artisan'
+                                ? route('dashboard')
+                                : route('shop.index')
+                        }
                         className="inline-flex items-center gap-1.5 text-stone-500 hover:text-stone-900 transition-colors text-xs sm:text-sm font-bold"
                     >
                         <ArrowLeft size={15} />
-                        {activeTab === 'artisan' ? 'Back to Studio Dashboard' : 'Back to Shop'}
+                        {activeTab === 'supplier'
+                            ? 'Back to Warehouse Dashboard'
+                            : activeTab === 'artisan'
+                            ? 'Back to Studio Dashboard'
+                            : 'Back to Shop'}
                     </Link>
                 </div>
 
@@ -165,44 +185,66 @@ export default function HelpCenter({
                         {/* Header Block */}
                         <div className="border-b border-stone-200/70 pb-4">
                             <span className="text-[10px] font-bold tracking-widest text-clay-700 uppercase">
-                                {activeTab === 'artisan' ? 'Artisan Studio • Help Hub' : 'Customer Support • Help Hub'}
+                                {activeTab === 'supplier'
+                                    ? 'Wholesale Supplier • Help Hub'
+                                    : activeTab === 'artisan'
+                                    ? 'Artisan Studio • Help Hub'
+                                    : 'Customer Support • Help Hub'}
                             </span>
                             <h1 className="font-serif text-2xl sm:text-3xl font-bold text-stone-900 mt-0.5">
-                                {activeTab === 'artisan' ? 'Artisan Help Center' : 'Help Center'}
+                                {activeTab === 'supplier'
+                                    ? 'Supplier Help Center'
+                                    : activeTab === 'artisan'
+                                    ? 'Artisan Help Center'
+                                    : 'Help Center'}
                             </h1>
                             <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-                                {activeTab === 'artisan'
+                                {activeTab === 'supplier'
+                                    ? 'Answers on Cavite raw material warehousing, wholesale catalog, studio procurement, and B2B orders.'
+                                    : activeTab === 'artisan'
                                     ? 'Answers on Cavite pottery studio operations, payouts, BIR VAT, and dispatch.'
                                     : 'Answers on Cavite pottery delivery, fragile warranty, return windows, and orders.'}
                             </p>
                         </div>
 
-                        {/* Persona Switcher Tabs - Strictly rendered ONLY for administrators who audit both */}
+                        {/* Persona Switcher Tabs - Strictly rendered ONLY for administrators who audit all */}
                         {allowedPersona === 'all' && (
-                            <div className="bg-stone-100 p-1 rounded-xl flex items-center border border-stone-200/70">
+                            <div className="bg-stone-100 p-1 rounded-xl flex items-center border border-stone-200/70 gap-1">
                                 <button
                                     type="button"
                                     onClick={() => handleTabChange('buyer')}
-                                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                                         activeTab === 'buyer'
                                             ? 'bg-white text-clay-700 shadow-xs'
                                             : 'text-stone-500 hover:text-stone-900'
                                     }`}
                                 >
                                     <ShoppingBag size={13} />
-                                    <span>Buyer Guide</span>
+                                    <span>Buyer</span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => handleTabChange('artisan')}
-                                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                                         activeTab === 'artisan'
                                             ? 'bg-white text-clay-700 shadow-xs'
                                             : 'text-stone-500 hover:text-stone-900'
                                     }`}
                                 >
                                     <Store size={13} />
-                                    <span>Artisan Guide</span>
+                                    <span>Artisan</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleTabChange('supplier')}
+                                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                                        activeTab === 'supplier'
+                                            ? 'bg-white text-clay-700 shadow-xs'
+                                            : 'text-stone-500 hover:text-stone-900'
+                                    }`}
+                                >
+                                    <Building2 size={13} />
+                                    <span>Supplier</span>
                                 </button>
                             </div>
                         )}
@@ -251,16 +293,30 @@ export default function HelpCenter({
                             <div>
                                 <h4 className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
                                     <HelpCircle size={13} className="text-clay-600" />
-                                    {activeTab === 'artisan' ? 'Need Studio Assistance?' : 'Still need assistance?'}
+                                    {activeTab === 'supplier'
+                                        ? 'Need Warehouse Assistance?'
+                                        : activeTab === 'artisan'
+                                        ? 'Need Studio Assistance?'
+                                        : 'Still need assistance?'}
                                 </h4>
                                 <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">
-                                    {activeTab === 'artisan'
+                                    {activeTab === 'supplier'
+                                        ? 'Access your wholesale orders or contact the B2B supplier help desk.'
+                                        : activeTab === 'artisan'
                                         ? 'Access your workshop fulfillment or contact our artisan merchant desk.'
                                         : 'Message the pottery workshop directly or contact platform support.'}
                                 </p>
                             </div>
 
-                            {activeTab === 'artisan' ? (
+                            {activeTab === 'supplier' ? (
+                                <Link
+                                    href={route('supplier.orders.index')}
+                                    className="w-full flex items-center justify-center gap-1.5 py-2 bg-clay-700 hover:bg-clay-800 text-white rounded-lg font-bold transition text-xs shadow-xs"
+                                >
+                                    <Package size={13} />
+                                    <span>Wholesale Orders & Fulfillment</span>
+                                </Link>
+                            ) : activeTab === 'artisan' ? (
                                 <Link
                                     href={route('orders.index')}
                                     className="w-full flex items-center justify-center gap-1.5 py-2 bg-clay-700 hover:bg-clay-800 text-white rounded-lg font-bold transition text-xs shadow-xs"
@@ -284,7 +340,13 @@ export default function HelpCenter({
                                 className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-stone-50 hover:bg-stone-100 text-stone-700 rounded-lg font-semibold transition text-xs border border-stone-200/80"
                             >
                                 <Mail size={13} className="text-stone-500" />
-                                <span>{activeTab === 'artisan' ? 'Artisan Merchant Desk' : 'Email Platform Support'}</span>
+                                <span>
+                                    {activeTab === 'supplier'
+                                        ? 'Supplier Merchant Desk'
+                                        : activeTab === 'artisan'
+                                        ? 'Artisan Merchant Desk'
+                                        : 'Email Platform Support'}
+                                </span>
                             </button>
 
                             <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-400">
@@ -296,8 +358,11 @@ export default function HelpCenter({
                                     Privacy
                                 </Link>
                                 <span>•</span>
-                                <Link href={route('seller.agreement')} className="hover:text-stone-700 hover:underline">
-                                    Seller Agreement
+                                <Link
+                                    href={activeTab === 'supplier' ? route('supplier.agreement') : route('seller.agreement')}
+                                    className="hover:text-stone-700 hover:underline"
+                                >
+                                    {activeTab === 'supplier' ? 'Supplier Agreement' : 'Seller Agreement'}
                                 </Link>
                             </div>
                         </div>
@@ -315,7 +380,13 @@ export default function HelpCenter({
                                 type="text"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Search questions (e.g. Cavite delivery, broken pottery, VAT invoice)..."
+                                placeholder={
+                                    activeTab === 'supplier'
+                                        ? 'Search questions (e.g. bulk clay, MOQ, warehouse dispatch, VAT invoice)...'
+                                        : activeTab === 'artisan'
+                                        ? 'Search questions (e.g. Cavite delivery, broken pottery, VAT invoice)...'
+                                        : 'Search questions (e.g. Cavite delivery, broken pottery, refund window)...'
+                                }
                                 className="w-full pl-9 pr-8 py-2 bg-stone-50/80 rounded-xl border border-stone-200 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-1.5 focus:ring-clay-500 focus:bg-white transition-all"
                             />
                             {searchTerm && (
@@ -543,16 +614,30 @@ export default function HelpCenter({
                         <div>
                             <h4 className="text-xs font-bold text-stone-900 flex items-center gap-1.5">
                                 <HelpCircle size={13} className="text-clay-600" />
-                                {activeTab === 'artisan' ? 'Need Studio Assistance?' : 'Still need assistance?'}
+                                {activeTab === 'supplier'
+                                    ? 'Need Warehouse Assistance?'
+                                    : activeTab === 'artisan'
+                                    ? 'Need Studio Assistance?'
+                                    : 'Still need assistance?'}
                             </h4>
                             <p className="text-[11px] text-stone-500 mt-0.5 leading-snug">
-                                {activeTab === 'artisan'
+                                {activeTab === 'supplier'
+                                    ? 'Access your wholesale orders or contact the B2B supplier help desk.'
+                                    : activeTab === 'artisan'
                                     ? 'Access your workshop fulfillment or contact our artisan merchant desk.'
                                     : 'Message the pottery workshop directly or contact platform support.'}
                             </p>
                         </div>
 
-                        {activeTab === 'artisan' ? (
+                        {activeTab === 'supplier' ? (
+                            <Link
+                                href={route('supplier.orders.index')}
+                                className="w-full flex items-center justify-center gap-1.5 py-2 bg-clay-700 hover:bg-clay-800 text-white rounded-lg font-bold transition text-xs shadow-xs"
+                            >
+                                <Package size={13} />
+                                <span>Wholesale Orders & Fulfillment</span>
+                            </Link>
+                        ) : activeTab === 'artisan' ? (
                             <Link
                                 href={route('orders.index')}
                                 className="w-full flex items-center justify-center gap-1.5 py-2 bg-clay-700 hover:bg-clay-800 text-white rounded-lg font-bold transition text-xs shadow-xs"
@@ -576,7 +661,13 @@ export default function HelpCenter({
                             className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-stone-50 hover:bg-stone-100 text-stone-700 rounded-lg font-semibold transition text-xs border border-stone-200/80"
                         >
                             <Mail size={13} className="text-stone-500" />
-                            <span>{activeTab === 'artisan' ? 'Artisan Merchant Desk' : 'Email Platform Support'}</span>
+                            <span>
+                                {activeTab === 'supplier'
+                                    ? 'Supplier Merchant Desk'
+                                    : activeTab === 'artisan'
+                                    ? 'Artisan Merchant Desk'
+                                    : 'Email Platform Support'}
+                            </span>
                         </button>
 
                         <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-400">
@@ -588,8 +679,11 @@ export default function HelpCenter({
                                 Privacy
                             </Link>
                             <span>•</span>
-                            <Link href={route('seller.agreement')} className="hover:text-stone-700 hover:underline">
-                                Seller Agreement
+                            <Link
+                                href={activeTab === 'supplier' ? route('supplier.agreement') : route('seller.agreement')}
+                                className="hover:text-stone-700 hover:underline"
+                            >
+                                {activeTab === 'supplier' ? 'Supplier Agreement' : 'Seller Agreement'}
                             </Link>
                         </div>
                     </div>

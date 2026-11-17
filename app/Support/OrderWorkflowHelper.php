@@ -128,12 +128,20 @@ class OrderWorkflowHelper
                 ]);
 
                 $addressErrors = [];
-                if (!\App\Support\CaviteAddress::isCaviteRegion((string) $request->shipping_region)) {
-                    $addressErrors['shipping_region'] = 'LikhangKamay operations and deliveries are strictly within the Province of Cavite.';
-                }
+                $inputRegion = (string) $request->shipping_region;
+                $inputCity = (string) $request->shipping_city;
 
-                if (!\App\Support\CaviteAddress::isValidCity((string) $request->shipping_city)) {
-                    $addressErrors['shipping_city'] = 'Please select a valid city or municipality within Cavite.';
+                if (\App\Support\CaviteAddress::isCaviteRegion($inputRegion)) {
+                    if (!\App\Support\CaviteAddress::isValidCity($inputCity)) {
+                        $addressErrors['shipping_city'] = 'Please select a valid city or municipality within Cavite.';
+                    }
+                    $shippingCity = \App\Support\CaviteAddress::resolveCanonicalCity(StructuredAddress::clean($inputCity));
+                    $shippingRegion = \App\Support\CaviteAddress::PROVINCE;
+                } elseif (\App\Support\RegionalDeliveryAddress::isSupportedDeliveryProvince($inputRegion)) {
+                    $shippingCity = StructuredAddress::clean($inputCity);
+                    $shippingRegion = \App\Support\RegionalDeliveryAddress::canonicalizeProvince($inputRegion);
+                } else {
+                    $addressErrors['shipping_region'] = 'LikhangKamay courier delivery is currently available within Cavite and Greater Luzon.';
                 }
 
                 if (!empty($addressErrors)) {
@@ -142,8 +150,6 @@ class OrderWorkflowHelper
 
                 $shippingStreetAddress = StructuredAddress::clean($request->shipping_street_address);
                 $shippingBarangay = StructuredAddress::clean($request->shipping_barangay);
-                $shippingCity = \App\Support\CaviteAddress::resolveCanonicalCity(StructuredAddress::clean($request->shipping_city));
-                $shippingRegion = \App\Support\CaviteAddress::PROVINCE;
                 $shippingPostalCode = StructuredAddress::clean($request->shipping_postal_code);
                 $shippingAddress = StructuredAddress::formatPhilippineAddress([
                     'street_address' => $shippingStreetAddress,
@@ -238,7 +244,8 @@ class OrderWorkflowHelper
             ?: ($order?->shipping_longitude ? (float) $order->shipping_longitude : null);
 
         if ((!$dropoffLat || !$dropoffLng) && $order?->shipping_city) {
-            $cityCentroid = \App\Support\CaviteAddress::getCityCoordinates($order->shipping_city);
+            $cityCentroid = \App\Support\CaviteAddress::getCityCoordinates($order->shipping_city)
+                ?? \App\Support\RegionalDeliveryAddress::getCityCoordinates($order->shipping_city);
             if ($cityCentroid) {
                 $dropoffLat = $dropoffLat ?: $cityCentroid['lat'];
                 $dropoffLng = $dropoffLng ?: $cityCentroid['lng'];

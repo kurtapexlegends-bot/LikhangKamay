@@ -15,6 +15,11 @@ import {
     normalizeCaviteAddressText,
     resolveCanonicalCaviteCity,
 } from '@/lib/caviteAddresses';
+import {
+    SUPPORTED_DELIVERY_PROVINCES,
+    getRegionalCitiesForProvince,
+    isSupportedDeliveryProvince,
+} from '@/lib/regionalAddresses';
 
 const normalizeValue = (value) => normalizeCaviteAddressText(value || '');
 
@@ -25,11 +30,12 @@ export default function StructuredAddressFields({
     prefix = '',
     fieldNames = {},
     required = false,
-    helperText = 'LikhangKamay operations and deliveries are strictly within the Province of Cavite.',
+    helperText = null,
     previewLabel = 'Address Preview',
     readOnly = false,
     showPreview = true,
     maxBounds = null,
+    allowRegional = false,
     streetRef = null,
     cityRef = null,
     barangayRef = null,
@@ -41,19 +47,32 @@ export default function StructuredAddressFields({
     const cityValue = data[field('city')];
     const lastAutoFilledStreetRef = useRef('');
 
+    const currentRegion = rawValue('region') || (allowRegional ? CAVITE_REGION : CAVITE_REGION);
+    const isCavite = !allowRegional || normalizeValue(currentRegion).toLowerCase() === 'cavite';
+
+    const cityOptions = useMemo(() => {
+        if (isCavite) {
+            return CAVITE_CITY_OPTIONS;
+        }
+        return getRegionalCitiesForProvince(currentRegion);
+    }, [isCavite, currentRegion]);
+
     // Match canonical Cavite city from options if value exists
     const matchedCity = useMemo(() => {
         const current = normalizeValue(cityValue ?? '');
         if (!current) return '';
-        const found = CAVITE_CITY_OPTIONS.find(
-            (opt) => normalizeValue(opt) === current || normalizeValue(opt).replace(/\s+city$/i, '') === current.replace(/\s+city$/i, '')
-        );
-        return found || (cityValue ?? '');
-    }, [cityValue]);
+        if (isCavite) {
+            const found = CAVITE_CITY_OPTIONS.find(
+                (opt) => normalizeValue(opt) === current || normalizeValue(opt).replace(/\s+city$/i, '') === current.replace(/\s+city$/i, '')
+            );
+            return found || (cityValue ?? '');
+        }
+        return cityValue ?? '';
+    }, [cityValue, isCavite]);
 
     const currentBarangays = useMemo(
-        () => getCaviteBarangaysForCity(matchedCity),
-        [matchedCity],
+        () => (isCavite ? getCaviteBarangaysForCity(matchedCity) : []),
+        [isCavite, matchedCity],
     );
 
     const formattedAddress = useMemo(
@@ -62,22 +81,27 @@ export default function StructuredAddressFields({
                 street_address: rawValue('street_address'),
                 barangay: rawValue('barangay'),
                 city: matchedCity || cityValue || '',
-                region: CAVITE_REGION,
+                region: currentRegion || CAVITE_REGION,
                 postal_code: rawValue('postal_code'),
             }),
-        [rawValue, matchedCity, cityValue],
+        [rawValue, matchedCity, cityValue, currentRegion],
     );
 
     const [locationNotice, setLocationNotice] = useState(null);
 
-    const currentRegion = data[field('region')];
-
-    // Ensure region is always set to Cavite
+    // Ensure region is locked to Cavite for artisan workshop profiles
     useEffect(() => {
-        if (normalizeValue(rawValue('region')) !== normalizeValue(CAVITE_REGION)) {
+        if (!allowRegional && normalizeValue(rawValue('region')) !== normalizeValue(CAVITE_REGION)) {
             setData(field('region'), CAVITE_REGION);
         }
-    }, [currentRegion, field, rawValue, setData]);
+    }, [allowRegional, currentRegion, field, rawValue, setData]);
+
+    // Pre-fill default Cavite region if unset in regional delivery mode
+    useEffect(() => {
+        if (allowRegional && !rawValue('region')) {
+            setData(field('region'), CAVITE_REGION);
+        }
+    }, [allowRegional, field, rawValue, setData]);
 
     const updateField = (name, nextValue) => {
         setData(field(name), nextValue);
@@ -123,7 +147,11 @@ export default function StructuredAddressFields({
         };
 
         if (addressDetails) {
-            if (!addressDetails.is_within_cavite) {
+            const isWithinCavite = addressDetails.is_within_cavite;
+            const detectedProvince = addressDetails.province || addressDetails.region || '';
+            const isSupportedRegional = allowRegional && isSupportedDeliveryProvince(detectedProvince);
+
+            if (!isWithinCavite && !allowRegional) {
                 const noticeMsg = addressDetails.warning || 'The detected location is outside Cavite. Deliveries and workshops are strictly Cavite-only.';
                 setLocationNotice({
                     type: 'warning',
@@ -135,7 +163,23 @@ export default function StructuredAddressFields({
                     window.dispatchEvent(new CustomEvent('app-toast', {
                         detail: {
                             type: 'warning',
-                            message: 'Pinned location is outside Cavite. LikhangKamay operations and deliveries are Cavite-only.',
+                            message: 'Pinned location is outside Cavite. Workshop locations must be in Cavite.',
+                        }
+                    }));
+                }
+            } else if (!isWithinCavite && !isSupportedRegional) {
+                const noticeMsg = addressDetails.warning || 'The detected location is outside the supported delivery area (Cavite & Greater Luzon).';
+                setLocationNotice({
+                    type: 'warning',
+                    title: 'Location Outside Delivery Area',
+                    message: noticeMsg,
+                });
+
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('app-toast', {
+                        detail: {
+                            type: 'warning',
+                            message: 'Pinned location is outside Greater Luzon overland delivery coverage.',
                         }
                     }));
                 }
@@ -144,41 +188,49 @@ export default function StructuredAddressFields({
 
                 let resolvedCity = '';
                 let resolvedBrgy = '';
+                const resolvedRegion = isWithinCavite ? CAVITE_REGION : (detectedProvince || CAVITE_REGION);
 
-                if (addressDetails.city) {
-                    const canonicalCity = resolveCanonicalCaviteCity(addressDetails.city) || addressDetails.city;
-                    const prevCity = rawValue('city');
+                if (isWithinCavite) {
+                    if (addressDetails.city) {
+                        const canonicalCity = resolveCanonicalCaviteCity(addressDetails.city) || addressDetails.city;
+                        const prevCity = rawValue('city');
 
-                    resolvedCity = canonicalCity;
-                    fieldsToUpdate.city = canonicalCity;
+                        resolvedCity = canonicalCity;
+                        fieldsToUpdate.city = canonicalCity;
 
-                    if (addressDetails.barangay) {
-                        const availableBarangays = getCaviteBarangaysForCity(canonicalCity);
-                        const normalizeBrgyCompare = (val) => {
-                            if (!val) return '';
-                            return normalizeValue(val)
-                                .toLowerCase()
-                                .replace(/^(?:barangay|brgy\.?|bgy\.?)\s+/i, '')
-                                .replace(/\bviii\b/g, '8')
-                                .replace(/\bvii\b/g, '7')
-                                .replace(/\bvi\b/g, '6')
-                                .replace(/\biv\b/g, '4')
-                                .replace(/\bv\b/g, '5')
-                                .replace(/\biii\b/g, '3')
-                                .replace(/\bii\b/g, '2')
-                                .replace(/\bi\b/g, '1')
-                                .replace(/[^a-z0-9]/g, '');
-                        };
-                        const targetNorm = normalizeBrgyCompare(addressDetails.barangay);
-                        const matchedBrgy = availableBarangays.find(
-                            (b) => normalizeValue(b) === normalizeValue(addressDetails.barangay) ||
-                                   normalizeBrgyCompare(b) === targetNorm
-                        ) || addressDetails.barangay;
-                        resolvedBrgy = matchedBrgy;
-                        fieldsToUpdate.barangay = matchedBrgy;
-                    } else if (canonicalCity !== prevCity) {
-                        fieldsToUpdate.barangay = '';
+                        if (addressDetails.barangay) {
+                            const availableBarangays = getCaviteBarangaysForCity(canonicalCity);
+                            const normalizeBrgyCompare = (val) => {
+                                if (!val) return '';
+                                return normalizeValue(val)
+                                    .toLowerCase()
+                                    .replace(/^(?:barangay|brgy\.?|bgy\.?)\s+/i, '')
+                                    .replace(/\bviii\b/g, '8')
+                                    .replace(/\bvii\b/g, '7')
+                                    .replace(/\bvi\b/g, '6')
+                                    .replace(/\biv\b/g, '4')
+                                    .replace(/\bv\b/g, '5')
+                                    .replace(/\biii\b/g, '3')
+                                    .replace(/\bii\b/g, '2')
+                                    .replace(/\bi\b/g, '1')
+                                    .replace(/[^a-z0-9]/g, '');
+                            };
+                            const targetNorm = normalizeBrgyCompare(addressDetails.barangay);
+                            const matchedBrgy = availableBarangays.find(
+                                (b) => normalizeValue(b) === normalizeValue(addressDetails.barangay) ||
+                                       normalizeBrgyCompare(b) === targetNorm
+                            ) || addressDetails.barangay;
+                            resolvedBrgy = matchedBrgy;
+                            fieldsToUpdate.barangay = matchedBrgy;
+                        } else if (canonicalCity !== prevCity) {
+                            fieldsToUpdate.barangay = '';
+                        }
                     }
+                } else {
+                    resolvedCity = addressDetails.city || '';
+                    resolvedBrgy = addressDetails.barangay || '';
+                    fieldsToUpdate.city = resolvedCity;
+                    fieldsToUpdate.barangay = resolvedBrgy;
                 }
 
                 if (addressDetails.street_address) {
@@ -193,13 +245,13 @@ export default function StructuredAddressFields({
                     fieldsToUpdate.postal_code = addressDetails.postal_code;
                 }
 
-                fieldsToUpdate.region = CAVITE_REGION;
+                fieldsToUpdate.region = resolvedRegion;
 
                 const formatted = formatStructuredAddress({
                     street_address: fieldsToUpdate.street_address || rawValue('street_address'),
                     barangay: fieldsToUpdate.barangay || rawValue('barangay'),
                     city: fieldsToUpdate.city || matchedCity || cityValue || '',
-                    region: CAVITE_REGION,
+                    region: resolvedRegion,
                     postal_code: fieldsToUpdate.postal_code || rawValue('postal_code'),
                 });
 
@@ -224,16 +276,21 @@ export default function StructuredAddressFields({
         }
 
         updateMultipleFields(fieldsToUpdate);
-    }, [cityValue, matchedCity, prefix, rawValue, updateMultipleFields]);
+    }, [allowRegional, cityValue, matchedCity, prefix, rawValue, updateMultipleFields]);
 
     const labelSuffix = required ? ' *' : '';
+    const effectiveHelperText = helperText ?? (
+        allowRegional
+            ? 'Buyer deliveries cover Cavite and Greater Luzon via overland courier.'
+            : 'LikhangKamay operations and workshops are strictly within the Province of Cavite.'
+    );
 
     return (
         <div className="space-y-4">
-            {helperText && (
+            {effectiveHelperText && (
                 <div className="flex items-center gap-2 rounded-lg bg-stone-50 border border-stone-200/80 px-3 py-2 text-xs text-stone-600">
                     <span className="inline-block w-2 h-2 rounded-full bg-clay-500 shrink-0" />
-                    <span>{helperText}</span>
+                    <span>{effectiveHelperText}</span>
                 </div>
             )}
 
@@ -261,43 +318,80 @@ export default function StructuredAddressFields({
                         value={matchedCity}
                         onChange={(nextCity) => {
                             updateField('city', nextCity);
-                            updateField('region', CAVITE_REGION);
-                            updateField('barangay', '');
+                            if (isCavite) {
+                                updateField('region', CAVITE_REGION);
+                                updateField('barangay', '');
+                            }
                         }}
-                        options={CAVITE_CITY_OPTIONS}
+                        options={cityOptions}
                         placeholder="Select city or municipality"
                         disabled={readOnly}
                         hasError={!!errors[field('city')]}
                         buttonRef={cityRef}
+                        allowCustom={!isCavite}
                     />
                     <InputError className="mt-2" message={errors[field('city')]} />
                 </div>
                 <div>
                     <InputLabel htmlFor={field('barangay')} value={`Barangay${labelSuffix}`} />
-                    <AddressSelect
-                        id={field('barangay')}
-                        value={rawValue('barangay')}
-                        onChange={(nextBarangay) => updateField('barangay', nextBarangay)}
-                        options={currentBarangays}
-                        placeholder={matchedCity ? 'Select barangay' : 'Choose a city first'}
-                        disabled={readOnly || !matchedCity}
-                        hasError={!!errors[field('barangay')]}
-                        buttonRef={barangayRef}
-                    />
+                    {isCavite ? (
+                        <AddressSelect
+                            id={field('barangay')}
+                            value={rawValue('barangay')}
+                            onChange={(nextBarangay) => updateField('barangay', nextBarangay)}
+                            options={currentBarangays}
+                            placeholder={matchedCity ? 'Select barangay' : 'Choose a city first'}
+                            disabled={readOnly || !matchedCity}
+                            hasError={!!errors[field('barangay')]}
+                            buttonRef={barangayRef}
+                        />
+                    ) : (
+                        <TextInput
+                            ref={barangayRef}
+                            id={field('barangay')}
+                            className={`mt-1 block w-full ${readOnly ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+                            value={rawValue('barangay')}
+                            onChange={(event) => updateField('barangay', event.target.value)}
+                            placeholder="e.g. Loyola Heights"
+                            required={required}
+                            disabled={readOnly}
+                            hasError={!!errors[field('barangay')]}
+                        />
+                    )}
                     <InputError className="mt-2" message={errors[field('barangay')]} />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                    <InputLabel htmlFor={field('region')} value="Province" />
-                    <TextInput
-                        ref={regionRef}
-                        id={field('region')}
-                        className="mt-1 block w-full bg-stone-100 text-stone-600 font-medium cursor-not-allowed"
-                        value={CAVITE_REGION}
-                        disabled
-                    />
+                    <InputLabel htmlFor={field('region')} value={`Province${labelSuffix}`} />
+                    {allowRegional ? (
+                        <AddressSelect
+                            id={field('region')}
+                            value={currentRegion || CAVITE_REGION}
+                            onChange={(nextProvince) => {
+                                updateField('region', nextProvince);
+                                if (nextProvince !== currentRegion) {
+                                    updateField('city', '');
+                                    updateField('barangay', '');
+                                }
+                            }}
+                            options={SUPPORTED_DELIVERY_PROVINCES}
+                            placeholder="Select delivery province"
+                            disabled={readOnly}
+                            hasError={!!errors[field('region')]}
+                            buttonRef={regionRef}
+                        />
+                    ) : (
+                        <TextInput
+                            ref={regionRef}
+                            id={field('region')}
+                            className="mt-1 block w-full bg-stone-100 text-stone-600 font-medium cursor-not-allowed"
+                            value={CAVITE_REGION}
+                            disabled
+                        />
+                    )}
+                    <InputError className="mt-2" message={errors[field('region')]} />
                 </div>
                 <div>
                     <InputLabel htmlFor={field('postal_code')} value="Postal Code" />

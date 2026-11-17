@@ -104,6 +104,7 @@ export default function AddressFormDrawer({
                     errors={errors}
                     prefix="shipping_"
                     required
+                    allowRegional
                     previewLabel="Delivery Address"
                     streetRef={streetRef}
                     cityRef={cityRef}
