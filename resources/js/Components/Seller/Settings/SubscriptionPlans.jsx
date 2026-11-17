@@ -42,8 +42,12 @@ export default function SubscriptionPlans({
                             <Crown className="h-[18px] w-[18px]" />
                         </div>
                         <div>
-                            <h2 className="text-[1.6rem] font-black tracking-tight text-stone-900 sm:text-[1.7rem]">Choose Your Plan</h2>
-                            <p className="mt-1 text-[13px] font-medium text-stone-500">Unlock more features for your seller workspace.</p>
+                            <h2 className="text-[1.6rem] font-black tracking-tight text-stone-900 sm:text-[1.7rem]">
+                                {isExpired ? 'Available Workshop Tiers' : 'Choose Your Plan'}
+                            </h2>
+                            <p className="mt-1 text-[13px] font-medium text-stone-500">
+                                {isExpired ? 'Compare capacity and select a tier to resume operations.' : 'Unlock more features for your seller workspace.'}
+                            </p>
                             {pendingUpgrade && (
                                 <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-700">
                                     Payment pending
@@ -205,7 +209,9 @@ export default function SubscriptionPlans({
 
                         const upgradeButtonClass = isElitePlan
                             ? 'bg-violet-600 text-white hover:bg-violet-700 shadow-sm'
-                            : 'bg-amber-600 text-white hover:bg-amber-700 shadow-sm';
+                            : isPremiumPlan
+                                ? 'bg-amber-600 text-white hover:bg-amber-700 shadow-sm'
+                                : 'bg-stone-900 text-white hover:bg-stone-800 shadow-sm';
 
                         return (
                             <article
@@ -219,7 +225,12 @@ export default function SubscriptionPlans({
                                     <div className="flex-1 min-w-0">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <h3 className="text-xl sm:text-[1.55rem] font-black leading-none tracking-tight text-stone-900">{plan.name}</h3>
-                                            {isTrialFree ? (
+                                            {isExpired && current ? (
+                                                <span className="rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] whitespace-nowrap border bg-amber-50 text-amber-900 border-amber-300 flex items-center gap-1 shadow-2xs">
+                                                    <Sparkles className="h-2.5 w-2.5 text-amber-600" />
+                                                    Your Previous Plan
+                                                </span>
+                                            ) : isTrialFree ? (
                                                 <span className="rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap border bg-emerald-50 text-emerald-800 border-emerald-300 animate-pulse flex items-center gap-1">
                                                     <Sparkles className="h-2.5 w-2.5 text-emerald-600" />
                                                     14-Day Free Trial
@@ -329,11 +340,21 @@ export default function SubscriptionPlans({
                                             disabled={isProcessing}
                                             className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${upgradeButtonClass}`}
                                         >
-                                            {isProcessing ? 'Processing...' : isPendingPlan ? 'Continue Payment' : `Upgrade to ${plan.name} (${isYearly ? 'Annual' : 'Monthly'})`}
+                                            {isProcessing ? 'Processing...' : isPendingPlan ? 'Continue Payment' : isExpired ? `Choose ${plan.name} (${isYearly ? 'Annual' : 'Monthly'})` : `Upgrade to ${plan.name} (${isYearly ? 'Annual' : 'Monthly'})`}
                                             {!isProcessing && <ArrowRight className="h-[15px] w-[15px]" />}
                                         </button>
                                     ) : isDowngrade ? (
-                                        pendingDowngradeTier && pendingDowngradeTier === plan.id && pendingDowngradeTier !== currentPlan ? (
+                                        isExpired ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleUpgrade(plan.id, billingCycle)}
+                                                disabled={isProcessing}
+                                                className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${upgradeButtonClass}`}
+                                            >
+                                                <span>Choose {plan.name} ({isYearly ? 'Annual' : 'Monthly'})</span>
+                                                <ArrowRight className="h-4 w-4" />
+                                            </button>
+                                        ) : pendingDowngradeTier && pendingDowngradeTier === plan.id && pendingDowngradeTier !== currentPlan ? (
                                             <button
                                                 type="button"
                                                 disabled
@@ -381,7 +402,11 @@ export default function SubscriptionPlans({
 
             <div className="flex flex-col gap-2.5 border-t border-stone-100 px-5 py-3 text-[12px] text-stone-500 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                    <p>Plans can be changed anytime. Downgrades take effect at the end of the billing cycle (payments non-refundable).</p>
+                    <p>
+                        {isExpired
+                            ? 'Select a tier above to immediately reactivate your workspace. All plans include secure PayMongo checkout with instant activation.'
+                            : 'Plans can be changed anytime. Downgrades take effect at the end of the billing cycle (payments non-refundable).'}
+                    </p>
                 </div>
                 {pendingUpgrade && pendingUpgrade.checkoutUrl && (
                     <button

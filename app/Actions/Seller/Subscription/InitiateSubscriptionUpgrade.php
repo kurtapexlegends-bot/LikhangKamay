@@ -37,14 +37,14 @@ class InitiateSubscriptionUpgrade
         $currentLevel = $this->getTierLevel($currentPlan);
         $targetLevel = $this->getTierLevel($targetPlan);
 
-        // If user is on an introductory trial, or their subscription expired, allow purchasing/activating the plan
-        $canPurchaseSameLevel = $user->isOnTrial() || (method_exists($user, 'isSubscriptionExpired') && $user->isSubscriptionExpired());
+        // If user is on an introductory trial, or their subscription expired/inactive, allow purchasing/activating any plan
+        $canPurchaseAnyPlan = $user->isOnTrial() || !$user->hasActiveSubscription();
 
-        if ($targetLevel === $currentLevel && !$canPurchaseSameLevel) {
+        if ($targetLevel === $currentLevel && !$canPurchaseAnyPlan) {
             throw new \Exception('already_on_plan');
         }
 
-        if ($targetLevel < $currentLevel && !$canPurchaseSameLevel) {
+        if ($targetLevel < $currentLevel && !$canPurchaseAnyPlan) {
             throw new \Exception('downgrade_flow');
         }
 

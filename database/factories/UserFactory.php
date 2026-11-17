@@ -68,6 +68,7 @@ class UserFactory extends Factory
             'setup_completed_at' => now(),
             'artisan_status' => 'approved',
             'approved_at' => now(),
+            'subscription_expires_at' => now()->addDays(30),
         ]);
     }
 
@@ -105,7 +106,13 @@ class UserFactory extends Factory
 
     public function configure(): static
     {
-        return $this->afterCreating(function (User $user) {
+        return $this->afterMaking(function (User $user) {
+            if ($user->role === 'artisan' && ($user->artisan_status === 'approved' || $user->artisan_status === null)) {
+                if (!array_key_exists('subscription_expires_at', $user->getAttributes())) {
+                    $user->subscription_expires_at = now()->addDays(30);
+                }
+            }
+        })->afterCreating(function (User $user) {
             if ($user->role === 'artisan') {
                 $user->complianceAgreements()->create([
                     'document_type' => 'seller_terms',

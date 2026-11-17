@@ -64,9 +64,17 @@ class SubscriptionController extends Controller
         $trialDaysConfig = (int) \App\Facades\Settings::get('subscription_trial_days', 14);
         $annualDiscount = (float) \App\Facades\Settings::get('subscription_annual_discount', 20.0);
         $trialDaysRemaining = $user->getTrialDaysRemaining();
+        $previousPlanKey = \App\Models\UserTierLog::where('user_id', $user->id)
+            ->whereIn('previous_tier', ['free', 'premium', 'super_premium'])
+            ->latest('id')
+            ->value('previous_tier') ?? $user->premium_tier ?? 'free';
+
+        $resolvedCurrentPlan = $user->hasActiveSubscription()
+            ? ($isOnTrial ? 'free' : $user->getEffectivePremiumTier())
+            : $previousPlanKey;
 
         return Inertia::render('Seller/Settings/Subscription', [
-            'currentPlan' => $isOnTrial ? 'free' : $user->getEffectivePremiumTier(),
+            'currentPlan' => $resolvedCurrentPlan,
             'rawPlan' => $user->premium_tier,
             'effectivePlan' => $user->getEffectivePremiumTier(),
             'activeProductsCount' => $activeProductsCount,
@@ -76,7 +84,12 @@ class SubscriptionController extends Controller
             'subscriptionExpiresAt' => $expiresAt?->toIso8601String(),
             'subscriptionCancelledAt' => $cancelledAt?->toIso8601String(),
             'isCancelled' => $cancelledAt !== null,
-            'isExpired' => $user->isSubscriptionExpired(),
+            'isExpired' => $user->isSubscriptionExpired() || !$user->hasActiveSubscription(),
+            'hasActiveSubscription' => $user->hasActiveSubscription(),
+            'isPaywallMode' => !$user->hasActiveSubscription(),
+            'previousPlanKey' => $previousPlanKey,
+            'shopName' => $user->shop_name ?: $user->name,
+            'shopAvatar' => $user->avatar_url ?? $user->profile_photo_url,
             'renewalPlan' => $user->pending_downgrade_tier ?: ($user->premium_tier ?? 'free'),
             'daysRemaining' => $daysRemaining,
             'isOnTrial' => $isOnTrial,

@@ -50,7 +50,7 @@ class InHouseDispatchTest extends TestCase
         $this->freeSeller = User::factory()->artisanApproved()->create([
             'name' => 'Solo Clay Artisan',
             'premium_tier' => 'free',
-            'subscription_expires_at' => null,
+            'subscription_expires_at' => now()->addDays(30),
         ]);
 
         $this->product = Product::create([

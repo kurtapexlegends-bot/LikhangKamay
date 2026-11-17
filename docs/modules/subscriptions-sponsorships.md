@@ -65,9 +65,9 @@ LikhangKamay supports three seller levels normalized in [SubscriptionService.php
 
 ---
 
-## 5. Subscription Downgrade Constraints
+## 5. Subscription Downgrade & Expiration Constraints
 
-Handled by the [DowngradeSubscription.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Subscription/DowngradeSubscription.php) action:
+Handled by the [DowngradeSubscription.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Subscription/DowngradeSubscription.php) action and [EnsureSellerWorkspaceAccess.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/EnsureSellerWorkspaceAccess.php) middleware:
 
 *   **Excess Product Drafting**:
     When a seller downgrades to a plan with lower listing limits, the system determines which products to keep active based on sales volume.
@@ -78,6 +78,29 @@ Handled by the [DowngradeSubscription.php](file:///c:/laragon/www/LikhangKamay/a
     `staff_plan_suspended_at` is set to `now()` for all staff members of the seller.
 *   **Safe Post-Downgrade Redirect**:
     To prevent routing errors, if the previous URL was inside an ERP/CRM module no longer permitted under the Basic plan (e.g. `/hr` or `/procurement`), the user is redirected to the standard `/dashboard`.
+
+---
+
+## 6. Subscription Paywall Gate & Workshop Inactivity Protections
+
+When an artisan's paid subscription or introductory trial expires without renewal:
+
+*   **Seller Workspace Paywall Gate**:
+    *   Enforced via [EnsureSellerWorkspaceAccess.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/EnsureSellerWorkspaceAccess.php) and [AuthRedirectService.php](file:///c:/laragon/www/LikhangKamay/app/Services/AuthRedirectService.php).
+    *   Artisans attempting to access dashboard, products, orders, or ERP modules are redirected directly to `/subscription` with `is_paywall_locked = true`.
+    *   Rendered with dedicated reactivation UI via [SubscriptionPaywallGate.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Settings/SubscriptionPaywallGate.jsx) and [Subscription.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Seller/Settings/Subscription.jsx).
+*   **Staff Holding Lock Screen**:
+    *   Staff members belonging to an expired artisan are intercepted by [EnsureStaffSecurityGate.php](file:///c:/laragon/www/LikhangKamay/app/Http/Middleware/EnsureStaffSecurityGate.php) and routed to `/staff/holding` rendered by [Holding.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Staff/Holding.jsx).
+    *   Displays a non-destructive holding state advising staff that workshop membership renewal is pending with the shop owner.
+*   **Public Catalog & Storefront Filtering**:
+    *   Public product discovery in [CatalogService.php](file:///c:/laragon/www/LikhangKamay/app/Services/CatalogService.php) automatically applies `activeSubscription()` scope so products of expired workshops are omitted from consumer browse/search results.
+    *   Public shop profiles in [ShopController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/ShopController.php) and [SellerProfile.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Consumer/Shop/SellerProfile.jsx) present a friendly "Taking a Break" status badge.
+*   **Cart & Checkout Protection**:
+    *   [CartService.php](file:///c:/laragon/www/LikhangKamay/app/Services/Cart/CartService.php) rejects adding products from expired workshops (`hasActiveSubscription() == false`).
+    *   Pre-existing cart items from inactive workshops are highlighted with warning notices.
+    *   [QuoteCheckoutShipping.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Consumer/QuoteCheckoutShipping.php) and [PlaceOrder.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Consumer/PlaceOrder.php) validate workshop subscription status, throwing descriptive validation exceptions to prevent orphan order placements.
+*   **Performance Composite Index & Migration Backfill**:
+    *   Migration [2026_11_17_120000_add_artisan_subscription_index_and_backfill.php](file:///c:/laragon/www/LikhangKamay/database/migrations/2026_11_17_120000_add_artisan_subscription_index_and_backfill.php) provides a composite index `(role, artisan_status, subscription_expires_at)` optimizing high-frequency catalog and auth gate queries, with a 30-day initial access grace period backfilled for legacy approved artisans.
 
 ### Core Business Actions
 *   [InitiateSubscriptionUpgrade.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Subscription/InitiateSubscriptionUpgrade.php): Starts checkout sessions on PayMongo and logs pending payment requests.
@@ -101,7 +124,7 @@ Handled by the [DowngradeSubscription.php](file:///c:/laragon/www/LikhangKamay/a
 
 ---
 
-## 6. Settings Hub Tier Gating
+## 7. Settings Hub Tier Gating
 
 In the Unified Global Settings Hub ([GlobalSettings.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Pages/Seller/Settings/GlobalSettings.jsx) and [SettingsController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/SettingsController.php)):
 *   **Standard / Free Plan**: Only the **Shop Storefront** tab is visible.
@@ -109,6 +132,6 @@ In the Unified Global Settings Hub ([GlobalSettings.jsx](file:///c:/laragon/www/
 
 ---
 
-## 7. Default Production Demo Artisan Tier Configuration
+## 8. Default Production Demo Artisan Tier Configuration
 
 To support end-to-end testing and production audit validation of the full ERP suite (HR Roster, Shift Tracking, Payroll, and Accounting Ledger), the default demo artisan (`artisan@likhangkamay.com`) is provisioned as `super_premium` via migration [2026_10_26_080000_enable_erp_modules_for_default_artisan.php](file:///c:/laragon/www/LikhangKamay/database/migrations/2026_10_26_080000_enable_erp_modules_for_default_artisan.php) and catalog seed [2026_10_06_083000_seed_production_landing_catalog.php](file:///c:/laragon/www/LikhangKamay/database/migrations/2026_10_06_083000_seed_production_landing_catalog.php). This unlocks the 15-employee seat quota and all ERP workspace routes (`/accounting`, `/hr`, `/procurement`).

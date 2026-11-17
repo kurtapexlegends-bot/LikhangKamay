@@ -15,9 +15,10 @@ const formatRolePreset = (value) => {
 };
 
 export default function Holding({ staffAccount, sellerOwner }) {
+    const ownerSubscriptionInactive = !!staffAccount?.owner_subscription_inactive || !!sellerOwner?.subscription_inactive;
     const workspaceAccessEnabled = staffAccount?.workspace_access_enabled !== false;
     const planSuspended = !!staffAccount?.plan_workspace_suspended;
-    const accountSuspended = !workspaceAccessEnabled && !planSuspended;
+    const accountSuspended = !workspaceAccessEnabled && !planSuspended && !ownerSubscriptionInactive;
 
     let iconConfig = {
         icon: ShieldAlert,
@@ -33,7 +34,21 @@ export default function Holding({ staffAccount, sellerOwner }) {
         ],
     };
 
-    if (planSuspended) {
+    if (ownerSubscriptionInactive) {
+        iconConfig = {
+            icon: AlertTriangle,
+            iconWrapClass: 'border-amber-200 bg-amber-50 text-amber-700',
+            badgeClass: 'border-amber-200 bg-amber-50 text-amber-800',
+            dotClass: 'bg-amber-600',
+            badgeText: 'Shop Subscription Inactive',
+            title: 'Workshop subscription has expired',
+            description: `The subscription for ${sellerOwner?.name || 'this shop'} has ended. Workspace tools, order processing, and staff shifts are temporarily paused until ${sellerOwner?.owner_name || 'the shop owner'} renews the workshop plan.`,
+            infoPoints: [
+                { icon: Clock, text: 'All your employee records, shift logs, and attendance history are fully preserved.' },
+                { icon: Store, text: 'Please contact your workshop owner to renew their subscription so team operations can resume.' },
+            ],
+        };
+    } else if (planSuspended) {
         iconConfig = {
             icon: AlertTriangle,
             iconWrapClass: 'border-amber-200 bg-amber-50 text-amber-600',

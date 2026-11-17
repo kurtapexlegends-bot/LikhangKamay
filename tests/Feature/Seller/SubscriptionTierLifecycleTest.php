@@ -842,7 +842,8 @@ class SubscriptionTierLifecycleTest extends TestCase
         // Hit the products index route as the artisan (no manual artisan command run)
         $response = $this->actingAs($seller)->get(route('products.index'));
 
-        $response->assertOk();
+        // Expired subscription intercepts access and redirects to subscription paywall
+        $response->assertRedirect(route('seller.subscription'));
 
         $seller->refresh();
 

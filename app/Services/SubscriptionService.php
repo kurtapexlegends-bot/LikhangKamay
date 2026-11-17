@@ -41,7 +41,9 @@ class SubscriptionService
             $billingCycle = $lockedTransaction->metadata['billing_cycle'] ?? 'monthly';
             $daysToAdd = ($billingCycle === 'yearly') ? 365 : 30;
 
-            if ($targetLevel > $currentLevel || ($targetLevel === $currentLevel && $user->isOnTrial())) {
+            $isExpiredOrInactive = !$user->hasActiveSubscription();
+
+            if ($targetLevel > $currentLevel || ($targetLevel === $currentLevel && ($user->isOnTrial() || $isExpiredOrInactive))) {
                 UserTierLog::create([
                     'user_id' => $user->id,
                     'previous_tier' => $currentPlan,
@@ -94,8 +96,31 @@ class SubscriptionService
                 ]);
 
                 $resolution = 'renewed';
-            } elseif ($targetLevel === $currentLevel) {
-                $resolution = 'already_active';
+            } elseif ($isExpiredOrInactive && $targetLevel < $currentLevel) {
+                // Expired user reactivating on a lower tier (e.g. from Elite to Basic/Premium)
+                app(\App\Actions\Seller\Subscription\DowngradeSubscription::class)->execute(
+                    $user,
+                    $targetPlan,
+                    null,
+                    route('dashboard')
+                );
+
+                $user->update([
+                    'premium_tier' => $targetPlan,
+                    'subscription_expires_at' => now()->addDays($daysToAdd),
+                    'subscription_cancelled_at' => null,
+                    'pending_downgrade_tier' => null,
+                    'billing_cycle' => $billingCycle,
+                    'trial_ends_at' => null,
+                ]);
+
+                if ($targetPlan !== 'free') {
+                    $user->staffMembers()
+                        ->whereNotNull('staff_plan_suspended_at')
+                        ->update(['staff_plan_suspended_at' => null]);
+                }
+
+                $resolution = 'applied';
             } else {
                 $resolution = 'higher_plan_active';
             }

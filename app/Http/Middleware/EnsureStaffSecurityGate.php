@@ -50,6 +50,7 @@ class EnsureStaffSecurityGate
      */
     protected array $holdingRoutes = [
         'staff.home',
+        'staff.subscription.locked',
         'staff.attendance.resume-prompt',
         'staff.attendance.resume',
         'staff.attendance.otp',
@@ -68,6 +69,7 @@ class EnsureStaffSecurityGate
      */
     protected array $completedRoutePrefixes = [
         'staff.dashboard',
+        'staff.subscription.locked',
         'staff.deliveries',
         'deliveries.',
         'team-messages.',

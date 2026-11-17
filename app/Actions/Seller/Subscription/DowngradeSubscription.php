@@ -62,11 +62,15 @@ class DowngradeSubscription
                 'new_tier' => $newTier,
             ]);
 
+            $newExpiration = ($userRecord->subscription_expires_at && $userRecord->subscription_expires_at->isFuture())
+                ? $userRecord->subscription_expires_at
+                : null;
+
             $userRecord->update([
                 'premium_tier' => $newTier,
-                'subscription_expires_at' => null,
+                'subscription_expires_at' => $newExpiration,
                 'subscription_cancelled_at' => null,
-                'pending_downgrade_tier' => 'free',
+                'pending_downgrade_tier' => null,
             ]);
 
             if ($shouldSuspendStaffForPlan) {

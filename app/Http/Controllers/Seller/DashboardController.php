@@ -126,6 +126,10 @@ class DashboardController extends Controller
             }
         }
 
+        if ($user->isArtisan() && $user->isApproved() && !$user->hasActiveSubscription()) {
+            return redirect()->route('seller.subscription');
+        }
+
         return null;
     }
 

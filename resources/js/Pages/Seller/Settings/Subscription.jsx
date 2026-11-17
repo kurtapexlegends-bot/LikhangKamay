@@ -7,6 +7,7 @@ import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/Seller
 
 // Subcomponents
 import SubscriptionPlans from '@/Components/Seller/Settings/SubscriptionPlans';
+import SubscriptionPaywallGate from '@/Components/Seller/Settings/SubscriptionPaywallGate';
 import SubscriptionComparisonModal from '@/Components/Seller/Settings/SubscriptionComparisonModal';
 import BillingActivity from '@/Components/Seller/Settings/BillingActivity';
 import DowngradeModal from '@/Components/Seller/Settings/DowngradeModal';
@@ -26,6 +27,11 @@ export default function Subscription({
     subscriptionCancelledAt = null,
     isCancelled = false,
     isExpired = false,
+    hasActiveSubscription = true,
+    isPaywallMode = false,
+    previousPlanKey = 'free',
+    shopName = null,
+    shopAvatar = null,
     renewalPlan = null,
     daysRemaining = null,
     pendingDowngradeTier = null,
@@ -302,6 +308,37 @@ export default function Subscription({
         submitSubscriptionChange(route('seller.subscription.resume-auto-renewal'), {});
     };
 
+    if (isPaywallMode) {
+        return (
+            <>
+                <Head title="Artisan Subscription Paywall Gate" />
+                <SubscriptionPaywallGate
+                    plans={plans}
+                    currentPlan={currentPlan}
+                    previousPlanKey={previousPlanKey}
+                    shopName={shopName || auth?.user?.shop_name || auth?.user?.name}
+                    shopAvatar={shopAvatar || auth?.user?.avatar_url || auth?.user?.profile_photo_url}
+                    isProcessing={isProcessing}
+                    handleUpgrade={handleUpgrade}
+                    billingCycle={billingCycle}
+                    setBillingCycle={setBillingCycle}
+                    annualDiscount={planSettings?.subscription_annual_discount ?? 20}
+                    pendingUpgrade={pendingUpgrade}
+                    onOpenComparison={() => setComparisonModalOpen(true)}
+                    daysRemaining={daysRemaining}
+                    formattedExpirationDate={formattedExpirationDate}
+                />
+
+                <SubscriptionComparisonModal
+                    isOpen={comparisonModalOpen}
+                    onClose={() => setComparisonModalOpen(false)}
+                    currentPlan={currentPlan}
+                    planSettings={planSettings}
+                />
+            </>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-[#FDFBF9] font-sans text-gray-800">
             <Head title="Subscription Plan" />
@@ -528,4 +565,9 @@ export default function Subscription({
     );
 }
 
-Subscription.layout = (page) => <SellerWorkspaceLayout active="subscription">{page}</SellerWorkspaceLayout>;
+Subscription.layout = (page) => {
+    if (page?.props?.isPaywallMode) {
+        return page;
+    }
+    return <SellerWorkspaceLayout active="subscription">{page}</SellerWorkspaceLayout>;
+};

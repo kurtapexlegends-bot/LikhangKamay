@@ -41,6 +41,10 @@ class StaffDashboardController extends Controller
             return redirect()->route('staff.home');
         }
 
+        if (!$seller->hasActiveSubscription()) {
+            return redirect()->route('staff.subscription.locked');
+        }
+
         $isDriver = $user->staff_role_preset_key === 'driver'
             || in_array($user->employee?->role, [
                 'Logistics & Driver',
@@ -369,5 +373,36 @@ class StaffDashboardController extends Controller
             ->map(fn(string $key) => $catalog[$key])
             ->values()
             ->all();
+    }
+
+    public function subscriptionLocked(Request $request): Response|RedirectResponse
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        abort_unless($user && $user->isStaff(), 403, 'Staff access only.');
+
+        $seller = $user->sellerOwner;
+
+        if ($seller && $seller->hasActiveSubscription()) {
+            return redirect()->route('staff.dashboard');
+        }
+
+        return Inertia::render('Staff/Holding', [
+            'staffAccount' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'role_preset_key' => $user->staff_role_preset_key,
+                'workspace_access_enabled' => false,
+                'plan_workspace_suspended' => true,
+                'owner_subscription_inactive' => true,
+            ],
+            'sellerOwner' => [
+                'id' => $user->getEffectiveSellerId(),
+                'name' => $seller?->shop_name ?? $seller?->name ?? 'Workshop',
+                'owner_name' => $seller?->name ?? 'Shop Owner',
+                'subscription_inactive' => true,
+            ],
+        ]);
     }
 }

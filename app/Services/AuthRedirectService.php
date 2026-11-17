@@ -31,6 +31,10 @@ class AuthRedirectService
                 return redirect()->route('staff.password.edit');
             }
 
+            if ($user->sellerOwner && !$user->sellerOwner->hasActiveSubscription()) {
+                return redirect()->route('staff.subscription.locked');
+            }
+
             return redirect()->route('staff.dashboard');
         }
 
@@ -42,6 +46,9 @@ class AuthRedirectService
             session()->forget('url.intended');
 
             if ($user->isApproved()) {
+                if (!$user->hasActiveSubscription()) {
+                    return redirect()->route('seller.subscription');
+                }
                 return redirect()->route('dashboard');
             }
 
@@ -191,11 +198,18 @@ class AuthRedirectService
                 return route('staff.password.edit', absolute: false);
             }
 
+            if ($user->sellerOwner && !$user->sellerOwner->hasActiveSubscription()) {
+                return route('staff.subscription.locked', absolute: false);
+            }
+
             return route('staff.dashboard', absolute: false);
         }
 
         if ($user->isArtisan()) {
             if ($user->isApproved()) {
+                if (!$user->hasActiveSubscription()) {
+                    return route('seller.subscription', absolute: false);
+                }
                 return route('dashboard', absolute: false);
             }
 

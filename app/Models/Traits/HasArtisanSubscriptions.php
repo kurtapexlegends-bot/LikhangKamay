@@ -140,6 +140,14 @@ trait HasArtisanSubscriptions
         return $this->isOnTrial() || ($this->subscription_expires_at !== null && $this->subscription_expires_at->isFuture());
     }
 
+    public function scopeActiveSubscription($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('subscription_expires_at', '>', now())
+              ->orWhere('trial_ends_at', '>', now());
+        });
+    }
+
     public function getActiveProductLimit(): int
     {
         return match($this->getEffectivePremiumTier()) {

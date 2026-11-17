@@ -68,6 +68,18 @@ if (app()->environment('local')) {
                     $request->session()->put('cart', $cart);
                 }
             }
+            if (str_contains($target, 'complete-profile')) {
+                Auth::guard('web')->logout();
+                $request->session()->put('social_auth', [
+                    'provider' => 'google',
+                    'id' => 'google-dev-preview',
+                    'email' => 'preview.buyer@likhangkamay.local',
+                    'name' => 'Dev Preview Buyer',
+                    'avatar' => null,
+                    'role' => 'buyer',
+                    'remember' => false,
+                ]);
+            }
             $request->session()->save();
         }
         $allParams = $request->except(['role', 'redirect']);
@@ -190,6 +202,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
     // DASHBOARD & PROFILE
     Route::get('/dashboard', [\App\Http\Controllers\Seller\DashboardController::class, 'index'])->middleware('staff.attendance')->name('dashboard');
     Route::get('/staff/dashboard', [\App\Http\Controllers\Seller\StaffDashboardController::class, 'index'])->name('staff.dashboard');
+    Route::get('/staff/subscription-locked', [\App\Http\Controllers\Seller\StaffDashboardController::class, 'subscriptionLocked'])->name('staff.subscription.locked');
     Route::get('/staff/deliveries', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'index'])->name('staff.deliveries');
     Route::post('/staff/deliveries/{delivery}/complete', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'complete'])->name('staff.deliveries.complete');
     Route::post('/staff/deliveries/verify-vehicle', [\App\Http\Controllers\Staff\DriverDeliveryController::class, 'verifyVehicle'])->name('staff.deliveries.verify-vehicle');
