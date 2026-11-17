@@ -27,6 +27,7 @@ class SocialAuthTest extends TestCase
             'email' => 'kurtapexlegends@gmail.com',
             'role' => 'artisan',
             'artisan_status' => 'approved',
+            'subscription_expires_at' => now()->addMonth(),
             'setup_completed_at' => now(),
             'email_verified_at' => now(),
             'current_session_id' => 'stale_old_session_123',
@@ -85,6 +86,7 @@ class SocialAuthTest extends TestCase
             'email' => 'artisan.case@likhangkamay.com',
             'role' => 'artisan',
             'artisan_status' => 'approved',
+            'subscription_expires_at' => now()->addMonth(),
             'setup_completed_at' => now(),
             'email_verified_at' => now(),
         ]);

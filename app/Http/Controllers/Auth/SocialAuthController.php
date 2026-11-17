@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\AuthRedirectService;
+use App\Services\FaceDescriptorService;
 use App\Support\PersonName;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
@@ -249,14 +250,49 @@ class SocialAuthController extends Controller
                 'name' => 'required_without:first_name|string|max:255',
                 'password' => ['required', 'string', 'confirmed', \App\Support\PasswordRules::buyer()],
                 'terms' => 'accepted',
+                'selfie_data_url' => 'nullable|string',
+                'face_descriptor' => 'nullable',
             ]);
         }
+
+        $faceService = app(FaceDescriptorService::class);
+        $faceDescriptor = $faceService->normalizeDescriptor($request->input('face_descriptor'));
+        $selfieDataUrl = $request->input('selfie_data_url');
+
+        if ($faceDescriptor) {
+            $bannedCheck = $faceService->checkBannedDuplicate($faceDescriptor);
+            if (!empty($bannedCheck['matched_banned'])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'face_verification' => 'Registration cannot be completed because this identity matches a restricted account.',
+                ]);
+            }
+        }
+
+        $kycSelfiePath = is_string($selfieDataUrl) && $selfieDataUrl !== ''
+            ? $faceService->storeSelfieDataUrl($selfieDataUrl, 'reg_social_' . time())
+            : null;
+        $livenessVerifiedAt = ($kycSelfiePath && $faceDescriptor) ? now() : null;
+        $requiresCheckoutFaceCheck = $livenessVerifiedAt === null;
 
         $name = PersonName::normalize(
             $request->input('first_name'),
             $request->input('last_name'),
             $request->input('name'),
         );
+
+        $biometricAttributes = [];
+        if (rescue(fn() => Schema::hasColumn('users', 'kyc_selfie_path'), false) && $kycSelfiePath !== null) {
+            $biometricAttributes['kyc_selfie_path'] = $kycSelfiePath;
+        }
+        if (rescue(fn() => Schema::hasColumn('users', 'kyc_liveness_verified_at'), false)) {
+            $biometricAttributes['kyc_liveness_verified_at'] = $livenessVerifiedAt;
+        }
+        if (rescue(fn() => Schema::hasColumn('users', 'requires_checkout_face_check'), false)) {
+            $biometricAttributes['requires_checkout_face_check'] = $livenessVerifiedAt ? false : (!$isArtisan && !$isSupplier);
+        }
+        if (rescue(fn() => Schema::hasColumn('users', 'face_descriptor'), false) && $faceDescriptor !== null) {
+            $biometricAttributes['face_descriptor'] = $faceDescriptor;
+        }
 
         // Create user with appropriate role
         $userData = [
@@ -268,6 +304,7 @@ class SocialAuthController extends Controller
             'social_id' => $socialData['id'],
             'avatar' => $socialData['avatar'],
             'email_verified_at' => now(), // Auto-verify social users
+            ...$biometricAttributes,
         ];
 
         if ($isSupplier) {
@@ -277,10 +314,6 @@ class SocialAuthController extends Controller
             $userData['setup_completed_at'] = null;
         } elseif ($isArtisan) {
             $userData['shop_name'] = $request->shop_name;
-        }
-
-        if (rescue(fn() => Schema::hasColumn('users', 'requires_checkout_face_check'), false)) {
-            $userData['requires_checkout_face_check'] = !$isArtisan && !$isSupplier;
         }
 
         $user = \Illuminate\Support\Facades\DB::transaction(function () use ($userData, $isArtisan, $isSupplier, $request) {

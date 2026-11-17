@@ -8,6 +8,7 @@ import Checkbox from '@/Components/Checkbox';
 import LegalModal from '@/Components/LegalModal';
 import SellerTermsModal from '@/Components/SellerTermsModal';
 import PasswordStrengthIndicator from '@/Components/PasswordStrengthIndicator';
+import RegisterFaceCheckCard from '@/Components/Auth/RegisterFaceCheckCard';
 import { Head, useForm } from '@inertiajs/react';
 import { Eye, EyeOff, Loader2, CheckCircle, Store, Mail, Lock, User, Briefcase, Building2, XCircle, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -26,6 +27,9 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
         company_name: '',
         password: '',
         password_confirmation: '',
+        selfie_data_url: '',
+        face_descriptor: null,
+        face_check_skipped: false,
         terms: false,
     });
 
@@ -493,6 +497,35 @@ export default function CompleteProfile({ email, suggestedName, suggestedFirstNa
                     {data.password && (
                         <motion.div variants={itemVariants}>
                             <PasswordStrengthIndicator password={data.password} minLength={isArtisan ? 12 : 8} />
+                        </motion.div>
+                    )}
+
+                    {/* Quick Live Face Check (Anti-Bot Shield with Camera-less Checkout Fallback) */}
+                    {!isBusiness && (
+                        <motion.div variants={itemVariants}>
+                            <RegisterFaceCheckCard
+                                selfieDataUrl={data.selfie_data_url}
+                                faceCheckSkipped={data.face_check_skipped}
+                                error={errors.face_verification}
+                                onVerified={({ photoData, descriptor }) => {
+                                    setData((prev) => ({
+                                        ...prev,
+                                        selfie_data_url: photoData || '',
+                                        face_descriptor: descriptor || null,
+                                        face_check_skipped: false,
+                                    }));
+                                    if (errors.face_verification) clearErrors('face_verification');
+                                }}
+                                onSkipped={() => {
+                                    setData((prev) => ({
+                                        ...prev,
+                                        selfie_data_url: '',
+                                        face_descriptor: null,
+                                        face_check_skipped: true,
+                                    }));
+                                }}
+                                onResetSkip={() => setData('face_check_skipped', false)}
+                            />
                         </motion.div>
                     )}
 
