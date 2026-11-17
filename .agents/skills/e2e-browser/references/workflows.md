@@ -250,15 +250,16 @@
 2. Place immediate COD test order (`ORD-CANCEL-XXXXX`). Assert stock decremented (`stock_baseline - 1`).
 3. Cancel order (`POST /my-orders/{id}/cancel`) while `Pending`. Assert stock atomically restored to `stock_baseline`.
 4. Test address re-order validation (`POST /my-orders/{id}/change-address-reorder`).
-5. **Dirty Data & Vacated Workshop Guard:** Add inactive workshop item, visit `/checkout` -> assert defensive redirect to `/cart` with warning (`"One or more items in your cart belong to an inactive workshop..."`) and zero 500 errors.
+5. **Dirty Data & Vacated Workshop Guard:** Attempt to add an item from an expired artisan (`POST /cart`) -> assert rejection with `"This workshop is currently taking a break"`. For existing cart items, visit `/cart` -> assert cart item renders unavailable status badge (`"Workshop is currently taking a break"`), visit `/checkout` -> assert defensive redirect to `/cart` with warning (`"One or more items in your cart belong to an inactive workshop..."`), and assert `QuoteCheckoutShipping` returns HTTP 422 with zero 500 errors.
 
 ---
 
-### Step 10: Full Auth, Face Check Fallback & Artisan KYC Onboarding Wizard (`/register`, `/verify-email`, `/artisan/setup`)
+### Step 10: Full Auth, Face Check Fallback & Artisan KYC Onboarding Wizard (`/register`, `/auth/complete-profile`, `/verify-email`, `/artisan/setup`)
 *Personas:* Synthetic New Onboarding User (`test.onboarding@likhangkamay.local` or fresh setup state)
 
-1. **Buyer Registration & Email Verification (`/register`, `/verify-email`):**
-   - Verify registration presents `Quick Account Face Check` (`Start Quick Face Check` / `Skip until first order`). If skipped, confirm `requires_checkout_face_check` prompts `CheckoutFaceCheckModal` (`POST /profile/verify-face`) on non-test first checkout (COD and GCash/Maya).
+1. **Buyer Registration & Email Verification (`/register`, `/auth/complete-profile`, `/verify-email`):**
+   - **Standard Registration (`/register`):** Verify registration presents `Quick Account Face Check` (`Start Quick Face Check` / `Skip until first order`). If skipped, confirm `requires_checkout_face_check` prompts `CheckoutFaceCheckModal` (`POST /profile/verify-face`) on non-test first checkout (COD and GCash/Maya).
+   - **Google OAuth Registration (`/auth/complete-profile`):** When registered via Google OAuth, verify `CompleteProfile.jsx` integrates `RegisterFaceCheckCard` with live camera capture (`Start Quick Face Check`) and `"Skip until first order"` fallback, saving liveness metadata and facial descriptor vectors (`POST /auth/complete-profile`).
    - Submit test verification code `000000` (or `123456`). Assert redirect to setup wizard for artisans.
 2. **Artisan KYC Setup Wizard (`/artisan/setup`):**
    - **Step 1 (Workshop Profile):** Workshop Name `"Cavite Heritage Crafts"`, Bio `"Traditional weaving and ceramics from Alfonso, Cavite."`, Municipality `"Alfonso"`, Address `"Sitio Maligaya, Alfonso, Cavite"`.
@@ -313,6 +314,10 @@
 ### Step 12: Monetization & Admin Email Studio (`/subscription`, `/admin/settings/email-templates`)
 *Personas:* `test.artisan` $\rightarrow$ `test.admin`
 
-1. **Subscription & Retention (`/subscription`):** Verify `Elite Tier (All 16 Modules Unlocked)`. Trigger retention modal (`Manage Auto-Renewal` -> `Cancel Auto-Renewal`), dismiss cleanly.
+1. **Subscription Tiers, Billing Cycles & Paywall Gate (`/subscription`, `SubscriptionPaywallGate.jsx`):**
+   - **Active Subscription Workspace (`/subscription`):** Verify paid-only tiers: Basic ₱349/mo (₱3,350/yr), Premium ₱699/mo (₱6,710/yr), Elite ₱1,299/mo (₱12,470/yr) with zero active free options. Test smooth commitment toggle between `Monthly Billing` and `Annual Commitment` (verifying `SAVE 20%` badge and dynamic ₱-savings pricing updates). Verify `Elite Tier (All 16 Modules Unlocked)` status for confirmed test artisan. Trigger retention modal (`Manage Auto-Renewal` -> `Cancel Auto-Renewal`), dismiss cleanly.
+   - **Expired Artisan Paywall Gate Simulation:** Authenticate as an artisan with `subscription_expires_at` in the past. Attempt navigation to any `/seller/*` route -> assert immediate redirection to `/subscription` rendered under `SubscriptionPaywallGate.jsx` (verifying isolated layout with zero workspace navigation/sidebar leak, `"YOUR PREVIOUS PLAN"` pre-selection pill, and one-click renewal button). Verify logout action terminates session cleanly.
+   - **Staff of Inactive Workshop Lock:** Authenticate as staff of an expired artisan. Attempt navigation to `/staff/dashboard` or `/staff` -> assert direct redirect to `route('staff.subscription.locked')` rendering `Holding.jsx` with `"Workshop Subscription Inactive"`.
+   - **Public Storefront Inactive State:** Open `/shop/{expired-artisan-slug}` as guest or buyer -> assert `"Workshop Taking a Break"` notice displays and catalog/search controls are cleanly hidden.
 2. **Ad Sponsorship Boost & Feedback Drawer (`/sponsorships`):** Create ₱50/day campaign on `TEST-BAMBOO-01`. For declined/returned sponsorships in the campaign history sidebar, assert status displays `Revision requested` + `View Feedback` action (avoiding squished sidebar text), clicking which opens the `SlideOverDrawer` with the product summary card and warm stone audit memo banner.
 3. **Admin Email Studio (`/admin/settings/email-templates`):** Inspect variable replacement (`{{buyer_name}}`, `{{order_number}}`), test live email dispatch (`POST /admin/settings/email-templates/dispatch`) to `test.buyer@likhangkamay.local`.

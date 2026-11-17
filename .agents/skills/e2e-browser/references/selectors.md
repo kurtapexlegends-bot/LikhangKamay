@@ -134,6 +134,17 @@ This reference eliminates blind accessibility tree dumps by providing pre-verifi
 - **Help Center Quick Action Links:** `a:has-text("Browse Pottery Catalog")`, `a:has-text("Track Orders & Deliveries")`, `a:has-text("Studio Orders & Fulfillment")`, `a:has-text("Workshop Settings")`
 - **Seller Header Profile Dropdown Order:** `a[href*="/seller/settings"]:has-text("Settings")` (placed before Help Center, unbolded), `a[href*="/help?tab=artisan"]:has-text("Help Center")`
 
+### Subscription Tiers, Billing Toggle & Paywall Gate (`/subscription`, `SubscriptionPaywallGate.jsx`, `Holding.jsx`)
+- **Subscription Billing Cycle Switches:** `button:has-text("Monthly Billing")`, `button:has-text("Annual Commitment")`
+- **Subscription Annual Savings Badge:** `span:has-text("SAVE 20%")`
+- **Subscription Previous Plan Badge:** `span:has-text("YOUR PREVIOUS PLAN")`
+- **Subscription Plan Selection Buttons:** `button:has-text("Your Current Plan")`, `button:has-text("Upgrade to ")`, `button:has-text("Switch to ")`, `button:has-text("Renew ")`, `button:has-text("Choose ")`
+- **Subscription Paywall Lock Header:** `h1:has-text("Subscription Required")`, `h1:has-text("Renew Your Workshop")`
+- **Subscription Paywall Sign Out Button:** `button:has-text("Sign Out")`
+- **Staff Holding Locked Screen Header:** `h1:has-text("Workshop Subscription Inactive")`, `p:has-text("taking a break")`
+- **Public Storefront Inactive Shop Notice:** `h2:has-text("Workshop Taking a Break")`, `p:has-text("temporarily unavailable")`
+- **Google OAuth Complete Profile Face Check Card:** `div:has-text("Quick Account Face Check")`, `button:has-text("Start Quick Face Check")`, `button:has-text("Skip until first order")`
+
 ---
 
 ## 2. Local Defense Assets & Two-Tier Upload Protocol
