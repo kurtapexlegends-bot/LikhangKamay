@@ -43,17 +43,18 @@ class SubscriptionTierLifecycleTest extends TestCase
             'premium_tier' => 'free',
         ]);
 
-        $this->createActiveProduct($seller, ['name' => 'Existing 1']);
-        $this->createActiveProduct($seller, ['name' => 'Existing 2']);
+        for ($i = 1; $i <= 7; $i++) {
+            $this->createActiveProduct($seller, ['name' => "Existing {$i}"]);
+        }
 
-        $this->assertEquals(2, $seller->products()->where('status', 'Active')->count());
-        $this->assertEquals(3, $seller->getActiveProductLimit());
+        $this->assertEquals(7, $seller->products()->where('status', 'Active')->count());
+        $this->assertEquals(8, $seller->getActiveProductLimit());
         $this->assertTrue($seller->canAddMoreProducts());
 
-        // 3rd product listing as active is allowed within free tier quota
+        // 8th product listing as active is allowed within free tier quota
         $response = $this->actingAs($seller)->post(route('products.store'), [
-            'sku' => 'SKU-FREE-003',
-            'name' => 'Third Active Craft',
+            'sku' => 'SKU-FREE-008',
+            'name' => 'Eighth Active Craft',
             'category' => 'Pottery',
             'price' => 250.00,
             'cost_price' => 100.00,
@@ -71,7 +72,7 @@ class SubscriptionTierLifecycleTest extends TestCase
 
         $response->assertRedirect();
         $response->assertSessionDoesntHaveErrors();
-        $this->assertEquals(3, $seller->fresh()->products()->where('status', 'Active')->count());
+        $this->assertEquals(8, $seller->fresh()->products()->where('status', 'Active')->count());
         $this->assertFalse($seller->fresh()->canAddMoreProducts());
     }
 
@@ -81,16 +82,16 @@ class SubscriptionTierLifecycleTest extends TestCase
             'premium_tier' => 'free',
         ]);
 
-        // Already at limit of 3
-        for ($i = 1; $i <= 3; $i++) {
+        // Already at limit of 8
+        for ($i = 1; $i <= 8; $i++) {
             $this->createActiveProduct($seller, ['name' => "Craft {$i}"]);
         }
 
         $this->assertFalse($seller->canAddMoreProducts());
 
         $response = $this->actingAs($seller)->post(route('products.store'), [
-            'sku' => 'SKU-FREE-004',
-            'name' => 'Fourth Exceeding Craft',
+            'sku' => 'SKU-FREE-009',
+            'name' => 'Ninth Exceeding Craft',
             'category' => 'Pottery',
             'price' => 300.00,
             'cost_price' => 120.00,
@@ -107,7 +108,7 @@ class SubscriptionTierLifecycleTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('limit');
-        $this->assertDatabaseMissing('products', ['sku' => 'SKU-FREE-004']);
+        $this->assertDatabaseMissing('products', ['sku' => 'SKU-FREE-009']);
     }
 
     public function test_free_tier_artisan_can_create_draft_when_active_limit_is_reached(): void
@@ -116,11 +117,11 @@ class SubscriptionTierLifecycleTest extends TestCase
             'premium_tier' => 'free',
         ]);
 
-        for ($i = 1; $i <= 3; $i++) {
+        for ($i = 1; $i <= 8; $i++) {
             $this->createActiveProduct($seller, ['name' => "Craft {$i}"]);
         }
 
-        // Creating 4th product as Draft is allowed
+        // Creating 9th product as Draft is allowed
         $response = $this->actingAs($seller)->post(route('products.store'), [
             'sku' => 'SKU-FREE-DRAFT',
             'name' => 'Draft Product Safe',
@@ -187,17 +188,17 @@ class SubscriptionTierLifecycleTest extends TestCase
             'subscription_expires_at' => now()->addDays(25),
         ]);
 
-        for ($i = 1; $i <= 9; $i++) {
+        for ($i = 1; $i <= 24; $i++) {
             $this->createActiveProduct($seller, ['name' => "Premium Craft {$i}"]);
         }
 
-        $this->assertEquals(10, $seller->getActiveProductLimit());
+        $this->assertEquals(25, $seller->getActiveProductLimit());
         $this->assertTrue($seller->canAddMoreProducts());
 
-        // 10th active product is allowed
+        // 25th active product is allowed
         $response = $this->actingAs($seller)->post(route('products.store'), [
-            'sku' => 'SKU-PREM-010',
-            'name' => 'Tenth Premium Craft',
+            'sku' => 'SKU-PREM-025',
+            'name' => 'Twenty-Fifth Premium Craft',
             'category' => 'Pottery',
             'price' => 500.00,
             'cost_price' => 200.00,
@@ -215,7 +216,7 @@ class SubscriptionTierLifecycleTest extends TestCase
 
         $response->assertRedirect();
         $response->assertSessionDoesntHaveErrors();
-        $this->assertEquals(10, $seller->fresh()->products()->where('status', 'Active')->count());
+        $this->assertEquals(25, $seller->fresh()->products()->where('status', 'Active')->count());
         $this->assertFalse($seller->fresh()->canAddMoreProducts());
     }
 
@@ -226,13 +227,13 @@ class SubscriptionTierLifecycleTest extends TestCase
             'subscription_expires_at' => now()->addDays(25),
         ]);
 
-        for ($i = 1; $i <= 10; $i++) {
+        for ($i = 1; $i <= 25; $i++) {
             $this->createActiveProduct($seller, ['name' => "Premium Craft {$i}"]);
         }
 
         $response = $this->actingAs($seller)->post(route('products.store'), [
-            'sku' => 'SKU-PREM-011',
-            'name' => 'Eleventh Exceeding Craft',
+            'sku' => 'SKU-PREM-026',
+            'name' => 'Twenty-Sixth Exceeding Craft',
             'category' => 'Pottery',
             'price' => 500.00,
             'cost_price' => 200.00,
@@ -249,7 +250,7 @@ class SubscriptionTierLifecycleTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('limit');
-        $this->assertDatabaseMissing('products', ['sku' => 'SKU-PREM-011']);
+        $this->assertDatabaseMissing('products', ['sku' => 'SKU-PREM-026']);
     }
 
     public function test_premium_tier_artisan_can_use_material_recipe_tracking(): void
@@ -308,7 +309,7 @@ class SubscriptionTierLifecycleTest extends TestCase
             'subscription_expires_at' => now()->addDays(30),
         ]);
 
-        $this->assertEquals(50, $seller->getActiveProductLimit());
+        $this->assertEquals(75, $seller->getActiveProductLimit());
         $this->assertTrue($seller->isEliteTier());
         $this->assertTrue($seller->isPremiumTier());
 
@@ -471,17 +472,17 @@ class SubscriptionTierLifecycleTest extends TestCase
             'pending_downgrade_tier' => 'free',
         ]);
 
-        // Seller currently has 6 active products (limit for Free is 3)
-        $products = collect(range(1, 6))->map(function (int $index) use ($seller) {
+        // Seller currently has 10 active products (limit for Free is 8)
+        $products = collect(range(1, 10))->map(function (int $index) use ($seller) {
             return $this->createActiveProduct($seller, [
                 'name' => "Product {$index}",
                 'sku' => "SKU-EXP-{$index}",
-                'sold' => 10 - $index, // 1st is highest seller
-                'created_at' => now()->subDays(10 - $index),
+                'sold' => 20 - $index, // 1st is highest seller
+                'created_at' => now()->subDays(20 - $index),
             ]);
         });
 
-        $this->assertEquals(6, $seller->products()->where('status', 'Active')->count());
+        $this->assertEquals(10, $seller->products()->where('status', 'Active')->count());
 
         // Run the scheduled command
         Artisan::call('subscriptions:process-lifecycle');
@@ -492,20 +493,20 @@ class SubscriptionTierLifecycleTest extends TestCase
         $this->assertSame('free', $seller->premium_tier);
         $this->assertNull($seller->subscription_expires_at);
 
-        // Top 3 selling active products remain Active, other 3 drafted
-        $this->assertEquals(3, $seller->products()->where('status', 'Active')->count());
-        $this->assertEquals(3, $seller->products()->where('status', 'Draft')->count());
+        // Top 8 selling active products remain Active, other 2 drafted
+        $this->assertEquals(8, $seller->products()->where('status', 'Active')->count());
+        $this->assertEquals(2, $seller->products()->where('status', 'Draft')->count());
 
-        // Top 3 items by sales count must be active
-        foreach ($products->take(3) as $topProduct) {
+        // Top 8 items by sales count must be active
+        foreach ($products->take(8) as $topProduct) {
             $this->assertDatabaseHas('products', [
                 'id' => $topProduct->id,
                 'status' => 'Active',
             ]);
         }
 
-        // Bottom 3 items must be in Draft
-        foreach ($products->skip(3) as $bottomProduct) {
+        // Bottom 2 items must be in Draft
+        foreach ($products->skip(8) as $bottomProduct) {
             $this->assertDatabaseHas('products', [
                 'id' => $bottomProduct->id,
                 'status' => 'Draft',
@@ -716,7 +717,7 @@ class SubscriptionTierLifecycleTest extends TestCase
             'premium_tier' => 'free',
         ]);
 
-        for ($i = 1; $i <= 3; $i++) {
+        for ($i = 1; $i <= 8; $i++) {
             $this->createActiveProduct($seller, ['name' => "Craft {$i}"]);
         }
 
@@ -828,15 +829,15 @@ class SubscriptionTierLifecycleTest extends TestCase
             'pending_downgrade_tier' => 'free',
         ]);
 
-        $products = collect(range(1, 6))->map(function ($index) use ($seller) {
+        $products = collect(range(1, 10))->map(function ($index) use ($seller) {
             return $this->createActiveProduct($seller, [
                 'name' => "Craft {$index}",
                 'sold' => $index * 5,
-                'created_at' => now()->subDays(10 - $index),
+                'created_at' => now()->subDays(15 - $index),
             ]);
         });
 
-        $this->assertEquals(6, $seller->products()->where('status', 'Active')->count());
+        $this->assertEquals(10, $seller->products()->where('status', 'Active')->count());
 
         // Hit the products index route as the artisan (no manual artisan command run)
         $response = $this->actingAs($seller)->get(route('products.index'));
@@ -849,9 +850,9 @@ class SubscriptionTierLifecycleTest extends TestCase
         $this->assertSame('free', $seller->premium_tier);
         $this->assertNull($seller->subscription_expires_at);
 
-        // Top 3 selling products stay Active, others moved to Draft
-        $this->assertEquals(3, $seller->products()->where('status', 'Active')->count());
-        $this->assertEquals(3, $seller->products()->where('status', 'Draft')->count());
+        // Top 8 selling products stay Active, others moved to Draft
+        $this->assertEquals(8, $seller->products()->where('status', 'Active')->count());
+        $this->assertEquals(2, $seller->products()->where('status', 'Draft')->count());
     }
 
     // ==========================================

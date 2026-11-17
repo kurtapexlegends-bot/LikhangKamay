@@ -32,7 +32,7 @@ export default function SellerAgreement({ policy = null }) {
         {
             title: "Membership Tiers & Subscriptions",
             icon: CreditCard,
-            content: "Artisans may subscribe to Standard (Free), Premium, or Elite membership tiers. Subscription fees are billed monthly, processed via PayMongo, and are strictly non-refundable once processed. Tier inclusions include active listing limits (3 for Standard, 10 for Premium, 50 for Elite), automated thank-you messages on order completion for Premium & Elite tiers, and the Discounts & Campaign Engine for Elite tier alongside platform Sponsorship credits. Upgrades take effect immediately. Sellers may cancel auto-renewal anytime; paid benefits remain 100% active until the end of the current billing cycle. Downgrades apply at the end of the billing period and enforce active catalog limits and suspend linked staff accounts."
+            content: "Artisans may subscribe to Basic, Premium, or Elite membership tiers. Subscription fees are billed monthly or annually, processed via PayMongo, and are strictly non-refundable once processed. Tier inclusions include active listing limits (8 for Basic, 25 for Premium, 75 for Elite), automated thank-you messages on order completion for Premium & Elite tiers, and the Discounts & Campaign Engine for Elite tier alongside platform Sponsorship credits. Upgrades take effect immediately. Sellers may cancel auto-renewal anytime; paid benefits remain 100% active until the end of the current billing cycle. Downgrades apply at the end of the billing period and enforce active catalog limits and suspend linked staff accounts."
         },
         {
             title: "Order Fulfillment",

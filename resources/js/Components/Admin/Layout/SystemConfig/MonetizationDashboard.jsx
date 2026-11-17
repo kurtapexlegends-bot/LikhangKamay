@@ -319,7 +319,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                                         user.tier === 'premium' || user.tier === 'Premium' ? 'bg-amber-50 text-amber-700 border-amber-200 font-extrabold' :
                                                         'bg-stone-50 text-stone-600 border-stone-200'
                                                     }`}>
-                                                        {user.tier === 'super_premium' ? 'Elite' : user.tier === 'premium' ? 'Premium' : user.tier || 'Standard'}
+                                                        {user.tier === 'super_premium' ? 'Elite' : user.tier === 'premium' ? 'Premium' : user.tier || 'Basic'}
                                                     </span>
                                                 </div>
                                                 <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-extrabold border uppercase tracking-wider ${
@@ -390,7 +390,7 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                                                 user.tier === 'premium' || user.tier === 'Premium' ? 'bg-amber-50 text-amber-700 border-amber-200' :
                                                 'bg-stone-100 text-stone-600 border-stone-200'
                                             }`}>
-                                                {user.tier === 'super_premium' ? 'Elite' : user.tier === 'premium' ? 'Premium' : user.tier || 'Standard'}
+                                                {user.tier === 'super_premium' ? 'Elite' : user.tier === 'premium' ? 'Premium' : user.tier || 'Basic'}
                                             </span>
                                             <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-bold border uppercase tracking-wider ml-1 ${
                                                 user.change_direction === 'upgrade' 

@@ -65,8 +65,8 @@ class SubscriptionService
                     ]);
                     
                 $resolution = 'applied';
-            } elseif ($targetLevel === $currentLevel && $targetPlan !== 'free') {
-                // Subscription Renewal event for active paid tier
+            } elseif ($targetLevel === $currentLevel) {
+                // Subscription Renewal event for active paid tier (Basic, Premium, Elite)
                 $baseDate = ($user->subscription_expires_at && $user->subscription_expires_at->isFuture())
                     ? $user->subscription_expires_at
                     : now();

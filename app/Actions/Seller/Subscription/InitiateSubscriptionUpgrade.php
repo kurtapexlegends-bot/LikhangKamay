@@ -32,16 +32,19 @@ class InitiateSubscriptionUpgrade
      */
     public function execute(User $user, string $targetPlan, PayMongoService $payMongoService, string $billingCycle = 'monthly'): string
     {
+        $targetPlan = $this->normalizeTier($targetPlan);
         $currentPlan = $this->normalizeTier($user->premium_tier);
         $currentLevel = $this->getTierLevel($currentPlan);
         $targetLevel = $this->getTierLevel($targetPlan);
 
-        // If user is on an introductory trial, they can upgrade/convert to full paid plan even on same tier
-        if ($targetLevel === $currentLevel && !$user->isOnTrial()) {
+        // If user is on an introductory trial, or their subscription expired, allow purchasing/activating the plan
+        $canPurchaseSameLevel = $user->isOnTrial() || (method_exists($user, 'isSubscriptionExpired') && $user->isSubscriptionExpired());
+
+        if ($targetLevel === $currentLevel && !$canPurchaseSameLevel) {
             throw new \Exception('already_on_plan');
         }
 
-        if ($targetLevel < $currentLevel) {
+        if ($targetLevel < $currentLevel && !$canPurchaseSameLevel) {
             throw new \Exception('downgrade_flow');
         }
 
@@ -122,9 +125,9 @@ class InitiateSubscriptionUpgrade
     private function getPlanPrice(string $plan): float
     {
         return match ($plan) {
-            'premium' => (float) \App\Facades\Settings::get('tier_premium_price', 199.00),
-            'super_premium' => (float) \App\Facades\Settings::get('tier_super_premium_price', 399.00),
-            default => 0.00,
+            'premium' => (float) \App\Facades\Settings::get('tier_premium_price', 699.00),
+            'super_premium', 'elite' => (float) \App\Facades\Settings::get('tier_super_premium_price', 1299.00),
+            default => (float) \App\Facades\Settings::get('tier_free_price', 349.00),
         };
     }
 
@@ -132,7 +135,7 @@ class InitiateSubscriptionUpgrade
     {
         return match ($tier) {
             'premium' => 'premium',
-            'super_premium' => 'super_premium',
+            'super_premium', 'elite' => 'super_premium',
             default => 'free',
         };
     }
@@ -146,8 +149,8 @@ class InitiateSubscriptionUpgrade
     {
         return match ($plan) {
             'premium' => 'Premium',
-            'super_premium' => 'Elite',
-            default => 'Standard',
+            'super_premium', 'elite' => 'Elite',
+            default => 'Basic',
         };
     }
 

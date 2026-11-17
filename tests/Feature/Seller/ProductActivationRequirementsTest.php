@@ -68,7 +68,7 @@ class ProductActivationRequirementsTest extends TestCase
     {
         $seller = User::factory()->artisanApproved()->create(['premium_tier' => 'free']);
 
-        foreach (range(1, 3) as $index) {
+        foreach (range(1, 8) as $index) {
             $this->makeProduct($seller, [
                 'sku' => 'LIVE-' . $index . '-' . strtoupper(fake()->unique()->bothify('??###')),
                 'status' => 'Active',

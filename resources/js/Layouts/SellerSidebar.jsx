@@ -88,7 +88,7 @@ export default function SellerSidebar({
         if (sellerSidebar) return sellerSidebar;
 
         return {
-            tierLabel: isElite ? 'Elite' : isPremium ? 'Premium' : 'Standard',
+            tierLabel: isElite ? 'Elite' : isPremium ? 'Premium' : 'Basic',
             visibleModules: isElite
                 ? ['overview', 'products', 'vouchers', 'analytics', '3d', 'orders', 'messages', 'reviews', 'shop_settings', 'sponsorships', 'discounts', 'supply_hub', 'hr', 'accounting', 'procurement', 'stock_requests', 'approvals', 'team_messages']
                 : isPremium

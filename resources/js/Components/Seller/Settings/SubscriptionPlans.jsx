@@ -86,7 +86,7 @@ export default function SubscriptionPlans({
                                     Welcome to LikhangKamay! Your 14-Day All-Access Trial is Live
                                 </h3>
                                 <p className="text-xs text-stone-600 mt-0.5 leading-relaxed max-w-2xl">
-                                    Explore all artisan studio features risk-free. Your trial automatically transitions to Standard after {trialDaysRemaining ?? 14} days without unexpected charges. Upgrade below anytime to lock in continuous Premium or Elite capacity.
+                                    Explore all artisan studio features risk-free. Your trial automatically transitions to Basic after {trialDaysRemaining ?? 14} days without unexpected charges. Upgrade below anytime to lock in continuous Premium or Elite capacity.
                                 </p>
                             </div>
                         </div>
@@ -157,7 +157,7 @@ export default function SubscriptionPlans({
                         const isElitePlan = plan.id === 'super_premium';
 
                         const isYearly = billingCycle === 'yearly';
-                        const baseMonthlyPrice = isPremiumPlan ? 199 : isElitePlan ? 399 : 0;
+                        const baseMonthlyPrice = plan.rawPrice ?? (isElitePlan ? 1299 : isPremiumPlan ? 699 : 349);
                         const annualTotal = Math.round((baseMonthlyPrice * 12) * (1 - annualDiscount / 100));
                         const annualMonthlyEquivalent = Math.round(annualTotal / 12);
 
@@ -217,7 +217,12 @@ export default function SubscriptionPlans({
                                 {plan.id === 'free' ? (
                                     <div className="mt-5">
                                         <div className="flex items-end gap-1.5">
-                                            <p className="text-[2.45rem] font-black tracking-tight text-stone-900">Free</p>
+                                            <p className="text-[2.35rem] font-black tracking-tight text-stone-900">
+                                                ₱{isYearly ? annualTotal.toLocaleString() : baseMonthlyPrice.toLocaleString()}
+                                            </p>
+                                            <p className="pb-1 text-[0.92rem] font-semibold text-stone-400">
+                                                {isYearly ? '/ year' : '/ mo'}
+                                            </p>
                                             {isOnTrial && (
                                                 <span className="mb-2 ml-1 text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 animate-pulse">
                                                     Active Trial
@@ -226,8 +231,10 @@ export default function SubscriptionPlans({
                                         </div>
                                         <p className="text-xs font-semibold text-stone-500">
                                             {isOnTrial
-                                                ? `${trialDaysRemaining ?? 14} days remaining • Reverts to Standard`
-                                                : 'No monthly fee'}
+                                                ? `${trialDaysRemaining ?? 14} days remaining • Reverts to Basic`
+                                                : isYearly
+                                                    ? `₱${annualMonthlyEquivalent}/mo equivalent (Save ${annualDiscount}%)`
+                                                    : 'Billed monthly'}
                                         </p>
                                     </div>
                                 ) : (

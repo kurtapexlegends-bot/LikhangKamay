@@ -35,12 +35,12 @@ export default function SubscriptionTiers({ data, setData, errors, availableModu
     const plans = [
         {
             id: 'free',
-            name: 'Standard',
+            name: 'Basic',
             icon: Zap,
             colorName: 'stone',
             badgeKey: 'tier_free_badge',
             descKey: 'tier_free_description',
-            priceKey: null,
+            priceKey: 'tier_free_price',
             limitKey: 'tier_free_limit',
             staffKey: 'tier_free_staff_limit',
             modulesKey: 'tier_free_modules',
@@ -207,7 +207,7 @@ export default function SubscriptionTiers({ data, setData, errors, availableModu
                             <span className="text-xs font-semibold text-stone-600">Days</span>
                         </div>
                         <p className="text-[11px] text-stone-500 font-medium leading-relaxed">
-                            Full premium perks granted on new artisan approval. Downgrades to Standard upon expiration unless upgraded. Set to 0 to disable.
+                            Full premium perks granted on new artisan approval. Downgrades to Basic upon expiration unless upgraded. Set to 0 to disable.
                         </p>
                     </div>
 

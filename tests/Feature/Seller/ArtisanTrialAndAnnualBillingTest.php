@@ -56,7 +56,7 @@ class ArtisanTrialAndAnnualBillingTest extends TestCase
         $this->assertNotNull($artisan->trial_ends_at);
         $this->assertTrue($artisan->isOnTrial());
         $this->assertSame('premium', $artisan->getEffectivePremiumTier());
-        $this->assertSame(10, $artisan->getActiveProductLimit());
+        $this->assertSame(25, $artisan->getActiveProductLimit());
         $this->assertSame(14, $artisan->getTrialDaysRemaining());
     }
 
@@ -74,7 +74,7 @@ class ArtisanTrialAndAnnualBillingTest extends TestCase
 
         $this->assertFalse($artisan->isOnTrial());
         $this->assertSame('free', $artisan->getEffectivePremiumTier());
-        $this->assertSame(3, $artisan->getActiveProductLimit());
+        $this->assertSame(8, $artisan->getActiveProductLimit());
         $this->assertSame(0, $artisan->getTrialDaysRemaining());
     }
 
@@ -174,8 +174,9 @@ class ArtisanTrialAndAnnualBillingTest extends TestCase
             ->post(route('admin.settings.update'), [
                 'subscription_trial_days' => 21,
                 'subscription_annual_discount' => 25.0,
-                'tier_premium_price' => 249,
-                'tier_super_premium_price' => 499,
+                'tier_free_price' => 349,
+                'tier_premium_price' => 699,
+                'tier_super_premium_price' => 1299,
                 'contact_info' => [
                     'email' => 'admin@likhangkamay.com',
                 ],
@@ -192,5 +193,55 @@ class ArtisanTrialAndAnnualBillingTest extends TestCase
 
         $this->assertSame(21, (int) Settings::get('subscription_trial_days'));
         $this->assertSame(25, (int) Settings::get('subscription_annual_discount'));
+        $this->assertSame(349, (int) Settings::get('tier_free_price'));
+        $this->assertSame(699, (int) Settings::get('tier_premium_price'));
+        $this->assertSame(1299, (int) Settings::get('tier_super_premium_price'));
+    }
+
+    public function test_artisan_on_trial_can_subscribe_to_basic_plan(): void
+    {
+        Settings::set('tier_free_price', 349.00);
+        Settings::set('subscription_annual_discount', 20.0);
+
+        $artisan = User::factory()->create([
+            'role' => 'artisan',
+            'artisan_status' => 'approved',
+            'premium_tier' => 'free',
+            'trial_ends_at' => now()->addDays(14),
+            'has_used_trial' => true,
+        ]);
+
+        $mockPayMongo = $this->createMock(PayMongoService::class);
+        $mockPayMongo->expects($this->once())
+            ->method('createCheckoutSession')
+            ->with($this->callback(function (array $payload) {
+                // 349 * 100 = 34900 centavos
+                $this->assertSame(34900, $payload['line_items'][0]['amount']);
+                $this->assertStringContainsString('Basic', $payload['line_items'][0]['description']);
+                return true;
+            }))
+            ->willReturn([
+                'id' => 'cs_test_basic_upgrade',
+                'attributes' => [
+                    'checkout_url' => 'https://checkout.paymongo.com/test_basic',
+                ],
+            ]);
+
+        $this->app->instance(PayMongoService::class, $mockPayMongo);
+
+        $response = $this->actingAs($artisan)
+            ->withHeaders(['X-Inertia' => 'true'])
+            ->post(route('seller.subscription.upgrade'), [
+                'plan' => 'basic',
+                'billing_cycle' => 'monthly',
+            ]);
+
+        $response->assertStatus(409);
+        $this->assertSame('https://checkout.paymongo.com/test_basic', $response->headers->get('X-Inertia-Location'));
+
+        $transaction = SubscriptionTransaction::where('user_id', $artisan->id)->latest('id')->first();
+        $this->assertNotNull($transaction);
+        $this->assertSame('free', $transaction->to_plan);
+        $this->assertEquals(349.00, (float) $transaction->amount);
     }
 }

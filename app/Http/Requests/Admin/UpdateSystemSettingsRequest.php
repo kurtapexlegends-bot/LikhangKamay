@@ -47,6 +47,7 @@ class UpdateSystemSettingsRequest extends FormRequest
             'paymongo_enabled' => 'required|boolean',
 
             // Subscription Tier Validation
+            'tier_free_price' => 'sometimes|required|numeric|min:0',
             'tier_free_limit' => 'sometimes|required|integer|min:1',
             'tier_free_staff_limit' => 'sometimes|required|integer|min:0',
             'tier_free_badge' => 'nullable|string|max:50',

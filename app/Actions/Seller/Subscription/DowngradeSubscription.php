@@ -25,9 +25,9 @@ class DowngradeSubscription
 
         // Determine new limit directly from tier key to avoid expired state interference
         $newLimit = match ($newTier) {
-            'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 50),
-            'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 10),
-            default => (int) \App\Facades\Settings::get('tier_free_limit', 3),
+            'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 75),
+            'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 25),
+            default => (int) \App\Facades\Settings::get('tier_free_limit', 8),
         };
 
         $activeIds = $user->products()

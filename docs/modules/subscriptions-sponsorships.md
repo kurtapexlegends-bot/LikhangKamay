@@ -21,15 +21,15 @@ This document details the seller tiers, active product/staff limits, PayMongo su
 
 ---
 
-## 2. Premium Tiers & Limits
+## 2. Artisan Subscription Tiers & Quota Ladder
 
 LikhangKamay supports three seller levels normalized in [SubscriptionService.php](file:///c:/laragon/www/LikhangKamay/app/Services/SubscriptionService.php):
 
-| Tier Level | System Key | Description / Entitlements |
-| :--- | :--- | :--- |
-| **Level 1** | `free` / `artisan` | Standard artisan level. Limited active product listings, no additional staff. |
-| **Level 2** | `premium` | Elevated listings limit. |
-| **Level 3** | `super_premium` | Elite artisan level. Unlimited listings, staff workspace creation, HR, and procurement tools. |
+| Tier Level | System Key | Tier Name | Price (Monthly / Annual) | Active Listing Quota | Staff Seats | Core Features & Entitlements |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Level 1** | `free` / `basic` | **Basic** | **₱349 / mo** (₱279/mo billed annually) | 8 listings | 0 staff | Foundational Cavite workshop access, standard storefront, 14-day free trial on onboarding approval. |
+| **Level 2** | `premium` | **Premium** | **₱699 / mo** (₱559/mo billed annually) | 25 listings | 3 staff seats | Bill of Materials (BOM) recipes, In-House driver dispatch, HR payroll & attendance, basic analytics export. |
+| **Level 3** | `super_premium` | **Elite** | **₱1,299 / mo** (₱1,039/mo billed annually) | 75 listings | 15 staff seats | Full access: 5 free sponsorship ad credits/month, B2B wholesale supply hub, multi-seat team management, priority discovery. |
 
 ---
 
@@ -74,10 +74,10 @@ Handled by the [DowngradeSubscription.php](file:///c:/laragon/www/LikhangKamay/a
     *   Active products are ordered by `sold` count (descending), then by `created_at` (ascending), and capped at the new limit.
     *   Any active product not in this top list has its status updated to `Draft`.
 *   **Linked Staff Suspension**:
-    Downgrades from `super_premium` (Elite) to `free` (Standard) trigger staff account lockouts:
+    Downgrades from `super_premium` (Elite) or `premium` to `free` (Basic) trigger staff account lockouts:
     `staff_plan_suspended_at` is set to `now()` for all staff members of the seller.
 *   **Safe Post-Downgrade Redirect**:
-    To prevent routing errors, if the previous URL was inside an ERP/CRM module no longer permitted under the free plan (e.g. `/hr` or `/procurement`), the user is redirected to the standard `/dashboard`.
+    To prevent routing errors, if the previous URL was inside an ERP/CRM module no longer permitted under the Basic plan (e.g. `/hr` or `/procurement`), the user is redirected to the standard `/dashboard`.
 
 ### Core Business Actions
 *   [InitiateSubscriptionUpgrade.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Subscription/InitiateSubscriptionUpgrade.php): Starts checkout sessions on PayMongo and logs pending payment requests.

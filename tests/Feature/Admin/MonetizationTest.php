@@ -50,12 +50,14 @@ class MonetizationTest extends TestCase
         User::factory()->artisanApproved()->create(['premium_tier' => 'premium']);
         User::factory()->artisanApproved()->create(['premium_tier' => 'super_premium']);
 
+        $expectedMrr = (int) (\App\Facades\Settings::get('tier_premium_price', 699) + \App\Facades\Settings::get('tier_super_premium_price', 1299));
+
         $this->actingAs($admin)
             ->get(route('admin.monetization'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Admin/Monetization/Monetization')
-                ->where('metrics.mrr.value', 598)
+                ->where('metrics.mrr.value', $expectedMrr)
                 ->where('metrics.mrr.is_projected', true)
                 ->where('metrics.mrr.basis', 'Based on current active artisan plan tiers.')
             );

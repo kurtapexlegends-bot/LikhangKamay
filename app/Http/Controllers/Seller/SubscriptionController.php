@@ -111,21 +111,22 @@ class SubscriptionController extends Controller
                     'premium' => app(\App\Services\SubscriptionPlanService::class)->getTierCustomFeatures('premium'),
                     'super_premium' => app(\App\Services\SubscriptionPlanService::class)->getTierCustomFeatures('super_premium'),
                 ],
-                'free_limit' => (int) \App\Facades\Settings::get('tier_free_limit', 3),
+                'free_price' => (float) \App\Facades\Settings::get('tier_free_price', 349),
+                'free_limit' => (int) \App\Facades\Settings::get('tier_free_limit', 8),
                 'free_staff_limit' => (int) \App\Facades\Settings::get('tier_free_staff_limit', 0),
                 'free_badge' => (string) \App\Facades\Settings::get('tier_free_badge', 'Foundational'),
-                'free_description' => (string) \App\Facades\Settings::get('tier_free_description', 'Keep your shop live with essentials for catalog, orders, and seller workspace.'),
+                'free_description' => (string) \App\Facades\Settings::get('tier_free_description', 'Essential catalog, orders, and shop operations for solo craft artisans.'),
                 'free_features' => app(\App\Services\SubscriptionPlanService::class)->getTierFeaturesList('free'),
 
-                'premium_price' => (float) \App\Facades\Settings::get('tier_premium_price', 199),
-                'premium_limit' => (int) \App\Facades\Settings::get('tier_premium_limit', 10),
+                'premium_price' => (float) \App\Facades\Settings::get('tier_premium_price', 699),
+                'premium_limit' => (int) \App\Facades\Settings::get('tier_premium_limit', 25),
                 'premium_staff_limit' => (int) \App\Facades\Settings::get('tier_premium_staff_limit', 3),
                 'premium_badge' => (string) \App\Facades\Settings::get('tier_premium_badge', 'Most Popular'),
                 'premium_description' => (string) \App\Facades\Settings::get('tier_premium_description', 'Add more shelf space and stronger operational tools for growing artisan shops.'),
                 'premium_features' => app(\App\Services\SubscriptionPlanService::class)->getTierFeaturesList('premium'),
 
-                'super_premium_price' => (float) \App\Facades\Settings::get('tier_super_premium_price', 399),
-                'super_premium_limit' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 50),
+                'super_premium_price' => (float) \App\Facades\Settings::get('tier_super_premium_price', 1299),
+                'super_premium_limit' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 75),
                 'super_premium_staff_limit' => (int) \App\Facades\Settings::get('tier_super_premium_staff_limit', 15),
                 'super_premium_badge' => (string) \App\Facades\Settings::get('tier_super_premium_badge', 'Full Access'),
                 'super_premium_description' => (string) \App\Facades\Settings::get('tier_super_premium_description', 'Unlock the complete seller suite, B2B wholesale access, and sponsored placements.'),
@@ -160,7 +161,7 @@ class SubscriptionController extends Controller
         $planName = match ($validated['plan']) {
             'super_premium' => 'Elite',
             'premium' => 'Premium',
-            default => 'Standard',
+            default => 'Basic',
         };
 
         $formattedDate = $user->subscription_expires_at
@@ -206,7 +207,7 @@ class SubscriptionController extends Controller
     public function upgrade(Request $request, InitiateSubscriptionUpgrade $action)
     {
         $validated = $request->validate([
-            'plan' => 'required|in:premium,super_premium',
+            'plan' => 'required|in:free,basic,premium,super_premium,elite',
             'billing_cycle' => 'nullable|in:monthly,yearly',
         ]);
 
@@ -342,8 +343,8 @@ class SubscriptionController extends Controller
     {
         return match ($plan) {
             'premium' => 'Premium',
-            'super_premium' => 'Elite',
-            default => 'Standard',
+            'super_premium', 'elite' => 'Elite',
+            default => 'Basic',
         };
     }
 

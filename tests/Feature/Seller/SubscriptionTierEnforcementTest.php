@@ -111,13 +111,13 @@ class SubscriptionTierEnforcementTest extends TestCase
             'premium_tier' => 'super_premium',
         ]);
 
-        $products = collect(range(1, 11))->map(function (int $index) use ($seller) {
+        $products = collect(range(1, 26))->map(function (int $index) use ($seller) {
             return $this->createActiveProduct($seller, [
                 'name' => 'Product ' . $index,
                 'sku' => 'SKU-TOP-' . $index,
-                'sold' => 12 - $index,
-                'created_at' => now()->subDays(20 - $index),
-                'updated_at' => now()->subDays(20 - $index),
+                'sold' => 30 - $index,
+                'created_at' => now()->subDays(30 - $index),
+                'updated_at' => now()->subDays(30 - $index),
             ]);
         });
 
@@ -132,7 +132,7 @@ class SubscriptionTierEnforcementTest extends TestCase
 
         $draftedProduct = $products->last();
 
-        foreach ($products->take(10) as $product) {
+        foreach ($products->take(25) as $product) {
             $this->assertDatabaseHas('products', [
                 'id' => $product->id,
                 'status' => 'Active',
@@ -151,13 +151,13 @@ class SubscriptionTierEnforcementTest extends TestCase
             'premium_tier' => 'premium',
         ]);
 
-        $products = collect(range(1, 4))->map(function (int $index) use ($seller) {
+        $products = collect(range(1, 9))->map(function (int $index) use ($seller) {
             return $this->createActiveProduct($seller, [
                 'name' => 'Tie Product ' . $index,
                 'sku' => 'SKU-TIE-' . $index,
                 'sold' => 0,
-                'created_at' => now()->subDays(10 - $index),
-                'updated_at' => now()->subDays(10 - $index),
+                'created_at' => now()->subDays(15 - $index),
+                'updated_at' => now()->subDays(15 - $index),
             ]);
         });
 
@@ -170,7 +170,7 @@ class SubscriptionTierEnforcementTest extends TestCase
         $response->assertRedirect();
         $this->assertSame('free', $seller->fresh()->premium_tier);
 
-        foreach ($products->take(3) as $product) {
+        foreach ($products->take(8) as $product) {
             $this->assertDatabaseHas('products', [
                 'id' => $product->id,
                 'status' => 'Active',
@@ -210,7 +210,7 @@ class SubscriptionTierEnforcementTest extends TestCase
             'user_id' => $seller->id,
             'from_plan' => 'free',
             'to_plan' => 'premium',
-            'amount' => 199.00,
+            'amount' => 699.00,
             'status' => SubscriptionTransaction::STATUS_PENDING,
             'paymongo_session_id' => 'cs_sub_pending',
         ]);

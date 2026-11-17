@@ -133,9 +133,9 @@ class ProductController extends Controller
                     'limit' => $seller->getActiveProductLimit(),
                     'canAddMore' => $seller->canAddMoreProducts(),
                     'tierLimits' => [
-                        'free' => (int) \App\Facades\Settings::get('tier_free_limit', 3),
-                        'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 10),
-                        'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 50),
+                        'free' => (int) \App\Facades\Settings::get('tier_free_limit', 8),
+                        'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 25),
+                        'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 75),
                     ],
                 ],
                 'metrics' => [
@@ -168,9 +168,9 @@ class ProductController extends Controller
                     'limit' => $seller->getActiveProductLimit(),
                     'canAddMore' => false,
                     'tierLimits' => [
-                        'free' => (int) \App\Facades\Settings::get('tier_free_limit', 3),
-                        'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 10),
-                        'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 50),
+                        'free' => (int) \App\Facades\Settings::get('tier_free_limit', 8),
+                        'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 25),
+                        'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 75),
                     ],
                 ],
                 'metrics' => [

@@ -32,7 +32,7 @@ class SubscriptionCancellationAndExpirationTest extends TestCase
         $this->assertNotNull($seller->subscription_cancelled_at);
         $this->assertEquals('premium', $seller->premium_tier);
         $this->assertTrue($seller->isPremiumTier());
-        $this->assertEquals(10, $seller->getActiveProductLimit());
+        $this->assertEquals(25, $seller->getActiveProductLimit());
     }
 
     public function test_resuming_auto_renewal_clears_cancellation_timestamp(): void
@@ -55,7 +55,7 @@ class SubscriptionCancellationAndExpirationTest extends TestCase
         $seller->refresh();
         $this->assertNull($seller->subscription_cancelled_at);
         $this->assertTrue($seller->isEliteTier());
-        $this->assertEquals(50, $seller->getActiveProductLimit());
+        $this->assertEquals(75, $seller->getActiveProductLimit());
     }
 
     public function test_expired_subscription_falls_back_to_free_tier_limits(): void
@@ -76,7 +76,7 @@ class SubscriptionCancellationAndExpirationTest extends TestCase
         $seller->refresh();
         $this->assertEquals('free', $seller->getEffectivePremiumTier());
         $this->assertFalse($seller->isPremiumTier());
-        $this->assertEquals(3, $seller->getActiveProductLimit());
+        $this->assertEquals(8, $seller->getActiveProductLimit());
     }
 
     public function test_scheduling_renewal_plan_retains_active_tier_until_expiration(): void
@@ -103,7 +103,7 @@ class SubscriptionCancellationAndExpirationTest extends TestCase
         // Active tier is still super_premium with 50 products limit while 20 days remain
         $this->assertEquals('super_premium', $seller->getEffectivePremiumTier());
         $this->assertTrue($seller->isEliteTier());
-        $this->assertEquals(50, $seller->getActiveProductLimit());
+        $this->assertEquals(75, $seller->getActiveProductLimit());
 
         // Fast forward past expiration
         $seller->update([
@@ -115,6 +115,6 @@ class SubscriptionCancellationAndExpirationTest extends TestCase
         $this->assertEquals('premium', $seller->getEffectivePremiumTier());
         $this->assertTrue($seller->isPremiumTier());
         $this->assertFalse($seller->isEliteTier());
-        $this->assertEquals(10, $seller->getActiveProductLimit());
+        $this->assertEquals(25, $seller->getActiveProductLimit());
     }
 }

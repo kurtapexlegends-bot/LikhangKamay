@@ -278,7 +278,7 @@ class AuditLogAggregationService
         return match ($plan) {
             'premium' => 'Premium',
             'super_premium' => 'Elite',
-            'free' => 'Standard',
+            'free' => 'Basic',
             default => ucfirst(str_replace('_', ' ', $plan)),
         };
     }

@@ -244,9 +244,9 @@ class SellerEntitlementService
             'isCancelled' => $cancelledAt !== null,
             'daysRemaining' => $daysRemaining,
             'tierLimits' => [
-                'free' => (int) \App\Facades\Settings::get('tier_free_limit', 3),
-                'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 10),
-                'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 50),
+                'free' => (int) \App\Facades\Settings::get('tier_free_limit', 8),
+                'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 25),
+                'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 75),
             ],
             'tierStaffLimits' => [
                 'free' => (int) \App\Facades\Settings::get('tier_free_staff_limit', 0),
@@ -256,9 +256,9 @@ class SellerEntitlementService
             'staffCount' => $seller->staffMembers()->count(),
             'staffLimit' => $seller->getActiveStaffLimit(),
             'tierPrices' => [
-                'free' => 0.00,
-                'premium' => (float) \App\Facades\Settings::get('tier_premium_price', 199.00),
-                'super_premium' => (float) \App\Facades\Settings::get('tier_super_premium_price', 399.00),
+                'free' => (float) \App\Facades\Settings::get('tier_free_price', 349.00),
+                'premium' => (float) \App\Facades\Settings::get('tier_premium_price', 699.00),
+                'super_premium' => (float) \App\Facades\Settings::get('tier_super_premium_price', 1299.00),
             ],
             'tierBadges' => [
                 'free' => (string) \App\Facades\Settings::get('tier_free_badge', 'Foundational'),
@@ -266,7 +266,7 @@ class SellerEntitlementService
                 'super_premium' => (string) \App\Facades\Settings::get('tier_super_premium_badge', 'Full Access'),
             ],
             'tierDescriptions' => [
-                'free' => (string) \App\Facades\Settings::get('tier_free_description', 'Keep your shop live with essentials for catalog, orders, and seller workspace.'),
+                'free' => (string) \App\Facades\Settings::get('tier_free_description', 'Essential catalog, orders, and shop operations for solo craft artisans.'),
                 'premium' => (string) \App\Facades\Settings::get('tier_premium_description', 'Add more shelf space and stronger operational tools for growing artisan shops.'),
                 'super_premium' => (string) \App\Facades\Settings::get('tier_super_premium_description', 'Unlock the complete seller suite, B2B wholesale access, and sponsored placements.'),
             ],

@@ -45,10 +45,11 @@ export default function Subscription({
     const { openSidebar } = useSellerWorkspaceShell();
 
     const plans = useMemo(() => {
-        const freeLimit = planSettings?.free_limit ?? 3;
+        const freePrice = planSettings?.free_price ?? 349;
+        const freeLimit = planSettings?.free_limit ?? 8;
         const freeStaffLimit = planSettings?.free_staff_limit ?? 0;
         const freeBadge = planSettings?.free_badge || 'Foundational';
-        const freeDescription = planSettings?.free_description || 'Keep your shop live with the essentials for catalog, orders, and seller workspace basics.';
+        const freeDescription = planSettings?.free_description || 'Essential catalog, orders, and shop operations for solo craft artisans.';
         const freeFeatures = planSettings?.free_features && planSettings.free_features.length > 0
             ? planSettings.free_features
             : [
@@ -56,12 +57,13 @@ export default function Subscription({
                 'Basic analytics dashboard',
                 '3D interactive model viewer',
                 'Courier booking (Lalamove)',
+                'Custom bespoke downpayments',
                 'Printable invoices & receipts',
                 'Customer reviews',
             ];
 
-        const premiumPrice = planSettings?.premium_price ?? 199;
-        const premiumLimit = planSettings?.premium_limit ?? 10;
+        const premiumPrice = planSettings?.premium_price ?? 699;
+        const premiumLimit = planSettings?.premium_limit ?? 25;
         const premiumStaffLimit = planSettings?.premium_staff_limit ?? 3;
         const premiumBadge = planSettings?.premium_badge || 'Most Popular';
         const premiumDescription = planSettings?.premium_description || 'Add more shelf space and stronger operational tools once your shop starts growing beyond the basics.';
@@ -77,8 +79,8 @@ export default function Subscription({
                 'Automated thank-you messages',
             ];
 
-        const superPremiumPrice = planSettings?.super_premium_price ?? 399;
-        const superPremiumLimit = planSettings?.super_premium_limit ?? 50;
+        const superPremiumPrice = planSettings?.super_premium_price ?? 1299;
+        const superPremiumLimit = planSettings?.super_premium_limit ?? 75;
         const superPremiumStaffLimit = planSettings?.super_premium_staff_limit ?? 15;
         const superPremiumBadge = planSettings?.super_premium_badge || 'Full Access';
         const superPremiumDescription = planSettings?.super_premium_description || 'Unlock the complete seller suite for larger shops, staff workflows, and sponsorship-driven growth.';
@@ -97,10 +99,11 @@ export default function Subscription({
         return [
             {
                 id: 'free',
-                name: 'Standard',
+                name: 'Basic',
                 eyebrow: freeBadge,
-                price: 'Free',
-                billingNote: 'No monthly fee',
+                rawPrice: freePrice,
+                price: `PHP ${freePrice}`,
+                billingNote: 'per month',
                 description: freeDescription,
                 limit: freeLimit,
                 staffLimit: freeStaffLimit,
@@ -114,7 +117,7 @@ export default function Subscription({
                 downgradeButtonClass: 'border-stone-300 bg-white text-stone-700 hover:border-stone-400 hover:bg-stone-50',
                 heroStripeClass: 'from-stone-300 via-stone-200 to-[#F4EEE8]',
                 benefitCardClass: 'border-stone-200 bg-stone-50/70',
-                supportCopy: 'Best for new artisan shops keeping a focused active catalog.',
+                supportCopy: 'Best for solo artisan shops keeping an authentic focused catalog.',
                 features: [
                     `Up to ${freeLimit} active products • ${freeStaffLimit} staff accounts`,
                     ...freeFeatures,
@@ -124,6 +127,7 @@ export default function Subscription({
                 id: 'premium',
                 name: 'Premium',
                 eyebrow: premiumBadge,
+                rawPrice: premiumPrice,
                 price: `PHP ${premiumPrice}`,
                 billingNote: 'per month',
                 description: premiumDescription,
@@ -149,6 +153,7 @@ export default function Subscription({
                 id: 'super_premium',
                 name: 'Elite',
                 eyebrow: superPremiumBadge,
+                rawPrice: superPremiumPrice,
                 price: `PHP ${superPremiumPrice}`,
                 billingNote: 'per month',
                 description: superPremiumDescription,
@@ -315,7 +320,7 @@ export default function Subscription({
                                 {isOnTrial ? (
                                     <span className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50/90 px-3.5 py-1 text-xs font-bold text-amber-950 shadow-2xs">
                                         <Sparkles className="h-4 w-4 shrink-0 text-amber-600 animate-pulse" />
-                                        <span>Your Current Plan: <strong className="font-black text-amber-950">Standard (14-Day Trial Active)</strong></span>
+                                        <span>Your Current Plan: <strong className="font-black text-amber-950">Basic (14-Day Trial Active)</strong></span>
                                     </span>
                                 ) : (
                                     <span className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-bold shadow-2xs ${

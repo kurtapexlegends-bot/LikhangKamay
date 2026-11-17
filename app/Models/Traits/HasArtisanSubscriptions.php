@@ -130,12 +130,22 @@ trait HasArtisanSubscriptions
         return false;
     }
 
+    public function isSubscriptionExpired(): bool
+    {
+        return $this->subscription_expires_at !== null && $this->subscription_expires_at->isPast();
+    }
+
+    public function hasActiveSubscription(): bool
+    {
+        return $this->isOnTrial() || ($this->subscription_expires_at !== null && $this->subscription_expires_at->isFuture());
+    }
+
     public function getActiveProductLimit(): int
     {
         return match($this->getEffectivePremiumTier()) {
-            'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 50),
-            'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 10),
-            default => (int) \App\Facades\Settings::get('tier_free_limit', 3),
+            'super_premium' => (int) \App\Facades\Settings::get('tier_super_premium_limit', 75),
+            'premium' => (int) \App\Facades\Settings::get('tier_premium_limit', 25),
+            default => (int) \App\Facades\Settings::get('tier_free_limit', 8),
         };
     }
 
@@ -257,7 +267,7 @@ trait HasArtisanSubscriptions
         return match($this->getEffectivePremiumTier()) {
             'super_premium' => 'Elite',
             'premium' => 'Premium',
-            default => 'Standard',
+            default => 'Basic',
         };
     }
 

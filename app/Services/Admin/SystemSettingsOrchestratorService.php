@@ -211,11 +211,18 @@ class SystemSettingsOrchestratorService
         }
 
         // Audit Logging for subscription plan modifications
+        if (isset($validated['tier_free_price']) && (float)$this->settings->get('tier_free_price') !== (float)$validated['tier_free_price']) {
+            PlatformActivity::log(
+                'TIER_PRICE_UPDATE',
+                "Changed Basic plan monthly price from ₱" . $this->settings->get('tier_free_price') . " to ₱" . $validated['tier_free_price'],
+                ['plan' => 'Basic', 'previous_price' => '₱' . $this->settings->get('tier_free_price'), 'new_price' => '₱' . $validated['tier_free_price']]
+            );
+        }
         if (isset($validated['tier_free_limit']) && (int)$this->settings->get('tier_free_limit') !== (int)$validated['tier_free_limit']) {
             PlatformActivity::log(
                 'TIER_LIMIT_UPDATE',
-                "Changed Free plan product limit from " . $this->settings->get('tier_free_limit') . " to " . $validated['tier_free_limit'],
-                ['plan' => 'Free', 'previous_limit' => $this->settings->get('tier_free_limit'), 'new_limit' => $validated['tier_free_limit']]
+                "Changed Basic plan product limit from " . $this->settings->get('tier_free_limit') . " to " . $validated['tier_free_limit'],
+                ['plan' => 'Basic', 'previous_limit' => $this->settings->get('tier_free_limit'), 'new_limit' => $validated['tier_free_limit']]
             );
         }
         if (isset($validated['tier_premium_price']) && (float)$this->settings->get('tier_premium_price') !== (float)$validated['tier_premium_price']) {
@@ -289,6 +296,9 @@ class SystemSettingsOrchestratorService
         }
 
         // Save Subscription Tier settings
+        if (isset($validated['tier_free_price'])) {
+            $this->settings->set('tier_free_price', $validated['tier_free_price'], 'float');
+        }
         if (isset($validated['tier_free_limit'])) {
             $this->settings->set('tier_free_limit', $validated['tier_free_limit'], 'integer');
         }
@@ -425,17 +435,18 @@ class SystemSettingsOrchestratorService
             'available_plan_modules' => array_values($this->planService->getAvailableModules()),
             'subscription_trial_days' => (int) $this->settings->get('subscription_trial_days', 14),
             'subscription_annual_discount' => (float) $this->settings->get('subscription_annual_discount', 20.0),
-            'tier_free_limit' => (int) $this->settings->get('tier_free_limit', 3),
+            'tier_free_price' => (float) $this->settings->get('tier_free_price', 349.00),
+            'tier_free_limit' => (int) $this->settings->get('tier_free_limit', 8),
             'tier_free_staff_limit' => (int) $this->settings->get('tier_free_staff_limit', 0),
             'tier_free_badge' => (string) $this->settings->get('tier_free_badge', 'Foundational'),
-            'tier_free_description' => (string) $this->settings->get('tier_free_description', 'Keep your shop live with essentials for catalog, orders, and seller workspace.'),
+            'tier_free_description' => (string) $this->settings->get('tier_free_description', 'Essential catalog, orders, and shop operations for solo craft artisans.'),
             'tier_free_modules' => $this->planService->getTierModules('free'),
             'tier_free_feature_labels' => $this->planService->getTierFeatureLabels('free'),
             'tier_free_custom_features' => $this->planService->getTierCustomFeatures('free'),
             'tier_free_features' => $this->planService->getTierFeaturesList('free'),
 
-            'tier_premium_price' => (float) $this->settings->get('tier_premium_price', 199.00),
-            'tier_premium_limit' => (int) $this->settings->get('tier_premium_limit', 10),
+            'tier_premium_price' => (float) $this->settings->get('tier_premium_price', 699.00),
+            'tier_premium_limit' => (int) $this->settings->get('tier_premium_limit', 25),
             'tier_premium_staff_limit' => (int) $this->settings->get('tier_premium_staff_limit', 3),
             'tier_premium_badge' => (string) $this->settings->get('tier_premium_badge', 'Most Popular'),
             'tier_premium_description' => (string) $this->settings->get('tier_premium_description', 'Add more shelf space and stronger operational tools for growing artisan shops.'),
@@ -444,8 +455,8 @@ class SystemSettingsOrchestratorService
             'tier_premium_custom_features' => $this->planService->getTierCustomFeatures('premium'),
             'tier_premium_features' => $this->planService->getTierFeaturesList('premium'),
 
-            'tier_super_premium_price' => (float) $this->settings->get('tier_super_premium_price', 399.00),
-            'tier_super_premium_limit' => (int) $this->settings->get('tier_super_premium_limit', 50),
+            'tier_super_premium_price' => (float) $this->settings->get('tier_super_premium_price', 1299.00),
+            'tier_super_premium_limit' => (int) $this->settings->get('tier_super_premium_limit', 75),
             'tier_super_premium_staff_limit' => (int) $this->settings->get('tier_super_premium_staff_limit', 15),
             'tier_super_premium_badge' => (string) $this->settings->get('tier_super_premium_badge', 'Full Access'),
             'tier_super_premium_description' => (string) $this->settings->get('tier_super_premium_description', 'Unlock the complete seller suite, B2B wholesale access, and sponsored placements.'),

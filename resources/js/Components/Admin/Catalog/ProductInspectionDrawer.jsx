@@ -294,7 +294,7 @@ export default function ProductInspectionDrawer({
                                                 ? 'bg-amber-50 text-amber-800 border-amber-250/30'
                                                 : 'bg-stone-100 text-stone-600 border-stone-200'
                                     }`}>
-                                        {product.user.premium_tier === 'super_premium' ? 'Elite' : product.user.premium_tier === 'premium' ? 'Premium' : 'Standard'}
+                                        {product.user.premium_tier === 'super_premium' ? 'Elite' : product.user.premium_tier === 'premium' ? 'Premium' : 'Basic'}
                                     </span>
                                 )}
                             </div>

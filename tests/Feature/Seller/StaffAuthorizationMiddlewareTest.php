@@ -185,6 +185,7 @@ class StaffAuthorizationMiddlewareTest extends TestCase
         ]);
 
         // 2. Active limit enforcement (import 4 valid products, limit is 3)
+        \App\Facades\Settings::set('tier_free_limit', 3);
         $productA = \App\Models\Product::factory()->create([
             'user_id' => $owner->id,
             'sku' => 'PROD-A',
