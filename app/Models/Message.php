@@ -31,6 +31,6 @@ class Message extends Model
     }
 
     public function commission() {
-        return $this->belongsTo(CustomCommission::class, 'commission_id');
+        return $this->belongsTo(CustomCommission::class, 'commission_id')->withTrashed();
     }
 }

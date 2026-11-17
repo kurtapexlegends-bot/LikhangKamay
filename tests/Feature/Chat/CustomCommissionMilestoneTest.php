@@ -404,4 +404,238 @@ class CustomCommissionMilestoneTest extends TestCase
         $this->assertSame(CustomCommission::STATUS_IN_PROGRESS, $commission->status);
         $this->assertSame('cs_test_return_dep', $commission->deposit_payment_id);
     }
+
+    public function test_record_balance_paid_is_guarded_against_cancelled_or_unready_commissions(): void
+    {
+        $service = app(\App\Services\CustomCommissionService::class);
+
+        // 1. Commission is cancelled
+        $cancelledCommission = CustomCommission::create([
+            'artisan_id' => $this->artisan->id,
+            'buyer_id' => $this->buyer->id,
+            'commission_number' => CustomCommission::generateCommissionNumber(),
+            'title' => 'Cancelled Custom Vase',
+            'total_amount' => 2000.00,
+            'deposit_amount' => 1000.00,
+            'balance_amount' => 1000.00,
+            'deposit_percentage' => 50.00,
+            'status' => CustomCommission::STATUS_CANCELLED,
+            'cancelled_at' => now(),
+        ]);
+
+        $ordersBefore = Order::count();
+        $result = $service->recordBalancePaid($cancelledCommission, 'GCash', 'PAY-CANCELLED-TEST');
+
+        $this->assertSame(CustomCommission::STATUS_CANCELLED, $result->status);
+        $this->assertSame($ordersBefore, Order::count());
+        $this->assertNull($result->order_id);
+
+        // 2. Commission is awaiting deposit
+        $awaitingCommission = CustomCommission::create([
+            'artisan_id' => $this->artisan->id,
+            'buyer_id' => $this->buyer->id,
+            'commission_number' => CustomCommission::generateCommissionNumber(),
+            'title' => 'Awaiting Deposit Bowl',
+            'total_amount' => 1500.00,
+            'deposit_amount' => 500.00,
+            'balance_amount' => 1000.00,
+            'deposit_percentage' => 33.33,
+            'status' => CustomCommission::STATUS_AWAITING_DEPOSIT,
+        ]);
+
+        $resultAwaiting = $service->recordBalancePaid($awaitingCommission, 'GCash', 'PAY-AWAITING-TEST');
+        $this->assertSame(CustomCommission::STATUS_AWAITING_DEPOSIT, $resultAwaiting->status);
+        $this->assertSame($ordersBefore, Order::count());
+        $this->assertNull($resultAwaiting->order_id);
+    }
+
+    public function test_reconcile_payment_session_rejects_mismatched_session_id(): void
+    {
+        $service = app(\App\Services\CustomCommissionService::class);
+
+        $commission = CustomCommission::create([
+            'artisan_id' => $this->artisan->id,
+            'buyer_id' => $this->buyer->id,
+            'commission_number' => CustomCommission::generateCommissionNumber(),
+            'title' => 'Custom Mug Set',
+            'total_amount' => 1000.00,
+            'deposit_amount' => 500.00,
+            'balance_amount' => 500.00,
+            'deposit_percentage' => 50.00,
+            'status' => CustomCommission::STATUS_AWAITING_DEPOSIT,
+            'paymongo_deposit_session_id' => 'cs_legit_expected_deposit_123',
+        ]);
+
+        // Attempt reconciliation with a mismatched session ID
+        $reconciled = $service->reconcilePaymentSession($commission, 'deposit', 'cs_attacker_forged_session_999');
+
+        $this->assertFalse($reconciled);
+        $commission->refresh();
+        $this->assertSame(CustomCommission::STATUS_AWAITING_DEPOSIT, $commission->status);
+        $this->assertNull($commission->deposit_paid_at);
+    }
+
+    public function test_paymongo_webhook_reconciles_by_session_id_when_metadata_is_omitted(): void
+    {
+        config(['services.paymongo.webhook_secret' => 'whsk_test_commission_secret']);
+        $timestamp = time();
+
+        $commission = CustomCommission::create([
+            'artisan_id' => $this->artisan->id,
+            'buyer_id' => $this->buyer->id,
+            'commission_number' => CustomCommission::generateCommissionNumber(),
+            'title' => 'Custom Terracotta Planter',
+            'total_amount' => 2500.00,
+            'deposit_amount' => 1250.00,
+            'balance_amount' => 1250.00,
+            'deposit_percentage' => 50.00,
+            'status' => CustomCommission::STATUS_AWAITING_DEPOSIT,
+            'paymongo_deposit_session_id' => 'cs_fallback_match_789',
+        ]);
+
+        // Webhook with NO metadata['commission_id'], only session ID
+        $depositPayload = [
+            'data' => [
+                'attributes' => [
+                    'type' => 'checkout_session.payment.paid',
+                    'data' => [
+                        'id' => 'cs_fallback_match_789',
+                        'attributes' => [
+                            'payment_status' => 'paid',
+                            'payment_method_used' => 'gcash',
+                            'payments' => [
+                                ['id' => 'pay_fb_001', 'attributes' => ['status' => 'paid']],
+                            ],
+                            'metadata' => [],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $payloadJson = json_encode($depositPayload);
+        $signature = hash_hmac('sha256', "{$timestamp}.{$payloadJson}", 'whsk_test_commission_secret');
+
+        $res = $this->call(
+            'POST',
+            route('webhooks.paymongo'),
+            [],
+            [],
+            [],
+            [
+                'HTTP_Paymongo-Signature' => "t={$timestamp},v1={$signature}",
+                'CONTENT_TYPE' => 'application/json',
+            ],
+            $payloadJson
+        );
+
+        $res->assertStatus(200);
+        $res->assertJson(['status' => 'success']);
+
+        $commission->refresh();
+        $this->assertSame(CustomCommission::STATUS_IN_PROGRESS, $commission->status);
+        $this->assertSame('pay_fb_001', $commission->deposit_payment_id);
+    }
+
+    public function test_paymongo_webhook_safely_ignores_cancelled_commission_and_logs(): void
+    {
+        config(['services.paymongo.webhook_secret' => 'whsk_test_commission_secret']);
+        $timestamp = time();
+
+        $commission = CustomCommission::create([
+            'artisan_id' => $this->artisan->id,
+            'buyer_id' => $this->buyer->id,
+            'commission_number' => CustomCommission::generateCommissionNumber(),
+            'title' => 'Cancelled Plate',
+            'total_amount' => 800.00,
+            'deposit_amount' => 400.00,
+            'balance_amount' => 400.00,
+            'deposit_percentage' => 50.00,
+            'status' => CustomCommission::STATUS_CANCELLED,
+            'paymongo_deposit_session_id' => 'cs_cancelled_session_111',
+            'cancelled_at' => now(),
+        ]);
+
+        $depositPayload = [
+            'data' => [
+                'attributes' => [
+                    'type' => 'checkout_session.payment.paid',
+                    'data' => [
+                        'id' => 'cs_cancelled_session_111',
+                        'attributes' => [
+                            'payment_status' => 'paid',
+                            'payment_method_used' => 'gcash',
+                            'payments' => [
+                                ['id' => 'pay_cnc_001', 'attributes' => ['status' => 'paid']],
+                            ],
+                            'metadata' => [
+                                'type' => 'commission_deposit',
+                                'commission_id' => (string) $commission->id,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $payloadJson = json_encode($depositPayload);
+        $signature = hash_hmac('sha256', "{$timestamp}.{$payloadJson}", 'whsk_test_commission_secret');
+
+        $res = $this->call(
+            'POST',
+            route('webhooks.paymongo'),
+            [],
+            [],
+            [],
+            [
+                'HTTP_Paymongo-Signature' => "t={$timestamp},v1={$signature}",
+                'CONTENT_TYPE' => 'application/json',
+            ],
+            $payloadJson
+        );
+
+        $res->assertStatus(200);
+        $res->assertJson(['status' => 'ignored']);
+
+        $commission->refresh();
+        $this->assertSame(CustomCommission::STATUS_CANCELLED, $commission->status);
+    }
+
+    public function test_commission_and_message_resolve_soft_deleted_relationships(): void
+    {
+        $commission = CustomCommission::create([
+            'artisan_id' => $this->artisan->id,
+            'buyer_id' => $this->buyer->id,
+            'commission_number' => CustomCommission::generateCommissionNumber(),
+            'title' => 'Archived Sculpture',
+            'total_amount' => 5000.00,
+            'deposit_amount' => 2500.00,
+            'balance_amount' => 2500.00,
+            'deposit_percentage' => 50.00,
+            'status' => CustomCommission::STATUS_READY_FOR_BALANCE,
+        ]);
+
+        // Complete it to create an Order
+        $service = app(\App\Services\CustomCommissionService::class);
+        $completedCommission = $service->recordBalancePaid($commission, 'GCash', 'PAY-COMPLETED-001');
+
+        $orderId = $completedCommission->order_id;
+        $this->assertNotNull($orderId);
+
+        $order = Order::findOrFail($orderId);
+        $order->delete(); // Soft delete order
+
+        $completedCommission->refresh();
+        $this->assertNotNull($completedCommission->order);
+        $this->assertSame($orderId, $completedCommission->order->id);
+
+        // Soft delete commission and verify message relation
+        $message = \App\Models\Message::where('commission_id', $commission->id)->first();
+        $this->assertNotNull($message);
+
+        $completedCommission->delete(); // Soft delete commission
+        $message->refresh();
+        $this->assertNotNull($message->commission);
+        $this->assertSame($completedCommission->id, $message->commission->id);
+    }
 }

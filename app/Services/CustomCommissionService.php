@@ -258,7 +258,7 @@ class CustomCommissionService
     {
         return DB::transaction(function () use ($commission, $paymentMethod, $paymentId) {
             $lockedCommission = CustomCommission::lockForUpdate()->findOrFail($commission->id);
-            if ($lockedCommission->isCompleted()) {
+            if (!$lockedCommission->isReadyForBalance()) {
                 return $lockedCommission;
             }
 
@@ -336,6 +336,19 @@ class CustomCommissionService
      */
     public function reconcilePaymentSession(CustomCommission $commission, string $step, ?string $sessionId): bool
     {
+        if (empty($sessionId)) {
+            return false;
+        }
+
+        $expectedSessionId = $step === 'deposit'
+            ? $commission->paymongo_deposit_session_id
+            : $commission->paymongo_balance_session_id;
+
+        if (!empty($expectedSessionId) && $expectedSessionId !== $sessionId) {
+            Log::warning("PayMongo commission session mismatch: expected {$expectedSessionId}, got {$sessionId}");
+            return false;
+        }
+
         $isTestMode = app()->environment('testing') || (app()->environment('local') && empty(config('services.paymongo.secret_key')));
 
         if ($isTestMode) {
@@ -349,22 +362,23 @@ class CustomCommissionService
             return false;
         }
 
-        if (empty($sessionId)) {
-            return false;
-        }
-
-        $expectedSessionId = $step === 'deposit'
-            ? $commission->paymongo_deposit_session_id
-            : $commission->paymongo_balance_session_id;
-
-        if ($expectedSessionId && $expectedSessionId !== $sessionId) {
-            Log::warning("PayMongo commission session mismatch: expected {$expectedSessionId}, got {$sessionId}");
+        if (empty($expectedSessionId)) {
+            Log::warning("PayMongo commission return without expected session on commission {$commission->id}");
             return false;
         }
 
         try {
             $session = $this->payMongoService->retrieveCheckoutSession($sessionId);
             $attributes = $session['attributes'] ?? [];
+
+            // Verify metadata to prevent cross-commission replay attacks
+            $metaCommissionId = $attributes['metadata']['commission_id'] ?? null;
+            $metaType = $attributes['metadata']['type'] ?? null;
+            if ($metaCommissionId !== null && ((string) $metaCommissionId !== (string) $commission->id || $metaType !== ('commission_' . $step))) {
+                Log::warning("PayMongo commission metadata mismatch for session {$sessionId}");
+                return false;
+            }
+
             $isPaid = ($attributes['payment_status'] ?? 'unpaid') === 'paid'
                 || ($attributes['status'] ?? 'pending') === 'paid';
 

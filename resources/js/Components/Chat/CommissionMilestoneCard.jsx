@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
     Receipt,
@@ -56,6 +56,12 @@ export default function CommissionMilestoneCard({ msg, viewer = 'buyer' }) {
     const [commission, setCommission] = useState(initialCommission);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [actionError, setActionError] = useState(null);
+
+    useEffect(() => {
+        if (msg?.commission) {
+            setCommission(msg.commission);
+        }
+    }, [msg?.commission]);
 
     if (!commission) {
         return null;

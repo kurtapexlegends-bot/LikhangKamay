@@ -118,20 +118,43 @@ class PaymongoWebhookController extends Controller
         // Check if it's a CustomCommission
         $commissionType = $sessionData['attributes']['metadata']['type'] ?? null;
         $commissionId = $sessionData['attributes']['metadata']['commission_id'] ?? null;
+        $commission = null;
+
         if (in_array($commissionType, ['commission_deposit', 'commission_balance'], true) && $commissionId) {
             $commission = \App\Models\CustomCommission::find($commissionId);
+        } elseif ($sessionId) {
+            $commission = \App\Models\CustomCommission::where('paymongo_deposit_session_id', $sessionId)
+                ->orWhere('paymongo_balance_session_id', $sessionId)
+                ->first();
             if ($commission) {
-                $paymentId = $sessionData['attributes']['payments'][0]['id'] ?? $sessionId;
-                $method = $sessionData['attributes']['payment_method_used'] ?? 'PayMongo';
-                if ($commissionType === 'commission_deposit' && $commission->isAwaitingDeposit()) {
-                    app(\App\Services\CustomCommissionService::class)->recordDepositPaid($commission, $method, $paymentId);
-                    Log::info('Custom commission deposit paid via Webhook', ['commission_id' => $commission->id]);
-                } elseif ($commissionType === 'commission_balance' && $commission->isReadyForBalance()) {
-                    app(\App\Services\CustomCommissionService::class)->recordBalancePaid($commission, $method, $paymentId);
-                    Log::info('Custom commission balance paid via Webhook', ['commission_id' => $commission->id]);
-                }
-                return response()->json(['status' => 'success']);
+                $commissionType = ($commission->paymongo_deposit_session_id === $sessionId)
+                    ? 'commission_deposit'
+                    : 'commission_balance';
             }
+        }
+
+        if ($commission) {
+            $paymentId = $sessionData['attributes']['payments'][0]['id'] ?? $sessionId;
+            $method = $sessionData['attributes']['payment_method_used'] ?? 'PayMongo';
+
+            if ($commission->isCancelled()) {
+                Log::error('PayMongo webhook received payment for CANCELLED custom commission', [
+                    'commission_id' => $commission->id,
+                    'session_id' => $sessionId,
+                    'payment_id' => $paymentId,
+                    'type' => $commissionType,
+                ]);
+                return response()->json(['status' => 'ignored']);
+            }
+
+            if ($commissionType === 'commission_deposit' && $commission->isAwaitingDeposit()) {
+                app(\App\Services\CustomCommissionService::class)->recordDepositPaid($commission, $method, $paymentId);
+                Log::info('Custom commission deposit paid via Webhook', ['commission_id' => $commission->id]);
+            } elseif ($commissionType === 'commission_balance' && $commission->isReadyForBalance()) {
+                app(\App\Services\CustomCommissionService::class)->recordBalancePaid($commission, $method, $paymentId);
+                Log::info('Custom commission balance paid via Webhook', ['commission_id' => $commission->id]);
+            }
+            return response()->json(['status' => 'success']);
         }
 
         // Check if it's a SubscriptionTransaction
@@ -200,20 +223,43 @@ class PaymongoWebhookController extends Controller
         // 3. Try reconciling as CustomCommission
         $commissionType = $paymentData['attributes']['metadata']['type'] ?? null;
         $commissionId = $paymentData['attributes']['metadata']['commission_id'] ?? null;
+        $checkoutSessionId = $paymentData['attributes']['checkout_session_id'] ?? null;
+
+        $commission = null;
         if (in_array($commissionType, ['commission_deposit', 'commission_balance'], true) && $commissionId) {
             $commission = \App\Models\CustomCommission::find($commissionId);
+        } elseif ($checkoutSessionId) {
+            $commission = \App\Models\CustomCommission::where('paymongo_deposit_session_id', $checkoutSessionId)
+                ->orWhere('paymongo_balance_session_id', $checkoutSessionId)
+                ->first();
             if ($commission) {
-                $paymentId = $paymentData['id'] ?? null;
-                $method = $paymentData['attributes']['source']['type'] ?? 'PayMongo';
-                if ($commissionType === 'commission_deposit' && $commission->isAwaitingDeposit()) {
-                    app(\App\Services\CustomCommissionService::class)->recordDepositPaid($commission, $method, $paymentId);
-                    Log::info('Custom commission deposit paid via payment.paid Webhook', ['commission_id' => $commission->id]);
-                } elseif ($commissionType === 'commission_balance' && $commission->isReadyForBalance()) {
-                    app(\App\Services\CustomCommissionService::class)->recordBalancePaid($commission, $method, $paymentId);
-                    Log::info('Custom commission balance paid via payment.paid Webhook', ['commission_id' => $commission->id]);
-                }
-                return response()->json(['status' => 'success']);
+                $commissionType = ($commission->paymongo_deposit_session_id === $checkoutSessionId)
+                    ? 'commission_deposit'
+                    : 'commission_balance';
             }
+        }
+
+        if ($commission) {
+            $paymentId = $paymentData['id'] ?? null;
+            $method = $paymentData['attributes']['source']['type'] ?? 'PayMongo';
+
+            if ($commission->isCancelled()) {
+                Log::error('PayMongo webhook payment.paid received for CANCELLED custom commission', [
+                    'commission_id' => $commission->id,
+                    'payment_id' => $paymentId,
+                    'type' => $commissionType,
+                ]);
+                return response()->json(['status' => 'ignored']);
+            }
+
+            if ($commissionType === 'commission_deposit' && $commission->isAwaitingDeposit()) {
+                app(\App\Services\CustomCommissionService::class)->recordDepositPaid($commission, $method, $paymentId);
+                Log::info('Custom commission deposit paid via payment.paid Webhook', ['commission_id' => $commission->id]);
+            } elseif ($commissionType === 'commission_balance' && $commission->isReadyForBalance()) {
+                app(\App\Services\CustomCommissionService::class)->recordBalancePaid($commission, $method, $paymentId);
+                Log::info('Custom commission balance paid via payment.paid Webhook', ['commission_id' => $commission->id]);
+            }
+            return response()->json(['status' => 'success']);
         }
 
         return response()->json(['status' => 'ignored']);
