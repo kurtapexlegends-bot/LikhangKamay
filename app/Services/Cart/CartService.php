@@ -140,14 +140,16 @@ class CartService
                 ? in_array($seller?->role, ['artisan', 'supplier'], true)
                 : $seller?->role === 'artisan';
 
-            if (!$seller || $seller->trashed() || !$isAllowedRole || $seller->artisan_status !== 'approved' || (method_exists($seller, 'isBanned') && $seller->isBanned()) || (method_exists($seller, 'isSuspended') && $seller->isSuspended())) {
+            $isSubscriptionInactive = $seller && $seller->isArtisan() && !$seller->hasActiveSubscription();
+
+            if (!$seller || $seller->trashed() || !$isAllowedRole || $seller->artisan_status !== 'approved' || (method_exists($seller, 'isBanned') && $seller->isBanned()) || (method_exists($seller, 'isSuspended') && $seller->isSuspended()) || $isSubscriptionInactive) {
                 if (($item['is_available'] ?? true) !== false) {
                     $item['is_available'] = false;
                     $updatedCart = true;
                 }
                 $item['is_out_of_stock'] = false;
                 $item['stock'] = 0;
-                $item['unavailable_reason'] = 'Workshop is currently unavailable';
+                $item['unavailable_reason'] = $isSubscriptionInactive ? 'Workshop is currently taking a break' : 'Workshop is currently unavailable';
                 continue;
             }
 
@@ -256,8 +258,25 @@ class CartService
         }
 
         $product = Product::select($productColumns)
-            ->with('user:id,name,shop_name,city,deleted_at')
+            ->with('user:id,name,shop_name,city,role,artisan_status,subscription_expires_at,trial_ends_at,suspended_until,banned_at,deleted_at')
             ->findOrFail($data['product_id']);
+
+        $seller = $product->user;
+        if ($seller && ($seller->trashed() || ($seller->isArtisan() && $seller->artisan_status !== 'approved') || (method_exists($seller, 'isBanned') && $seller->isBanned()) || (method_exists($seller, 'isSuspended') && $seller->isSuspended()))) {
+            return [
+                'success' => false,
+                'message' => 'Workshop is currently unavailable.',
+                'status' => 422,
+            ];
+        }
+
+        if ($seller && $seller->isArtisan() && !$seller->hasActiveSubscription()) {
+            return [
+                'success' => false,
+                'message' => 'Workshop is currently taking a break.',
+                'status' => 422,
+            ];
+        }
 
         $moq = (int) ($product->moq ?: 1);
         $requestedQty = (int) ($data['quantity'] ?? $moq);

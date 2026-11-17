@@ -62,7 +62,8 @@ class BuyerOrderController extends Controller
 
         foreach ($sellerItems as $artisanId => $sellerGroupItems) {
             $seller = User::withTrashed()->find((int) $artisanId);
-            if (!$seller || $seller->trashed() || $seller->role !== 'artisan' || $seller->artisan_status !== 'approved' || $seller->isBanned() || $seller->isSuspended()) {
+            $isSubscriptionInactive = $seller && $seller->isArtisan() && !$seller->hasActiveSubscription();
+            if (!$seller || $seller->trashed() || $seller->role !== 'artisan' || $seller->artisan_status !== 'approved' || $seller->isBanned() || $seller->isSuspended() || $isSubscriptionInactive) {
                 return redirect()->route('cart.index')->with('error', 'One or more items in your cart belong to an inactive workshop. Please update your cart to proceed.');
             }
 

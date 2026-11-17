@@ -49,6 +49,7 @@ class CatalogService
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
                       ->where('artisan_status', 'approved')
+                      ->activeSubscription()
                       ->whereHas('complianceAgreements', function ($cq) {
                           $cq->where('document_type', 'seller_terms');
                       });
@@ -73,6 +74,7 @@ class CatalogService
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
                       ->where('artisan_status', 'approved')
+                      ->activeSubscription()
                       ->whereHas('complianceAgreements', function ($cq) {
                           $cq->where('document_type', 'seller_terms');
                       });
@@ -126,6 +128,7 @@ class CatalogService
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
                       ->where('artisan_status', 'approved')
+                      ->activeSubscription()
                       ->whereHas('complianceAgreements', function ($cq) {
                           $cq->where('document_type', 'seller_terms');
                       });
@@ -217,6 +220,7 @@ class CatalogService
             ->whereHas('user', function ($q) {
                 $q->where('role', 'artisan')
                   ->where('artisan_status', 'approved')
+                  ->activeSubscription()
                   ->whereHas('complianceAgreements', function ($cq) {
                       $cq->where('document_type', 'seller_terms');
                   });
@@ -238,6 +242,7 @@ class CatalogService
             ->whereHas('user', function ($q) {
                 $q->where('role', 'artisan')
                   ->where('artisan_status', 'approved')
+                  ->activeSubscription()
                   ->whereHas('complianceAgreements', function ($cq) {
                       $cq->where('document_type', 'seller_terms');
                   });
@@ -421,6 +426,7 @@ class CatalogService
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
                       ->where('artisan_status', 'approved')
+                      ->activeSubscription()
                       ->whereHas('complianceAgreements', function ($cq) {
                           $cq->where('document_type', 'seller_terms');
                       });
@@ -440,6 +446,7 @@ class CatalogService
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
                       ->where('artisan_status', 'approved')
+                      ->activeSubscription()
                       ->whereHas('complianceAgreements', function ($cq) {
                           $cq->where('document_type', 'seller_terms');
                       });
@@ -458,6 +465,7 @@ class CatalogService
                 ->whereHas('user', function ($q) {
                     $q->where('role', 'artisan')
                       ->where('artisan_status', 'approved')
+                      ->activeSubscription()
                       ->whereHas('complianceAgreements', function ($cq) {
                           $cq->where('document_type', 'seller_terms');
                       });

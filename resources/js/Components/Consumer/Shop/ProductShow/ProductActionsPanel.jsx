@@ -6,6 +6,7 @@ export default function ProductActionsPanel({
     quantity,
     setQuantity,
     isPendingArtisan,
+    isWorkshopInactive = false,
     auth,
     addToCart,
     isAddingToCart,
@@ -24,7 +25,7 @@ export default function ProductActionsPanel({
                         <button
                             onClick={() => setQuantity(Math.max(1, quantity - 1))}
                             aria-label="Decrease quantity"
-                            disabled={quantity <= 1}
+                            disabled={quantity <= 1 || isWorkshopInactive}
                             className="flex h-11 w-11 items-center justify-center rounded-l-xl border border-stone-200 transition-all hover:bg-stone-50 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 sm:h-8 sm:w-8 sm:rounded-l-lg disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Minus size={16} className="sm:w-3.5 sm:h-3.5" />
@@ -35,7 +36,7 @@ export default function ProductActionsPanel({
                         <button
                             onClick={() => setQuantity(Math.min(product.stock || 99, quantity + 1))}
                             aria-label="Increase quantity"
-                            disabled={quantity >= (product.stock || 99)}
+                            disabled={quantity >= (product.stock || 99) || isWorkshopInactive}
                             className="flex h-11 w-11 items-center justify-center rounded-r-xl border border-stone-200 transition-all hover:bg-stone-50 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-500/20 sm:h-8 sm:w-8 sm:rounded-r-lg disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Plus size={16} className="sm:w-3.5 sm:h-3.5" />
@@ -52,6 +53,10 @@ export default function ProductActionsPanel({
                 {isPendingArtisan ? (
                     <div className="flex w-full items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-[13px] font-bold text-amber-700 shadow-sm">
                         Purchasing is disabled while your shop application is under review.
+                    </div>
+                ) : isWorkshopInactive ? (
+                    <div className="flex w-full items-center justify-center rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-center text-[13px] font-bold text-stone-700 shadow-sm">
+                        This workshop is currently taking a break. Purchasing is temporarily unavailable.
                     </div>
                 ) : isAdmin ? (
                     <div className="flex w-full items-center justify-center rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-center text-[13px] font-bold text-stone-700 shadow-sm">

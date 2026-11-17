@@ -53,8 +53,9 @@ class QuoteCheckoutShipping
         foreach ($groupedItems as $artisanId => $items) {
             $seller = User::withTrashed()->find($artisanId);
             $isAllowedRole = in_array($seller?->role, ['artisan', 'supplier'], true);
+            $isSubscriptionInactive = $seller && $seller->isArtisan() && !$seller->hasActiveSubscription();
 
-            if (!$seller || $seller->trashed() || !$isAllowedRole || $seller->artisan_status !== 'approved' || $seller->isBanned() || $seller->isSuspended()) {
+            if (!$seller || $seller->trashed() || !$isAllowedRole || $seller->artisan_status !== 'approved' || $seller->isBanned() || $seller->isSuspended() || $isSubscriptionInactive) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
                     'items' => 'One or more items in your cart belong to an inactive workshop. Please update your cart to proceed.',
                 ]);

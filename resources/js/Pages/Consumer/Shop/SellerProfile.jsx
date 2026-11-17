@@ -5,7 +5,7 @@ import BuyerNavbar from '@/Layouts/BuyerNavbar';
 import Footer from '@/Layouts/Footer';
 import {
     MapPin, Calendar, Star, Package, Trophy, Crown, Flame, Sparkles,
-    ShoppingCart, Check, Loader2, ArrowLeft, Filter, Heart, Search, ArrowUpDown, X
+    ShoppingCart, Check, Loader2, ArrowLeft, Filter, Heart, Search, ArrowUpDown, X, Clock3
 } from 'lucide-react';
 import UserAvatar from '@/Components/UserAvatar';
 import { hasRating, formatRating } from '@/utils/rating';
@@ -16,7 +16,7 @@ import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { parsePrice, formatPrice } from '@/utils/money';
 import { resolveImageUrl } from '@/lib/media';
 
-export default function SellerProfile({ seller, products, bestSellers = [], stats }) {
+export default function SellerProfile({ seller, products, bestSellers = [], stats, isStoreInactive = false }) {
     const { addToast } = useToast();
     const { auth } = usePage().props;
     const [searchTerm, setSearchTerm] = useState('');
@@ -210,7 +210,25 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                     </div>
                 </div>
 
-                {/* --- BEST SELLERS --- */}
+                {/* --- INACTIVE STORE NOTICE --- */}
+                {isStoreInactive && (
+                    <div className="my-10 rounded-[2rem] border border-amber-200 bg-stone-50 p-10 sm:p-14 text-center max-w-2xl mx-auto shadow-2xs">
+                        <div className="w-14 h-14 rounded-2xl bg-amber-100/80 text-amber-800 flex items-center justify-center mx-auto mb-4 border border-amber-200 shadow-2xs">
+                            <Clock3 className="w-7 h-7" />
+                        </div>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 mb-3">
+                            Temporarily Paused
+                        </span>
+                        <h3 className="text-xl sm:text-2xl font-serif font-black text-stone-900 tracking-tight">Workshop Taking a Break</h3>
+                        <p className="mt-2 text-sm sm:text-base text-stone-600 leading-relaxed max-w-lg mx-auto">
+                            This artisan workshop is temporarily resting while updating studio operations. Craft listings and ordering will resume once the workshop reopens.
+                        </p>
+                    </div>
+                )}
+
+                {!isStoreInactive && (
+                    <>
+                        {/* --- BEST SELLERS --- */}
                 {bestSellers.length > 0 && (
                     <div className="mb-10">
                         <div className="mb-4 px-1 select-none">
@@ -428,6 +446,8 @@ export default function SellerProfile({ seller, products, bestSellers = [], stat
                         description={products.length > 0 ? "We couldn't find any products matching your search or filters. Try adjusting them." : "This artisan hasn't added any products to their shop yet."}
                         className="py-16"
                     />
+                )}
+                    </>
                 )}
 
             </main>

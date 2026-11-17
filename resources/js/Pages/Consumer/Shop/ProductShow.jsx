@@ -21,7 +21,7 @@ import RelatedProductsGrid from '@/Components/Consumer/Shop/ProductShow/RelatedP
 import SellerAboutPanel from '@/Components/Consumer/Shop/ProductShow/SellerAboutPanel';
 import HeightComparisonModal from '@/Components/Consumer/Shop/ProductShow/HeightComparisonModal';
 
-export default function ProductShow({ product, relatedProducts = [], auth }) {
+export default function ProductShow({ product, relatedProducts = [], isWorkshopInactive = false, auth }) {
     const { addToast } = useToast();
     const [isHeightComparisonOpen, setIsHeightComparisonOpen] = useState(false);
     const productRating = normalizeRating(product?.rating);
@@ -170,6 +170,11 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
             return;
         }
 
+        if (isWorkshopInactive) {
+            addToast('This workshop is currently taking a break.', 'info');
+            return;
+        }
+
         setIsAddingToCart(true);
         window.dispatchEvent(new CustomEvent('cart-add-animate', { detail: { quantity } }));
 
@@ -195,6 +200,11 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
     const handleBuyNow = () => {
         if (!auth?.user) {
             router.visit(route('login'));
+            return;
+        }
+
+        if (isWorkshopInactive) {
+            addToast('This workshop is currently taking a break.', 'info');
             return;
         }
 
@@ -327,6 +337,7 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                                 quantity={quantity}
                                 setQuantity={setQuantity}
                                 isPendingArtisan={isPendingArtisan}
+                                isWorkshopInactive={isWorkshopInactive}
                                 auth={auth}
                                 addToCart={addToCart}
                                 isAddingToCart={isAddingToCart}
@@ -386,6 +397,10 @@ export default function ProductShow({ product, relatedProducts = [], auth }) {
                     {isPendingArtisan ? (
                         <div className="flex h-11 flex-1 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-4 text-[13px] font-bold text-amber-700">
                             Disabled for pending shops
+                        </div>
+                    ) : isWorkshopInactive ? (
+                        <div className="flex h-11 flex-1 items-center justify-center rounded-xl border border-stone-200 bg-stone-50 px-4 text-[13px] font-bold text-stone-700">
+                            Workshop taking a break
                         </div>
                     ) : isAdmin ? (
                         <div className="flex h-11 flex-1 items-center justify-center rounded-xl border border-stone-200 bg-stone-50 px-4 text-[13px] font-bold text-stone-700">

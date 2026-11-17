@@ -449,10 +449,18 @@ class ProductController extends Controller
         ]);
 
         $relatedProducts = $product->getRelatedProducts();
+        $isWorkshopInactive = (bool) ($product->user?->isArtisan() && (
+            !$product->user?->hasActiveSubscription()
+            || $product->user?->trashed()
+            || $product->user?->artisan_status !== 'approved'
+            || (method_exists($product->user, 'isBanned') && $product->user->isBanned())
+            || (method_exists($product->user, 'isSuspended') && $product->user->isSuspended())
+        ));
 
         return Inertia::render('Consumer/Shop/ProductShow', [
             'product' => new ProductDetailResource($product),
             'relatedProducts' => $relatedProducts,
+            'isWorkshopInactive' => $isWorkshopInactive,
             'auth' => [
                 'user' => Auth::user(),
             ],

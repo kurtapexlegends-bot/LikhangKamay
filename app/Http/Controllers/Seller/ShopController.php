@@ -41,6 +41,34 @@ class ShopController extends Controller
 
         $seller->enforceSubscriptionExpirationIfDue();
 
+        $isSubscriptionActive = $seller->hasActiveSubscription();
+
+        if (!$isSubscriptionActive) {
+            return Inertia::render('Consumer/Shop/SellerProfile', [
+                'seller' => [
+                    'id' => $seller->id,
+                    'slug' => $seller->shop_slug,
+                    'name' => $seller->shop_name ?? $seller->name,
+                    'avatar' => $seller->avatar,
+                    'avatar_url' => $seller->avatar_url,
+                    'banner_image' => $seller->banner_image,
+                    'banner_image_url' => $seller->banner_image_url,
+                    'location' => $seller->city ?? 'Philippines',
+                    'joined_at' => $seller->created_at?->format('F Y') ?? 'Recently',
+                    'bio' => $seller->bio ?? "Passionate artisan creating unique handcrafted items.",
+                    'premium_tier' => $seller->premium_tier,
+                ],
+                'products' => [],
+                'bestSellers' => [],
+                'stats' => [
+                    'products' => 0,
+                    'sales' => 0,
+                    'rating' => '0.0',
+                ],
+                'isStoreInactive' => true,
+            ]);
+        }
+
         $products = Cache::remember("seller_{$seller->id}_products", 1800, function() use ($seller) {
             return Product::query()
                 ->where('user_id', $seller->id)
