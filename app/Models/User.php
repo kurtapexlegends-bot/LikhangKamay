@@ -562,7 +562,7 @@ class User extends Authenticatable implements AuthenticatableContract, MustVerif
 
     public function sellerOwner()
     {
-        return $this->belongsTo(self::class, 'seller_owner_id');
+        return $this->belongsTo(self::class, 'seller_owner_id')->withTrashed();
     }
 
     public function staffMembers()

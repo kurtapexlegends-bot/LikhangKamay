@@ -65,7 +65,6 @@ class EnsureSellerWorkspaceAccess
             $owner = $user->sellerOwner;
             if ($owner && !$owner->hasActiveSubscription()) {
                 $allowedStaffRoutes = [
-                    'staff.home',
                     'staff.subscription.locked',
                     'logout',
                     'staff.logout.confirm',

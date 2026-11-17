@@ -89,6 +89,10 @@ class DashboardController extends Controller
         }
 
         if ($user->isStaff()) {
+            if ($user->sellerOwner && !$user->sellerOwner->hasActiveSubscription()) {
+                return redirect()->route('staff.subscription.locked');
+            }
+
             if (!$user->canAccessSellerWorkspace()) {
                 return redirect()->route('staff.home');
             }

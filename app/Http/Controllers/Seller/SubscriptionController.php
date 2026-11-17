@@ -47,13 +47,6 @@ class SubscriptionController extends Controller
             ->values()
             ->all();
 
-        if ($user->isPremiumTier() && $user->subscription_expires_at === null) {
-            $user->update([
-                'subscription_expires_at' => now()->addDays(30),
-            ]);
-            $user->refresh();
-        }
-
         $expiresAt = $user->subscription_expires_at;
         $cancelledAt = $user->subscription_cancelled_at;
         $daysRemaining = $expiresAt ? max(0, (int) ceil(now()->diffInSeconds($expiresAt, false) / 86400)) : null;
@@ -64,10 +57,14 @@ class SubscriptionController extends Controller
         $trialDaysConfig = (int) \App\Facades\Settings::get('subscription_trial_days', 14);
         $annualDiscount = (float) \App\Facades\Settings::get('subscription_annual_discount', 20.0);
         $trialDaysRemaining = $user->getTrialDaysRemaining();
-        $previousPlanKey = \App\Models\UserTierLog::where('user_id', $user->id)
-            ->whereIn('previous_tier', ['free', 'premium', 'super_premium'])
+        $rawPreviousTier = \App\Models\UserTierLog::where('user_id', $user->id)
             ->latest('id')
             ->value('previous_tier') ?? $user->premium_tier ?? 'free';
+        $previousPlanKey = match ($rawPreviousTier) {
+            'super_premium', 'elite' => 'super_premium',
+            'premium' => 'premium',
+            default => 'free',
+        };
 
         $resolvedCurrentPlan = $user->hasActiveSubscription()
             ? ($isOnTrial ? 'free' : $user->getEffectivePremiumTier())

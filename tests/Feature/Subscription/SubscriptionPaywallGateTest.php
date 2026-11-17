@@ -164,4 +164,80 @@ class SubscriptionPaywallGateTest extends TestCase
             ->where('products', [])
         );
     }
+
+    public function test_visiting_subscription_page_does_not_silently_grant_30_days_to_unpaid_artisan(): void
+    {
+        $artisan = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'premium',
+            'subscription_expires_at' => null,
+            'trial_ends_at' => null,
+        ]);
+
+        $this->assertFalse($artisan->hasActiveSubscription());
+
+        $this->actingAs($artisan)
+            ->get(route('seller.subscription'))
+            ->assertOk();
+
+        $artisan->refresh();
+
+        // Must NOT silently grant 30 days
+        $this->assertNull($artisan->subscription_expires_at);
+        $this->assertFalse($artisan->hasActiveSubscription());
+    }
+
+    public function test_staff_visiting_staff_home_redirects_to_subscription_locked_when_artisan_is_expired(): void
+    {
+        $artisan = User::factory()->artisanApproved()->create([
+            'subscription_expires_at' => now()->subDay(),
+            'trial_ends_at' => now()->subDay(),
+        ]);
+
+        $staff = User::factory()->staff($artisan)->create([
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'craftsman',
+            'staff_module_permissions' => User::withWorkspaceAccessFlag(['products' => true], true),
+        ]);
+
+        $this->actingAs($staff)
+            ->get(route('staff.home'))
+            ->assertRedirect(route('staff.subscription.locked'));
+    }
+
+    public function test_staff_visiting_dashboard_redirects_to_subscription_locked_when_artisan_is_expired(): void
+    {
+        $artisan = User::factory()->artisanApproved()->create([
+            'subscription_expires_at' => now()->subDay(),
+            'trial_ends_at' => now()->subDay(),
+        ]);
+
+        $staff = User::factory()->staff($artisan)->create([
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+            'staff_role_preset_key' => 'craftsman',
+            'staff_module_permissions' => null, // no permissions
+        ]);
+
+        $this->actingAs($staff)
+            ->get(route('dashboard'))
+            ->assertRedirect(route('staff.subscription.locked'));
+    }
+
+    public function test_staff_seller_owner_relationship_resolves_soft_deleted_seller(): void
+    {
+        $artisan = User::factory()->artisanApproved()->create([
+            'subscription_expires_at' => now()->addDays(30),
+        ]);
+
+        $staff = User::factory()->staff($artisan)->create([
+            'email_verified_at' => now(),
+            'must_change_password' => false,
+        ]);
+
+        $artisan->delete();
+
+        $this->assertNotNull($staff->fresh()->sellerOwner);
+        $this->assertTrue($staff->fresh()->sellerOwner->trashed());
+    }
 }

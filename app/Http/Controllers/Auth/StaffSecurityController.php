@@ -28,6 +28,10 @@ class StaffSecurityController extends Controller
 
         $user->loadMissing('sellerOwner');
 
+        if ($user->sellerOwner && !$user->sellerOwner->hasActiveSubscription()) {
+            return redirect()->route('staff.subscription.locked');
+        }
+
         return Inertia::render('Staff/Holding', [
             'staffAccount' => [
                 'name' => $user->name,
@@ -35,10 +39,13 @@ class StaffSecurityController extends Controller
                 'role_preset_key' => $user->staff_role_preset_key,
                 'workspace_access_enabled' => $user->isWorkspaceAccessEnabled(),
                 'plan_workspace_suspended' => $user->isPlanWorkspaceSuspended(),
+                'owner_subscription_inactive' => (bool) ($user->sellerOwner && !$user->sellerOwner->hasActiveSubscription()),
             ],
             'sellerOwner' => [
                 'id' => $user->getEffectiveSellerId(),
                 'name' => $user->sellerOwner?->shop_name ?? $user->sellerOwner?->name,
+                'owner_name' => $user->sellerOwner?->name,
+                'subscription_inactive' => (bool) ($user->sellerOwner && !$user->sellerOwner->hasActiveSubscription()),
             ],
         ]);
     }
