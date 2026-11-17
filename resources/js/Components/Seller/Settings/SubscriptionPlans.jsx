@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, Clock3, AlertCircle, CheckCircle2, ArrowRight, ChevronRight, HelpCircle, BadgeCheck, Sparkles, Gift, Percent } from 'lucide-react';
 
 export default function SubscriptionPlans({
@@ -11,7 +12,7 @@ export default function SubscriptionPlans({
     handleUpgrade,
     initiateDowngrade,
     handleScheduleRenewal,
-    pendingDowngradeTier = 'free',
+    pendingDowngradeTier = null,
     daysRemaining = null,
     subscriptionExpiresAt = null,
     handleScroll,
@@ -23,12 +24,14 @@ export default function SubscriptionPlans({
     trialDaysRemaining = null,
     hasSubscriptionHistory = false,
     isNewApprovedArtisan = false,
+    isCancelled = false,
+    isExpired = false,
     billingCycle = 'monthly',
     setBillingCycle,
     annualDiscount = 20,
 }) {
     const currentPlanMeta = plans.find((plan) => plan.id === currentPlan) ?? plans[0];
-    const isFirstTimeSeller = isNewApprovedArtisan || (isOnTrial && !hasSubscriptionHistory);
+    const isFirstTimeSeller = !isExpired && (isNewApprovedArtisan || (isOnTrial && !hasSubscriptionHistory));
 
     return (
         <section className="mx-auto max-w-[1020px] overflow-hidden rounded-[1.75rem] border border-stone-200 bg-white shadow-[0_24px_60px_-42px_rgba(15,23,42,0.32)]">
@@ -101,43 +104,60 @@ export default function SubscriptionPlans({
             )}
 
             <div className="px-5 py-5 sm:px-6">
-                {/* Billing Cycle Commitment Switcher */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 px-1">
-                    <div>
-                        <p className="text-xs font-bold text-stone-800">Choose commitment billing cycle:</p>
-                        <p className="text-[11px] text-stone-500 font-medium">Pay monthly or lock in annual savings.</p>
-                    </div>
-                    <div className="inline-flex p-1 rounded-2xl bg-stone-100 border border-stone-200/80 shadow-2xs">
+                {/* Refined & Centered Billing Cycle Switcher */}
+                <div className="flex flex-col items-center justify-center text-center my-6 px-4">
+                    <p className="text-xs font-bold text-stone-800 mb-2">
+                        Choose commitment billing cycle
+                    </p>
+                    <div className="relative inline-flex items-center p-1.5 rounded-full bg-stone-100 border border-stone-200/90 shadow-2xs">
+                        {/* Monthly Billing Tab */}
                         <button
                             type="button"
                             onClick={() => setBillingCycle?.('monthly')}
-                            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] ${
+                            className={`relative z-10 px-5 py-2 rounded-full text-xs font-bold transition-colors duration-200 min-h-[38px] ${
                                 billingCycle === 'monthly'
-                                    ? 'bg-white text-stone-900 shadow-sm'
+                                    ? 'text-stone-900 font-black'
                                     : 'text-stone-500 hover:text-stone-800'
                             }`}
                         >
-                            Monthly Billing
+                            {billingCycle === 'monthly' && (
+                                <motion.div
+                                    layoutId="billingCyclePill"
+                                    className="absolute inset-0 rounded-full bg-white shadow-sm border border-stone-200/70"
+                                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                                />
+                            )}
+                            <span className="relative z-10">Monthly Billing</span>
                         </button>
+
+                        {/* Annual Commitment Tab */}
                         <button
                             type="button"
                             onClick={() => setBillingCycle?.('yearly')}
-                            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 min-h-[38px] ${
+                            className={`relative z-10 px-5 py-2 rounded-full text-xs font-bold transition-colors duration-200 flex items-center gap-2 min-h-[38px] ${
                                 billingCycle === 'yearly'
-                                    ? 'bg-stone-900 text-white shadow-sm'
+                                    ? 'text-stone-900 font-black'
                                     : 'text-stone-500 hover:text-stone-800'
                             }`}
                         >
-                            <span>Annual Commitment</span>
-                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                                billingCycle === 'yearly'
-                                    ? 'bg-emerald-400 text-emerald-950'
-                                    : 'bg-emerald-100 text-emerald-800'
-                            }`}>
+                            {billingCycle === 'yearly' && (
+                                <motion.div
+                                    layoutId="billingCyclePill"
+                                    className="absolute inset-0 rounded-full bg-white shadow-sm border border-stone-200/70"
+                                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                                />
+                            )}
+                            <span className="relative z-10">Annual Commitment</span>
+                            <span className="relative z-10 inline-flex items-center text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300">
                                 Save {annualDiscount}%
                             </span>
                         </button>
                     </div>
+                    <p className="text-[11px] font-medium text-stone-500 mt-2">
+                        {billingCycle === 'yearly'
+                            ? `Billed annually at ${annualDiscount}% discount. Lock in all features for 365 days.`
+                            : 'Pay month-to-month. Switch to annual commitment anytime to save.'}
+                    </p>
                 </div>
 
                 <div 
@@ -214,46 +234,38 @@ export default function SubscriptionPlans({
                                     </div>
                                 </div>
 
-                                {plan.id === 'free' ? (
-                                    <div className="mt-5">
-                                        <div className="flex items-end gap-1.5">
-                                            <p className="text-[2.35rem] font-black tracking-tight text-stone-900">
-                                                ₱{isYearly ? annualTotal.toLocaleString() : baseMonthlyPrice.toLocaleString()}
+                                <div className="mt-5 min-h-[76px]">
+                                    <AnimatePresence mode="wait">
+                                        <motion.div
+                                            key={billingCycle}
+                                            initial={{ opacity: 0, y: -4 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: 4 }}
+                                            transition={{ duration: 0.16, ease: 'easeOut' }}
+                                        >
+                                            <div className="flex items-end gap-1.5">
+                                                <p className="text-[2.35rem] font-black tracking-tight text-stone-900">
+                                                    ₱{isYearly ? annualTotal.toLocaleString() : baseMonthlyPrice.toLocaleString()}
+                                                </p>
+                                                <p className="pb-1 text-[0.92rem] font-semibold text-stone-400">
+                                                    {isYearly ? '/ year' : '/ mo'}
+                                                </p>
+                                                {isOnTrial && plan.id === 'free' && (
+                                                    <span className="mb-2 ml-1 text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 animate-pulse">
+                                                        Active Trial
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-xs font-semibold text-stone-500">
+                                                {isOnTrial && plan.id === 'free'
+                                                    ? `${trialDaysRemaining ?? 14} days remaining • Reverts to Basic`
+                                                    : isYearly
+                                                        ? `₱${annualMonthlyEquivalent}/mo equivalent (Save ${annualDiscount}%)`
+                                                        : 'Billed monthly'}
                                             </p>
-                                            <p className="pb-1 text-[0.92rem] font-semibold text-stone-400">
-                                                {isYearly ? '/ year' : '/ mo'}
-                                            </p>
-                                            {isOnTrial && (
-                                                <span className="mb-2 ml-1 text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 animate-pulse">
-                                                    Active Trial
-                                                </span>
-                                            )}
-                                        </div>
-                                        <p className="text-xs font-semibold text-stone-500">
-                                            {isOnTrial
-                                                ? `${trialDaysRemaining ?? 14} days remaining • Reverts to Basic`
-                                                : isYearly
-                                                    ? `₱${annualMonthlyEquivalent}/mo equivalent (Save ${annualDiscount}%)`
-                                                    : 'Billed monthly'}
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="mt-5">
-                                        <div className="flex items-end gap-1.5">
-                                            <p className="text-[2.35rem] font-black tracking-tight text-stone-900">
-                                                ₱{isYearly ? annualTotal.toLocaleString() : baseMonthlyPrice.toLocaleString()}
-                                            </p>
-                                            <p className="pb-1 text-[0.92rem] font-semibold text-stone-400">
-                                                {isYearly ? '/ year' : '/ mo'}
-                                            </p>
-                                        </div>
-                                        <p className="text-xs font-semibold text-stone-500">
-                                            {isYearly
-                                                ? `₱${annualMonthlyEquivalent}/mo equivalent (Save ${annualDiscount}%)`
-                                                : 'Billed monthly'}
-                                        </p>
-                                    </div>
-                                )}
+                                        </motion.div>
+                                    </AnimatePresence>
+                                </div>
 
                                 <ul className="mt-5 space-y-3">
                                     {plan.features.map((feature, index) => (
@@ -275,15 +287,40 @@ export default function SubscriptionPlans({
                                                 <BadgeCheck className="h-4 w-4 text-emerald-600" />
                                                 <span>14-Day Trial Active ({trialDaysRemaining ?? 14}d left)</span>
                                             </button>
-                                        ) : (
+                                        ) : isExpired ? (
                                             <button
                                                 type="button"
-                                                disabled
-                                                className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-stone-100 border border-stone-200 px-4 py-2.5 text-[14px] font-extrabold text-stone-700 cursor-default"
+                                                onClick={() => handleUpgrade(plan.id, billingCycle)}
+                                                disabled={isProcessing}
+                                                className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${upgradeButtonClass}`}
                                             >
-                                                <BadgeCheck className="h-4 w-4 text-emerald-600" />
-                                                Your Current Plan
+                                                <span>Renew {plan.name} ({isYearly ? 'Annual' : 'Monthly'})</span>
+                                                <ArrowRight className="h-4 w-4" />
                                             </button>
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-1.5 w-full">
+                                                <button
+                                                    type="button"
+                                                    disabled
+                                                    className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-stone-100 border border-stone-200 px-4 py-2.5 text-[14px] font-extrabold text-stone-700 cursor-default"
+                                                >
+                                                    <BadgeCheck className="h-4 w-4 text-emerald-600" />
+                                                    Your Current Plan
+                                                </button>
+                                                {isCancelled ? (
+                                                    <span className="text-[11px] font-semibold text-amber-700 flex items-center gap-1">
+                                                        <Clock3 className="h-3 w-3" /> Auto-renewal cancelled • Ends in {daysRemaining}d
+                                                    </span>
+                                                ) : pendingDowngradeTier && pendingDowngradeTier !== currentPlan ? (
+                                                    <span className="text-[11px] font-semibold text-amber-700 flex items-center gap-1">
+                                                        <Clock3 className="h-3 w-3" /> Switches on renewal
+                                                    </span>
+                                                ) : daysRemaining !== null ? (
+                                                    <span className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
+                                                        <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Auto-renews in {daysRemaining}d on {plan.name}
+                                                    </span>
+                                                ) : null}
+                                            </div>
                                         )
                                     ) : isUpgrade ? (
                                         <button
@@ -296,7 +333,7 @@ export default function SubscriptionPlans({
                                             {!isProcessing && <ArrowRight className="h-[15px] w-[15px]" />}
                                         </button>
                                     ) : isDowngrade ? (
-                                        pendingDowngradeTier === plan.id ? (
+                                        pendingDowngradeTier && pendingDowngradeTier === plan.id && pendingDowngradeTier !== currentPlan ? (
                                             <button
                                                 type="button"
                                                 disabled

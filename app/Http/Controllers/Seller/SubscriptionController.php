@@ -76,6 +76,8 @@ class SubscriptionController extends Controller
             'subscriptionExpiresAt' => $expiresAt?->toIso8601String(),
             'subscriptionCancelledAt' => $cancelledAt?->toIso8601String(),
             'isCancelled' => $cancelledAt !== null,
+            'isExpired' => $user->isSubscriptionExpired(),
+            'renewalPlan' => $user->pending_downgrade_tier ?: ($user->premium_tier ?? 'free'),
             'daysRemaining' => $daysRemaining,
             'isOnTrial' => $isOnTrial,
             'trialEndsAt' => $user->trial_ends_at?->toIso8601String(),
@@ -83,7 +85,7 @@ class SubscriptionController extends Controller
             'hasSubscriptionHistory' => $hasSubscriptionHistory,
             'isNewApprovedArtisan' => $isNewApprovedArtisan,
             'currentBillingCycle' => $user->billing_cycle ?? 'monthly',
-            'pendingDowngradeTier' => $user->pending_downgrade_tier,
+            'pendingDowngradeTier' => ($user->pending_downgrade_tier !== $user->premium_tier) ? $user->pending_downgrade_tier : null,
             'noRefundPolicy' => 'All subscription payments are final and non-refundable. Auto-renewal can be cancelled anytime with full benefits retained until period expiration.',
             'staffLimit' => $user->getActiveStaffLimit(),
             'canAddMoreStaff' => $user->canAddMoreStaff(),
@@ -148,17 +150,25 @@ class SubscriptionController extends Controller
     public function scheduleRenewalPlan(Request $request)
     {
         $validated = $request->validate([
-            'plan' => 'required|in:free,premium,super_premium'
+            'plan' => 'required|in:free,basic,premium,super_premium,elite'
         ]);
+
+        $normalizedPlan = match ($validated['plan']) {
+            'basic' => 'free',
+            'elite' => 'super_premium',
+            default => $validated['plan'],
+        };
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
+        $targetTier = ($normalizedPlan === $user->premium_tier) ? null : $normalizedPlan;
+
         $user->update([
-            'pending_downgrade_tier' => $validated['plan'],
+            'pending_downgrade_tier' => $targetTier,
         ]);
 
-        $planName = match ($validated['plan']) {
+        $planName = match ($normalizedPlan) {
             'super_premium' => 'Elite',
             'premium' => 'Premium',
             default => 'Basic',
@@ -167,6 +177,10 @@ class SubscriptionController extends Controller
         $formattedDate = $user->subscription_expires_at
             ? $user->subscription_expires_at->format('M d, Y')
             : 'your current period end';
+
+        if ($targetTier === null) {
+            return back()->with('success', "Renewal plan set to {$planName}. Your subscription will continue renewing on the {$planName} plan.");
+        }
 
         return back()->with('success', "Renewal plan set to {$planName}. You will keep all current {$user->getSellerTierLabel()} features until {$formattedDate}, when your shop will gracefully switch to {$planName}.");
     }
@@ -199,6 +213,7 @@ class SubscriptionController extends Controller
 
         $user->update([
             'subscription_cancelled_at' => null,
+            'pending_downgrade_tier' => null,
         ]);
 
         return back()->with('success', 'Subscription reactivated successfully.');

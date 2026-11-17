@@ -25,8 +25,10 @@ export default function Subscription({
     subscriptionExpiresAt = null,
     subscriptionCancelledAt = null,
     isCancelled = false,
+    isExpired = false,
+    renewalPlan = null,
     daysRemaining = null,
-    pendingDowngradeTier = 'free',
+    pendingDowngradeTier = null,
     isOnTrial = false,
     trialEndsAt = null,
     trialDaysRemaining = null,
@@ -352,6 +354,11 @@ export default function Subscription({
                                         <Clock3 size={13} className="text-amber-600" />
                                         Trial ends in <span className="font-bold">{trialDaysRemaining} {trialDaysRemaining === 1 ? 'day' : 'days'}</span>
                                     </span>
+                                ) : isExpired ? (
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-300 bg-rose-50 px-3 py-1 text-xs font-bold text-rose-800">
+                                        <AlertCircle size={13} className="text-rose-600" />
+                                        Subscription Expired on {formattedExpirationDate}
+                                    </span>
                                 ) : formattedExpirationDate ? (
                                     <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50/80 px-3 py-1 text-xs font-semibold text-stone-700">
                                         <Clock3 size={13} className="text-stone-500" />
@@ -370,7 +377,7 @@ export default function Subscription({
                             </div>
 
                             {/* Subscription Actions */}
-                            {currentPlan !== 'free' && !isOnTrial && (
+                            {currentPlan !== 'free' && !isOnTrial && !isExpired && (
                                 <div className="shrink-0 flex items-center gap-2">
                                     {isCancelled ? (
                                         <button
@@ -396,8 +403,49 @@ export default function Subscription({
                             )}
                         </div>
 
+                        {/* Expired Subscription Banner */}
+                        {isExpired && (
+                            <div className="flex items-start gap-3.5 rounded-2xl border border-rose-300 bg-rose-50/90 p-4.5 text-rose-950 shadow-2xs">
+                                <div className="h-10 w-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                                    <AlertCircle className="h-5 w-5" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-sm font-black text-rose-950">Subscription Expired</h4>
+                                    <p className="mt-1 text-xs leading-relaxed text-rose-800">
+                                        Your subscription expired on <strong>{formattedExpirationDate}</strong> without renewal. Your workspace has gracefully transitioned to the Basic plan tier (8 active listings). Excess active listings are safely retained in Draft status, and staff access is paused.
+                                    </p>
+                                    <p className="mt-1 text-xs font-semibold text-rose-700">
+                                        Renew your subscription below to immediately restore your listings, staff access, and features.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Scheduled Plan Change Banner */}
+                        {pendingDowngradeTier && pendingDowngradeTier !== currentPlan && !isCancelled && formattedExpirationDate && (
+                            <div className="flex items-start gap-3 rounded-2xl border border-amber-200/90 bg-amber-50/70 p-4 text-amber-900 shadow-2xs">
+                                <Clock3 size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                                <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                    <div>
+                                        <h4 className="text-xs font-bold text-amber-950">Scheduled Plan Switch on Renewal</h4>
+                                        <p className="mt-0.5 text-xs text-amber-800">
+                                            Your shop is scheduled to transition to the <strong>{pendingDowngradeTier === 'super_premium' ? 'Elite' : pendingDowngradeTier === 'premium' ? 'Premium' : 'Basic'}</strong> plan on <strong>{formattedExpirationDate}</strong>.
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleScheduleRenewal(currentPlan)}
+                                        disabled={isProcessing}
+                                        className="shrink-0 text-xs font-bold text-amber-900 underline hover:text-amber-950"
+                                    >
+                                        Keep Current Plan
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Cancellation Warning Banner */}
-                        {isCancelled && formattedExpirationDate && (
+                        {isCancelled && formattedExpirationDate && !isExpired && (
                             <div className="flex items-start gap-3 rounded-2xl border border-amber-200/80 bg-amber-50/70 p-4 text-amber-900 shadow-2xs">
                                 <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
                                 <div>
@@ -431,6 +479,8 @@ export default function Subscription({
                             trialDaysRemaining={trialDaysRemaining}
                             hasSubscriptionHistory={hasSubscriptionHistory}
                             isNewApprovedArtisan={isNewApprovedArtisan}
+                            isCancelled={isCancelled}
+                            isExpired={isExpired}
                             billingCycle={billingCycle}
                             setBillingCycle={setBillingCycle}
                             annualDiscount={planSettings?.subscription_annual_discount ?? 20}

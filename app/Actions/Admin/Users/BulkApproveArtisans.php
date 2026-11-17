@@ -53,7 +53,7 @@ class BulkApproveArtisans
                     $approvalData['subscription_expires_at'] = now()->addDays($trialDays);
                     $approvalData['trial_ends_at'] = now()->addDays($trialDays);
                     $approvalData['has_used_trial'] = true;
-                    $approvalData['pending_downgrade_tier'] = 'free';
+                    $approvalData['pending_downgrade_tier'] = null;
                 }
 
                 $artisan->update($approvalData);

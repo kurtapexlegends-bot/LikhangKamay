@@ -52,7 +52,7 @@ class SubscriptionService
                     'premium_tier' => $targetPlan,
                     'subscription_expires_at' => now()->addDays($daysToAdd),
                     'subscription_cancelled_at' => null,
-                    'pending_downgrade_tier' => 'free',
+                    'pending_downgrade_tier' => null,
                     'billing_cycle' => $billingCycle,
                     'trial_ends_at' => null,
                 ]);
@@ -75,7 +75,7 @@ class SubscriptionService
                     'premium_tier' => $targetPlan,
                     'subscription_expires_at' => $baseDate->copy()->addDays($daysToAdd),
                     'subscription_cancelled_at' => null,
-                    'pending_downgrade_tier' => 'free',
+                    'pending_downgrade_tier' => null,
                     'billing_cycle' => $billingCycle,
                     'trial_ends_at' => null,
                 ]);
