@@ -14,7 +14,10 @@ import {
     Settings as SettingsIcon,
     ToggleLeft,
     ToggleRight,
-    HelpCircle
+    HelpCircle,
+    Gift,
+    Calendar,
+    Percent
 } from 'lucide-react';
 import { DEFAULT_AVAILABLE_MODULES } from './subscriptionModulesConfig';
 
@@ -164,6 +167,101 @@ export default function SubscriptionTiers({ data, setData, errors, availableModu
 
     return (
         <div className="space-y-6">
+            {/* Introductory Free Trial & Annual Billing Policy Card */}
+            <div className="rounded-[1.75rem] border border-amber-200/90 bg-gradient-to-br from-amber-50/60 via-white to-stone-50 p-6 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-amber-200/60 pb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-600 text-white shadow-sm">
+                            <Gift className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-black text-stone-900 tracking-tight flex items-center gap-2">
+                                <span>Introductory Free Trial & Annual Billing Policy</span>
+                                <span className="text-[10px] uppercase font-extrabold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200">
+                                    Adviser Directives
+                                </span>
+                            </h3>
+                            <p className="text-xs text-stone-500 font-medium">
+                                Configure the 14-day introductory full-access trial for newly approved artisan accounts and the annual billing commitment discount.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    {/* Trial Duration */}
+                    <div className="space-y-1.5 bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
+                        <label className="block text-xs font-bold text-stone-800 flex items-center gap-1.5">
+                            <Calendar size={14} className="text-amber-600" />
+                            <span>New Artisan Free Trial</span>
+                        </label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="number"
+                                min="0"
+                                max="90"
+                                value={data.subscription_trial_days ?? 14}
+                                onChange={(e) => setData('subscription_trial_days', Math.max(0, parseInt(e.target.value) || 0))}
+                                className="w-24 rounded-xl border-stone-200 bg-stone-50 text-xs font-bold text-stone-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                            />
+                            <span className="text-xs font-semibold text-stone-600">Days</span>
+                        </div>
+                        <p className="text-[11px] text-stone-500 font-medium leading-relaxed">
+                            Full premium perks granted on new artisan approval. Downgrades to Standard upon expiration unless upgraded. Set to 0 to disable.
+                        </p>
+                    </div>
+
+                    {/* Annual Discount */}
+                    <div className="space-y-1.5 bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs">
+                        <label className="block text-xs font-bold text-stone-800 flex items-center gap-1.5">
+                            <Percent size={14} className="text-emerald-600" />
+                            <span>Annual Commitment Discount</span>
+                        </label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="number"
+                                min="0"
+                                max="90"
+                                step="1"
+                                value={data.subscription_annual_discount ?? 20}
+                                onChange={(e) => setData('subscription_annual_discount', Math.max(0, parseFloat(e.target.value) || 0))}
+                                className="w-24 rounded-xl border-stone-200 bg-stone-50 text-xs font-bold text-stone-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                            />
+                            <span className="text-xs font-semibold text-stone-600">% Off</span>
+                        </div>
+                        <p className="text-[11px] text-stone-500 font-medium leading-relaxed">
+                            Discount rate applied when artisans select Yearly billing on the subscription upgrade screen.
+                        </p>
+                    </div>
+
+                    {/* Live Annual Pricing Calculator Preview */}
+                    <div className="space-y-2 bg-stone-900 text-white p-4 rounded-2xl shadow-sm flex flex-col justify-between">
+                        <div>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 block">
+                                Calculated Annual Checkouts
+                            </span>
+                            <div className="mt-2 space-y-1 text-xs">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-stone-300">Premium Annual:</span>
+                                    <span className="font-bold text-white font-mono">
+                                        ₱{Math.round((Number(data.tier_premium_price) || 199) * 12 * (1 - (Number(data.subscription_annual_discount) || 20) / 100)).toLocaleString()}/yr
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-stone-300">Elite Annual:</span>
+                                    <span className="font-bold text-white font-mono">
+                                        ₱{Math.round((Number(data.tier_super_premium_price) || 399) * 12 * (1 - (Number(data.subscription_annual_discount) || 20) / 100)).toLocaleString()}/yr
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <span className="text-[10px] text-stone-400 font-mono">
+                            Auto-syncs with PayMongo checkout API
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 {plans.map((plan) => {
                     const PlanIcon = plan.icon;

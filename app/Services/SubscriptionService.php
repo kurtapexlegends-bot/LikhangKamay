@@ -38,7 +38,10 @@ class SubscriptionService
             $currentLevel = $this->getTierLevel($currentPlan);
             $targetLevel = $this->getTierLevel($targetPlan);
 
-            if ($targetLevel > $currentLevel) {
+            $billingCycle = $lockedTransaction->metadata['billing_cycle'] ?? 'monthly';
+            $daysToAdd = ($billingCycle === 'yearly') ? 365 : 30;
+
+            if ($targetLevel > $currentLevel || ($targetLevel === $currentLevel && $user->isOnTrial())) {
                 UserTierLog::create([
                     'user_id' => $user->id,
                     'previous_tier' => $currentPlan,
@@ -47,9 +50,11 @@ class SubscriptionService
 
                 $user->update([
                     'premium_tier' => $targetPlan,
-                    'subscription_expires_at' => now()->addDays(30),
+                    'subscription_expires_at' => now()->addDays($daysToAdd),
                     'subscription_cancelled_at' => null,
                     'pending_downgrade_tier' => 'free',
+                    'billing_cycle' => $billingCycle,
+                    'trial_ends_at' => null,
                 ]);
                 
                 // Clear plan-based staff suspension if they had any
@@ -68,9 +73,11 @@ class SubscriptionService
 
                 $user->update([
                     'premium_tier' => $targetPlan,
-                    'subscription_expires_at' => $baseDate->copy()->addDays(30),
+                    'subscription_expires_at' => $baseDate->copy()->addDays($daysToAdd),
                     'subscription_cancelled_at' => null,
                     'pending_downgrade_tier' => 'free',
+                    'billing_cycle' => $billingCycle,
+                    'trial_ends_at' => null,
                 ]);
 
                 // Clear plan-based staff suspension if they had any

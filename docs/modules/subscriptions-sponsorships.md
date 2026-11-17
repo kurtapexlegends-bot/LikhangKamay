@@ -50,9 +50,13 @@ LikhangKamay supports three seller levels normalized in [SubscriptionService.php
     *   `subscription_cancelled_at`: The timestamp when auto-renewal cancellation was requested.
     *   `pending_downgrade_tier`: Tier level (`free` or `premium`) the user will transition to upon expiration.
 *   **Active Entitlements During Period & Prepaid 30-Day Pass**:
-    *   Because PayMongo subscriptions function as 30-day prepaid passes, canceling auto-renewal or scheduling a lower tier does **not** immediately cut off access or draft active products.
+    *   Because PayMongo subscriptions function as 30-day (or 365-day annual) prepaid passes, canceling auto-renewal or scheduling a lower tier does **not** immediately cut off access or draft active products.
     *   `getEffectivePremiumTier()` returns `premium_tier` while `subscription_expires_at` is in the future.
+    *   `isOnTrial()` returns true when `trial_ends_at` is in the future, providing full Premium feature access during the 14-day introductory period granted upon admin approval.
     *   Once `subscription_expires_at` passes, `getEffectivePremiumTier()` transitions to `pending_downgrade_tier` (or `free`), enforcing listing limits and staff suspensions.
+*   **Annual Billing Cycle & Discount**:
+    *   Sellers can select Monthly or Annual billing in [SubscriptionPlans.jsx](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Settings/SubscriptionPlans.jsx).
+    *   Annual subscriptions grant 365 days of tier access with an automatic discount (configured in System Settings, default 20% savings).
 *   **Scheduled Renewal Plan Selection**:
     *   `POST /subscription/schedule-renewal` (`seller.subscription.schedule-renewal`) in [SubscriptionController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/SubscriptionController.php) updates `pending_downgrade_tier` without drafting listings or altering the current active tier while days remain.
     *   When expiration arrives, the system smoothly transitions the seller to the scheduled tier.

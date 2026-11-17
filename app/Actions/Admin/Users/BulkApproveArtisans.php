@@ -39,12 +39,24 @@ class BulkApproveArtisans
                     'new_status' => 'approved',
                 ]);
 
-                $artisan->update([
+                $trialDays = (int) \App\Facades\Settings::get('subscription_trial_days', 14);
+                $approvalData = [
                     'artisan_status' => 'approved',
                     'approved_at' => now(),
                     'approved_by' => $adminId,
                     'setup_completed_at' => $artisan->setup_completed_at ?? now(),
-                ]);
+                ];
+
+                // Grant introductory trial of paid features on new artisan account approval
+                if ($artisan->isArtisan() && $trialDays > 0 && !$artisan->has_used_trial && $artisan->subscription_expires_at === null) {
+                    $approvalData['premium_tier'] = 'free';
+                    $approvalData['subscription_expires_at'] = now()->addDays($trialDays);
+                    $approvalData['trial_ends_at'] = now()->addDays($trialDays);
+                    $approvalData['has_used_trial'] = true;
+                    $approvalData['pending_downgrade_tier'] = 'free';
+                }
+
+                $artisan->update($approvalData);
 
                 if (method_exists($artisan, 'resolveActiveRevisions')) {
                     $artisan->resolveActiveRevisions();

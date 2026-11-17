@@ -27,6 +27,12 @@ export default function Subscription({
     isCancelled = false,
     daysRemaining = null,
     pendingDowngradeTier = 'free',
+    isOnTrial = false,
+    trialEndsAt = null,
+    trialDaysRemaining = null,
+    hasSubscriptionHistory = false,
+    isNewApprovedArtisan = false,
+    currentBillingCycle = 'monthly',
 }) {
     const [finalDowngradeModalOpen, setFinalDowngradeModalOpen] = useState(false);
     const [comparisonModalOpen, setComparisonModalOpen] = useState(false);
@@ -34,6 +40,7 @@ export default function Subscription({
     const [targetPlan, setTargetPlan] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [activePageIndex, setActivePageIndex] = useState(0);
+    const [billingCycle, setBillingCycle] = useState(currentBillingCycle || 'monthly');
     const { addToast } = useToast();
     const { openSidebar } = useSellerWorkspaceShell();
 
@@ -196,8 +203,11 @@ export default function Subscription({
         });
     };
 
-    const handleUpgrade = (planValue) => {
-        submitSubscriptionChange(route('seller.subscription.upgrade'), { plan: planValue });
+    const handleUpgrade = (planValue, cycle = billingCycle) => {
+        submitSubscriptionChange(route('seller.subscription.upgrade'), {
+            plan: planValue,
+            billing_cycle: cycle,
+        });
     };
 
     const initiateDowngrade = (planValue, newLimit) => {
@@ -302,30 +312,42 @@ export default function Subscription({
                         {/* Expiration & Policy Status Banner */}
                         <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
                             <div className="flex flex-wrap items-center gap-2">
-                                <span className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-bold shadow-2xs ${
-                                     currentPlan === 'super_premium'
-                                         ? 'border-violet-200/80 bg-violet-50/70 text-violet-900'
-                                         : currentPlan === 'premium'
-                                             ? 'border-amber-200/80 bg-amber-50/70 text-amber-900'
-                                             : 'border-stone-200 bg-stone-100/80 text-stone-800'
-                                 }`}>
-                                     <BadgeCheck className={`h-4 w-4 shrink-0 ${
+                                {isOnTrial ? (
+                                    <span className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50/90 px-3.5 py-1 text-xs font-bold text-amber-950 shadow-2xs">
+                                        <Sparkles className="h-4 w-4 shrink-0 text-amber-600 animate-pulse" />
+                                        <span>Your Current Plan: <strong className="font-black text-amber-950">Standard (14-Day Trial Active)</strong></span>
+                                    </span>
+                                ) : (
+                                    <span className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-bold shadow-2xs ${
                                          currentPlan === 'super_premium'
-                                             ? 'text-violet-600'
+                                             ? 'border-violet-200/80 bg-violet-50/70 text-violet-900'
                                              : currentPlan === 'premium'
-                                                 ? 'text-amber-600'
-                                                 : 'text-stone-600'
-                                     }`} />
-                                     <span>Your Current Plan: <strong className={`font-black ${
-                                         currentPlan === 'super_premium'
-                                             ? 'text-violet-950'
-                                             : currentPlan === 'premium'
-                                                 ? 'text-amber-950'
-                                                 : 'text-stone-950'
-                                     }`}>{currentPlanMeta.name}</strong></span>
-                                 </span>
+                                                 ? 'border-amber-200/80 bg-amber-50/70 text-amber-900'
+                                                 : 'border-stone-200 bg-stone-100/80 text-stone-800'
+                                     }`}>
+                                         <BadgeCheck className={`h-4 w-4 shrink-0 ${
+                                             currentPlan === 'super_premium'
+                                                 ? 'text-violet-600'
+                                                 : currentPlan === 'premium'
+                                                     ? 'text-amber-600'
+                                                     : 'text-stone-600'
+                                         }`} />
+                                         <span>Your Current Plan: <strong className={`font-black ${
+                                             currentPlan === 'super_premium'
+                                                 ? 'text-violet-950'
+                                                 : currentPlan === 'premium'
+                                                     ? 'text-amber-950'
+                                                     : 'text-stone-950'
+                                         }`}>{currentPlanMeta.name}</strong></span>
+                                    </span>
+                                )}
 
-                                {formattedExpirationDate && (
+                                {isOnTrial && trialDaysRemaining !== null ? (
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50/80 px-3 py-1 text-xs font-semibold text-amber-900">
+                                        <Clock3 size={13} className="text-amber-600" />
+                                        Trial ends in <span className="font-bold">{trialDaysRemaining} {trialDaysRemaining === 1 ? 'day' : 'days'}</span>
+                                    </span>
+                                ) : formattedExpirationDate ? (
                                     <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50/80 px-3 py-1 text-xs font-semibold text-stone-700">
                                         <Clock3 size={13} className="text-stone-500" />
                                         {isCancelled ? `Expires on ${formattedExpirationDate}` : `Renews on ${formattedExpirationDate}`}
@@ -335,15 +357,15 @@ export default function Subscription({
                                             </span>
                                         )}
                                     </span>
-                                )}
+                                ) : null}
 
                                 <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
-                                    Non-Refundable
+                                    {isOnTrial ? 'Introductory Trial' : 'Non-Refundable'}
                                 </span>
                             </div>
 
                             {/* Subscription Actions */}
-                            {currentPlan !== 'free' && (
+                            {currentPlan !== 'free' && !isOnTrial && (
                                 <div className="shrink-0 flex items-center gap-2">
                                     {isCancelled ? (
                                         <button
@@ -399,6 +421,14 @@ export default function Subscription({
                             activePageIndex={activePageIndex}
                             pendingUpgradeDate={pendingUpgradeDate}
                             onOpenComparison={() => setComparisonModalOpen(true)}
+                            isOnTrial={isOnTrial}
+                            trialEndsAt={trialEndsAt}
+                            trialDaysRemaining={trialDaysRemaining}
+                            hasSubscriptionHistory={hasSubscriptionHistory}
+                            isNewApprovedArtisan={isNewApprovedArtisan}
+                            billingCycle={billingCycle}
+                            setBillingCycle={setBillingCycle}
+                            annualDiscount={planSettings?.subscription_annual_discount ?? 20}
                         />
 
                         <BillingActivity

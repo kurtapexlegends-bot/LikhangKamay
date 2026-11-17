@@ -59,10 +59,33 @@ trait HasArtisanSubscriptions
 
     // ========== PREMIUM TIER HELPERS ==========
 
+    public function isOnTrial(): bool
+    {
+        return $this->trial_ends_at !== null && $this->trial_ends_at->isFuture();
+    }
+
+    public function hasSubscriptionHistory(): bool
+    {
+        return rescue(fn () => \App\Models\SubscriptionTransaction::where('user_id', $this->id)->where('status', 'paid')->exists(), false);
+    }
+
+    public function getTrialDaysRemaining(): int
+    {
+        if (!$this->isOnTrial()) {
+            return 0;
+        }
+
+        return max(0, (int) ceil(now()->diffInSeconds($this->trial_ends_at, false) / 86400));
+    }
+
     public function getEffectivePremiumTier(): string
     {
         if ($this->subscription_expires_at !== null && $this->subscription_expires_at->isPast()) {
             return $this->pending_downgrade_tier ?? 'free';
+        }
+
+        if ($this->isOnTrial()) {
+            return 'premium';
         }
 
         return $this->premium_tier ?? 'free';

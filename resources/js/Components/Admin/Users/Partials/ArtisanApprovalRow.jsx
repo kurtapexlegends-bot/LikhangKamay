@@ -54,9 +54,20 @@ export default function ArtisanApprovalRow({
                             )}
                         </div>
                         <div className="min-w-0">
-                            <h3 className="font-bold text-[14px] text-stone-900 leading-tight truncate group-hover:text-clay-800 transition-colors">
-                                {artisan.shop_name}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-[14px] text-stone-900 leading-tight truncate group-hover:text-clay-800 transition-colors">
+                                    {artisan.shop_name}
+                                </h3>
+                                {artisan.role === 'supplier' ? (
+                                    <span className="inline-flex items-center rounded-md border border-teal-200/80 bg-teal-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-teal-800 whitespace-nowrap shrink-0">
+                                        Supplier
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center rounded-md border border-amber-200/80 bg-amber-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-800 whitespace-nowrap shrink-0">
+                                        Artisan
+                                    </span>
+                                )}
+                            </div>
                             <p className="text-stone-500 text-[11px] font-medium truncate mt-0.5">
                                 {artisan.name}
                             </p>
@@ -167,9 +178,20 @@ export default function ArtisanApprovalRow({
                             )}
                         </div>
                         <div className="min-w-0">
-                            <h3 className="font-bold text-xs text-stone-900 leading-tight truncate">
-                                {artisan.shop_name}
-                            </h3>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <h3 className="font-bold text-xs text-stone-900 leading-tight truncate">
+                                    {artisan.shop_name}
+                                </h3>
+                                {artisan.role === 'supplier' ? (
+                                    <span className="inline-flex items-center rounded border border-teal-200/80 bg-teal-50 px-1.5 py-0.5 text-[8.5px] font-black uppercase tracking-wider text-teal-800 whitespace-nowrap shrink-0">
+                                        Supplier
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center rounded border border-amber-200/80 bg-amber-50 px-1.5 py-0.5 text-[8.5px] font-black uppercase tracking-wider text-amber-800 whitespace-nowrap shrink-0">
+                                        Artisan
+                                    </span>
+                                )}
+                            </div>
                             <p className="text-stone-500 text-[10px] font-medium truncate mt-0.5">
                                 {artisan.name}
                             </p>

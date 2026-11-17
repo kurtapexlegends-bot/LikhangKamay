@@ -120,31 +120,31 @@ export default function UserTable({
 
                                     {/* Role & Status Badges */}
                                     <div className="flex flex-wrap gap-1.5">
-                                        <span className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer}`}>
-                                            {user.role === 'artisan' && <Store size={11} />}
+                                        <span className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider whitespace-nowrap shrink-0 ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer}`}>
+                                            {(user.role === 'artisan' || user.role === 'supplier') && <Store size={11} />}
                                             {user.role === 'super_admin' && <Shield size={11} />}
                                             {user.role === 'buyer' && <Users size={11} />}
                                             {user.role_label}
                                         </span>
                                         {user.is_banned ? (
-                                            <span className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-wider">
+                                            <span className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0">
                                                 Deactivated
                                             </span>
                                         ) : user.is_suspended ? (
-                                            <span className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-wider">
+                                            <span className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 px-2.5 py-1 text-[9.5px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0">
                                                 Suspended ({user.days_remaining_suspension || 1}d)
                                             </span>
                                         ) : user.warning_count > 0 ? (
-                                            <span className="inline-flex items-center gap-1 rounded-lg border border-amber-200/80 bg-amber-50/60 text-amber-800 px-2.5 py-1 text-[9.5px] font-semibold">
+                                            <span className="inline-flex items-center gap-1 rounded-lg border border-amber-200/80 bg-amber-50/60 text-amber-800 px-2.5 py-1 text-[9.5px] font-semibold whitespace-nowrap shrink-0">
                                                 {user.warning_count} Warning{user.warning_count === 1 ? '' : 's'}
                                             </span>
                                         ) : (
-                                            <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
+                                            <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[9.5px] font-black uppercase tracking-wider whitespace-nowrap shrink-0 ${stateClasses[user.account_state_tone] || stateClasses.neutral}`}>
                                                 {user.account_state}
                                             </span>
                                         )}
-                                        {user.role === 'artisan' && user.shop_name && (
-                                            <span className="inline-flex items-center rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-[9.5px] font-bold text-stone-600 uppercase tracking-wider truncate max-w-[140px]">
+                                        {(user.role === 'artisan' || user.role === 'supplier') && user.shop_name && (
+                                            <span className="inline-flex items-center rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-[9.5px] font-bold text-stone-600 uppercase tracking-wider truncate max-w-[140px] whitespace-nowrap shrink-0">
                                                 {user.shop_name}
                                             </span>
                                         )}
@@ -282,10 +282,11 @@ export default function UserTable({
 
                                          <td className="px-5 py-4 text-center whitespace-nowrap">
                                              <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest whitespace-nowrap ${roleBadgeClasses[user.role] || roleBadgeClasses.buyer}`}>
-                                                 {user.role === 'artisan' && <Store size={10} className="shrink-0" />}
+                                                 {(user.role === 'artisan' || user.role === 'supplier') && <Store size={10} className="shrink-0" />}
                                                  {user.role === 'super_admin' && <Shield size={10} className="shrink-0" />}
                                                  {user.role === 'buyer' && <Users size={10} className="shrink-0" />}
                                                  {user.role === 'artisan' && 'Artisan'}
+                                                 {user.role === 'supplier' && 'Supplier'}
                                                  {user.role === 'super_admin' && 'Admin'}
                                                  {user.role === 'buyer' && 'Buyer'}
                                              </span>

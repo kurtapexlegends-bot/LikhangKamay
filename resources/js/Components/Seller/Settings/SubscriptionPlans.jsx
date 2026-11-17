@@ -1,5 +1,5 @@
 import React from 'react';
-import { Crown, Clock3, AlertCircle, CheckCircle2, ArrowRight, ChevronRight, HelpCircle, BadgeCheck } from 'lucide-react';
+import { Crown, Clock3, AlertCircle, CheckCircle2, ArrowRight, ChevronRight, HelpCircle, BadgeCheck, Sparkles, Gift, Percent } from 'lucide-react';
 
 export default function SubscriptionPlans({
     plans,
@@ -18,8 +18,17 @@ export default function SubscriptionPlans({
     activePageIndex,
     pendingUpgradeDate,
     onOpenComparison,
+    isOnTrial = false,
+    trialEndsAt = null,
+    trialDaysRemaining = null,
+    hasSubscriptionHistory = false,
+    isNewApprovedArtisan = false,
+    billingCycle = 'monthly',
+    setBillingCycle,
+    annualDiscount = 20,
 }) {
     const currentPlanMeta = plans.find((plan) => plan.id === currentPlan) ?? plans[0];
+    const isFirstTimeSeller = isNewApprovedArtisan || (isOnTrial && !hasSubscriptionHistory);
 
     return (
         <section className="mx-auto max-w-[1020px] overflow-hidden rounded-[1.75rem] border border-stone-200 bg-white shadow-[0_24px_60px_-42px_rgba(15,23,42,0.32)]">
@@ -53,39 +62,126 @@ export default function SubscriptionPlans({
                 </div>
             </div>
 
+            {/* Introductory Trial Welcome Banner for Newly Approved Sellers */}
+            {isFirstTimeSeller && (
+                <div className="mx-5 sm:mx-6 mt-5 p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-300/80 shadow-2xs animate-in fade-in slide-in-from-top-3 duration-700 ease-out">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-start sm:items-center gap-3.5">
+                            <div className="h-10 w-10 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-sm animate-pulse">
+                                <Sparkles className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded-full border border-amber-300">
+                                        Introductory Trial Activated
+                                    </span>
+                                    {trialDaysRemaining !== null && (
+                                        <span className="text-xs font-bold text-amber-950 flex items-center gap-1">
+                                            <Clock3 size={13} className="text-amber-700" />
+                                            {trialDaysRemaining} {trialDaysRemaining === 1 ? 'day' : 'days'} remaining
+                                        </span>
+                                    )}
+                                </div>
+                                <h3 className="text-sm sm:text-base font-extrabold text-stone-900 mt-1">
+                                    Welcome to LikhangKamay! Your 14-Day All-Access Trial is Live
+                                </h3>
+                                <p className="text-xs text-stone-600 mt-0.5 leading-relaxed max-w-2xl">
+                                    Explore all artisan studio features risk-free. Your trial automatically transitions to Standard after {trialDaysRemaining ?? 14} days without unexpected charges. Upgrade below anytime to lock in continuous Premium or Elite capacity.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="shrink-0 flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-amber-200 text-xs font-bold text-amber-900 shadow-2xs">
+                                <BadgeCheck className="h-4 w-4 text-emerald-600" />
+                                <span>No Card Required</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="px-5 py-5 sm:px-6">
+                {/* Billing Cycle Commitment Switcher */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 px-1">
+                    <div>
+                        <p className="text-xs font-bold text-stone-800">Choose commitment billing cycle:</p>
+                        <p className="text-[11px] text-stone-500 font-medium">Pay monthly or lock in annual savings.</p>
+                    </div>
+                    <div className="inline-flex p-1 rounded-2xl bg-stone-100 border border-stone-200/80 shadow-2xs">
+                        <button
+                            type="button"
+                            onClick={() => setBillingCycle?.('monthly')}
+                            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] ${
+                                billingCycle === 'monthly'
+                                    ? 'bg-white text-stone-900 shadow-sm'
+                                    : 'text-stone-500 hover:text-stone-800'
+                            }`}
+                        >
+                            Monthly Billing
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setBillingCycle?.('yearly')}
+                            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 min-h-[38px] ${
+                                billingCycle === 'yearly'
+                                    ? 'bg-stone-900 text-white shadow-sm'
+                                    : 'text-stone-500 hover:text-stone-800'
+                            }`}
+                        >
+                            <span>Annual Commitment</span>
+                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                billingCycle === 'yearly'
+                                    ? 'bg-emerald-400 text-emerald-950'
+                                    : 'bg-emerald-100 text-emerald-800'
+                            }`}>
+                                Save {annualDiscount}%
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
                 <div 
                     onScroll={handleScroll}
                     className="flex overflow-x-auto snap-x snap-mandatory pb-4 gap-4 md:grid md:grid-cols-3 md:gap-6 no-scrollbar"
                 >
                     {plans.map((plan) => {
-                        const current = currentPlan === plan.id;
+                        const isTrialFree = isOnTrial && plan.id === 'free';
+                        const current = isTrialFree || (!isOnTrial && currentPlan === plan.id);
                         const tierIndex = plans.findIndex((item) => item.id === plan.id);
-                        const currentTierIndex = plans.findIndex((item) => item.id === currentPlan);
-                        const isUpgrade = tierIndex > currentTierIndex;
-                        const isDowngrade = tierIndex < currentTierIndex;
+                        const currentTierIndex = plans.findIndex((item) => item.id === (isOnTrial ? 'free' : currentPlan));
+                        const isUpgrade = isOnTrial ? (plan.id === 'premium' || plan.id === 'super_premium') : (tierIndex > currentTierIndex);
+                        const isDowngrade = isOnTrial ? false : (tierIndex < currentTierIndex);
                         const isPendingPlan = pendingUpgrade?.plan === plan.id && !!pendingUpgrade?.checkoutUrl;
                         const PlanIcon = plan.icon;
                         const isPremiumPlan = plan.id === 'premium';
                         const isElitePlan = plan.id === 'super_premium';
 
-                        const cardClass = current
-                            ? isElitePlan
-                                ? 'border-violet-300 ring-2 ring-violet-200 shadow-md'
-                                : isPremiumPlan
-                                    ? 'border-amber-300 ring-2 ring-amber-200 shadow-md'
-                                    : 'border-stone-300 ring-2 ring-stone-200 shadow-sm'
-                            : isElitePlan
-                                ? 'border-violet-200/80 hover:border-violet-300 shadow-sm'
-                                : isPremiumPlan
-                                    ? 'border-amber-200/80 hover:border-amber-300 shadow-sm'
-                                    : 'border-stone-200 hover:border-stone-300 shadow-sm';
+                        const isYearly = billingCycle === 'yearly';
+                        const baseMonthlyPrice = isPremiumPlan ? 199 : isElitePlan ? 399 : 0;
+                        const annualTotal = Math.round((baseMonthlyPrice * 12) * (1 - annualDiscount / 100));
+                        const annualMonthlyEquivalent = Math.round(annualTotal / 12);
+
+                        const cardClass = isTrialFree
+                            ? 'border-emerald-300 ring-2 ring-emerald-200/80 shadow-md bg-white'
+                            : current
+                                ? isElitePlan
+                                    ? 'border-violet-300 ring-2 ring-violet-200 shadow-md bg-white'
+                                    : isPremiumPlan
+                                        ? 'border-amber-300 ring-2 ring-amber-200 shadow-md bg-white'
+                                        : 'border-stone-300 ring-2 ring-stone-200 shadow-sm bg-white'
+                                : isElitePlan
+                                    ? 'border-violet-200/80 hover:border-violet-300 shadow-sm bg-white'
+                                    : isPremiumPlan
+                                        ? 'border-amber-200/80 hover:border-amber-300 shadow-sm bg-white'
+                                        : 'border-stone-200 hover:border-stone-300 shadow-sm bg-white';
 
                         const iconClass = isElitePlan
                             ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-sm'
                             : isPremiumPlan
                                 ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-sm'
-                                : 'bg-stone-100 text-stone-700 border border-stone-200';
+                                : isTrialFree
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                    : 'bg-stone-100 text-stone-700 border border-stone-200';
 
                         const upgradeButtonClass = isElitePlan
                             ? 'bg-violet-600 text-white hover:bg-violet-700 shadow-sm'
@@ -94,7 +190,7 @@ export default function SubscriptionPlans({
                         return (
                             <article
                                 key={plan.id}
-                                className={`relative flex flex-col rounded-[1.7rem] border bg-white px-5 pb-5 pt-4 w-[85%] md:w-full shrink-0 snap-center transition-all duration-200 ${cardClass}`}
+                                className={`relative flex flex-col rounded-[1.7rem] border px-5 pb-5 pt-4 w-[85%] md:w-full shrink-0 snap-center transition-all duration-200 ${cardClass}`}
                             >
                                 <div className="flex items-start gap-3">
                                     <div className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.95rem] ${iconClass}`}>
@@ -102,30 +198,60 @@ export default function SubscriptionPlans({
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex flex-wrap items-center gap-2">
-                                             <h3 className="text-xl sm:text-[1.55rem] font-black leading-none tracking-tight text-stone-900">{plan.name}</h3>
-                                            {plan.eyebrow && (
+                                            <h3 className="text-xl sm:text-[1.55rem] font-black leading-none tracking-tight text-stone-900">{plan.name}</h3>
+                                            {isTrialFree ? (
+                                                <span className="rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap border bg-emerald-50 text-emerald-800 border-emerald-300 animate-pulse flex items-center gap-1">
+                                                    <Sparkles className="h-2.5 w-2.5 text-emerald-600" />
+                                                    14-Day Free Trial
+                                                </span>
+                                            ) : plan.eyebrow ? (
                                                 <span className={`rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap border ${plan.badgeClass || 'bg-stone-100 text-stone-700 border-stone-200'}`}>
                                                     {plan.eyebrow}
                                                 </span>
-                                            )}
+                                            ) : null}
                                         </div>
                                         <p className="mt-1 max-w-[210px] text-[13px] font-medium leading-6 text-stone-500">{plan.description}</p>
                                     </div>
                                 </div>
 
-                                <div className="mt-5 flex items-end gap-1.5">
-                                    <p className={`${plan.id === 'free' ? 'text-[2.45rem]' : 'text-[2.35rem]'} font-black tracking-tight text-stone-900`}>
-                                        {plan.id === 'free' ? 'Free' : `₱${plan.price.replace('PHP ', '')}`}
-                                    </p>
-                                    {plan.id !== 'free' && (
-                                        <p className="pb-1 text-[0.92rem] font-semibold text-stone-400">/ mo</p>
-                                    )}
-                                </div>
+                                {plan.id === 'free' ? (
+                                    <div className="mt-5">
+                                        <div className="flex items-end gap-1.5">
+                                            <p className="text-[2.45rem] font-black tracking-tight text-stone-900">Free</p>
+                                            {isOnTrial && (
+                                                <span className="mb-2 ml-1 text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 animate-pulse">
+                                                    Active Trial
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-xs font-semibold text-stone-500">
+                                            {isOnTrial
+                                                ? `${trialDaysRemaining ?? 14} days remaining • Reverts to Standard`
+                                                : 'No monthly fee'}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="mt-5">
+                                        <div className="flex items-end gap-1.5">
+                                            <p className="text-[2.35rem] font-black tracking-tight text-stone-900">
+                                                ₱{isYearly ? annualTotal.toLocaleString() : baseMonthlyPrice.toLocaleString()}
+                                            </p>
+                                            <p className="pb-1 text-[0.92rem] font-semibold text-stone-400">
+                                                {isYearly ? '/ year' : '/ mo'}
+                                            </p>
+                                        </div>
+                                        <p className="text-xs font-semibold text-stone-500">
+                                            {isYearly
+                                                ? `₱${annualMonthlyEquivalent}/mo equivalent (Save ${annualDiscount}%)`
+                                                : 'Billed monthly'}
+                                        </p>
+                                    </div>
+                                )}
 
                                 <ul className="mt-5 space-y-3">
                                     {plan.features.map((feature, index) => (
                                         <li key={index} className="flex items-start gap-3">
-                                            <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${plan.featureIconClass || (isElitePlan ? 'text-violet-600' : isPremiumPlan ? 'text-amber-600' : 'text-stone-500')}`} />
+                                            <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${plan.featureIconClass || (isElitePlan ? 'text-violet-600' : isPremiumPlan ? 'text-amber-600' : isTrialFree ? 'text-emerald-600' : 'text-stone-500')}`} />
                                             <span className="text-[13px] leading-6 text-stone-700">{feature}</span>
                                         </li>
                                     ))}
@@ -133,22 +259,33 @@ export default function SubscriptionPlans({
 
                                 <div className="mt-auto pt-5">
                                     {current ? (
-                                        <button
-                                            type="button"
-                                            disabled
-                                            className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-stone-100 border border-stone-200 px-4 py-2.5 text-[14px] font-extrabold text-stone-700 cursor-default"
-                                        >
-                                            <BadgeCheck className="h-4 w-4 text-emerald-600" />
-                                            Your Current Plan
-                                        </button>
+                                        isTrialFree ? (
+                                            <button
+                                                type="button"
+                                                disabled
+                                                className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-emerald-50 border border-emerald-300 px-4 py-2.5 text-[14px] font-extrabold text-emerald-800 cursor-default shadow-2xs"
+                                            >
+                                                <BadgeCheck className="h-4 w-4 text-emerald-600" />
+                                                <span>14-Day Trial Active ({trialDaysRemaining ?? 14}d left)</span>
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                disabled
+                                                className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-stone-100 border border-stone-200 px-4 py-2.5 text-[14px] font-extrabold text-stone-700 cursor-default"
+                                            >
+                                                <BadgeCheck className="h-4 w-4 text-emerald-600" />
+                                                Your Current Plan
+                                            </button>
+                                        )
                                     ) : isUpgrade ? (
                                         <button
                                             type="button"
-                                            onClick={() => (isPendingPlan ? window.location.assign(pendingUpgrade.checkoutUrl) : handleUpgrade(plan.id))}
+                                            onClick={() => (isPendingPlan ? window.location.assign(pendingUpgrade.checkoutUrl) : handleUpgrade(plan.id, billingCycle))}
                                             disabled={isProcessing}
                                             className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${upgradeButtonClass}`}
                                         >
-                                            {isProcessing ? 'Processing...' : isPendingPlan ? 'Continue Payment' : `Upgrade to ${plan.name}`}
+                                            {isProcessing ? 'Processing...' : isPendingPlan ? 'Continue Payment' : `Upgrade to ${plan.name} (${isYearly ? 'Annual' : 'Monthly'})`}
                                             {!isProcessing && <ArrowRight className="h-[15px] w-[15px]" />}
                                         </button>
                                     ) : isDowngrade ? (

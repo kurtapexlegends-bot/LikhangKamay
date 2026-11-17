@@ -367,6 +367,14 @@ class SystemSettingsOrchestratorService
             $this->settings->set('tier_super_premium_features', $cleanFeatures, 'json');
         }
 
+        // Save Introductory Trial & Annual Discount Config
+        if (isset($validated['subscription_trial_days'])) {
+            $this->settings->set('subscription_trial_days', (int) $validated['subscription_trial_days'], 'integer');
+        }
+        if (isset($validated['subscription_annual_discount'])) {
+            $this->settings->set('subscription_annual_discount', (float) $validated['subscription_annual_discount'], 'float');
+        }
+
         // Save Mail Dispatcher Config
         $this->settings->set('mail_driver', $validated['mail_driver'] ?? 'resend');
         $this->settings->set('resend_api_key', $validated['resend_api_key'] ?? '');
@@ -415,6 +423,8 @@ class SystemSettingsOrchestratorService
 
             // Subscription Tier Settings
             'available_plan_modules' => array_values($this->planService->getAvailableModules()),
+            'subscription_trial_days' => (int) $this->settings->get('subscription_trial_days', 14),
+            'subscription_annual_discount' => (float) $this->settings->get('subscription_annual_discount', 20.0),
             'tier_free_limit' => (int) $this->settings->get('tier_free_limit', 3),
             'tier_free_staff_limit' => (int) $this->settings->get('tier_free_staff_limit', 0),
             'tier_free_badge' => (string) $this->settings->get('tier_free_badge', 'Foundational'),

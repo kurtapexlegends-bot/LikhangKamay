@@ -107,6 +107,10 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
         tier_super_premium_custom_features: settings?.tier_super_premium_custom_features ?? [],
         tier_super_premium_features: settings?.tier_super_premium_features ?? [],
 
+        // Introductory Free Trial & Annual Discount
+        subscription_trial_days: settings?.subscription_trial_days ?? 14,
+        subscription_annual_discount: settings?.subscription_annual_discount ?? 20,
+
         // Mail Engine & Dispatcher Settings
         mail_driver: settings?.mail_driver || 'resend',
         resend_api_key: settings?.resend_api_key || '',
@@ -159,6 +163,8 @@ export default function SystemConfig({ auth, settings, metrics, recentSubscriber
                 tier_premium_limit: settings.tier_premium_limit ?? 10,
                 tier_super_premium_price: settings.tier_super_premium_price ?? 399,
                 tier_super_premium_limit: settings.tier_super_premium_limit ?? 50,
+                subscription_trial_days: settings.subscription_trial_days ?? 14,
+                subscription_annual_discount: settings.subscription_annual_discount ?? 20,
                 mail_driver: settings.mail_driver || 'resend',
                 resend_api_key: settings.resend_api_key || '',
                 mail_from_address: settings.mail_from_address || 'noreply@likhangkamay.app',

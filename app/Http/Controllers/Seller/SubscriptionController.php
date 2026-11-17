@@ -58,8 +58,15 @@ class SubscriptionController extends Controller
         $cancelledAt = $user->subscription_cancelled_at;
         $daysRemaining = $expiresAt ? max(0, (int) ceil(now()->diffInSeconds($expiresAt, false) / 86400)) : null;
 
+        $isOnTrial = $user->isOnTrial();
+        $hasSubscriptionHistory = $user->hasSubscriptionHistory();
+        $isNewApprovedArtisan = !$hasSubscriptionHistory && $user->isApproved();
+        $trialDaysConfig = (int) \App\Facades\Settings::get('subscription_trial_days', 14);
+        $annualDiscount = (float) \App\Facades\Settings::get('subscription_annual_discount', 20.0);
+        $trialDaysRemaining = $user->getTrialDaysRemaining();
+
         return Inertia::render('Seller/Settings/Subscription', [
-            'currentPlan' => $user->getEffectivePremiumTier(),
+            'currentPlan' => $isOnTrial ? 'free' : $user->getEffectivePremiumTier(),
             'rawPlan' => $user->premium_tier,
             'effectivePlan' => $user->getEffectivePremiumTier(),
             'activeProductsCount' => $activeProductsCount,
@@ -70,11 +77,24 @@ class SubscriptionController extends Controller
             'subscriptionCancelledAt' => $cancelledAt?->toIso8601String(),
             'isCancelled' => $cancelledAt !== null,
             'daysRemaining' => $daysRemaining,
+            'isOnTrial' => $isOnTrial,
+            'trialEndsAt' => $user->trial_ends_at?->toIso8601String(),
+            'trialDaysRemaining' => $trialDaysRemaining,
+            'hasSubscriptionHistory' => $hasSubscriptionHistory,
+            'isNewApprovedArtisan' => $isNewApprovedArtisan,
+            'currentBillingCycle' => $user->billing_cycle ?? 'monthly',
             'pendingDowngradeTier' => $user->pending_downgrade_tier,
             'noRefundPolicy' => 'All subscription payments are final and non-refundable. Auto-renewal can be cancelled anytime with full benefits retained until period expiration.',
             'staffLimit' => $user->getActiveStaffLimit(),
             'canAddMoreStaff' => $user->canAddMoreStaff(),
             'planSettings' => [
+                'subscription_trial_days' => $trialDaysConfig,
+                'subscription_annual_discount' => $annualDiscount,
+                'annual_discount_percentage' => $annualDiscount,
+                'is_on_trial' => $isOnTrial,
+                'trial_days_remaining' => $trialDaysRemaining,
+                'has_subscription_history' => $hasSubscriptionHistory,
+                'is_new_approved_artisan' => $isNewApprovedArtisan,
                 'available_modules' => array_values(app(\App\Services\SubscriptionPlanService::class)->getAvailableModules()),
                 'modules' => [
                     'free' => app(\App\Services\SubscriptionPlanService::class)->getTierModules('free'),
@@ -186,14 +206,16 @@ class SubscriptionController extends Controller
     public function upgrade(Request $request, InitiateSubscriptionUpgrade $action)
     {
         $validated = $request->validate([
-            'plan' => 'required|in:premium,super_premium'
+            'plan' => 'required|in:premium,super_premium',
+            'billing_cycle' => 'nullable|in:monthly,yearly',
         ]);
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
+        $billingCycle = $validated['billing_cycle'] ?? 'monthly';
 
         try {
-            $checkoutUrl = $action->execute($user, $validated['plan'], $this->payMongoService);
+            $checkoutUrl = $action->execute($user, $validated['plan'], $this->payMongoService, $billingCycle);
             return Inertia::location($checkoutUrl);
         } catch (\Throwable $e) {
             if ($e->getMessage() === 'downgrade_flow') {

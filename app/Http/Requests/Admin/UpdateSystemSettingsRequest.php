@@ -85,6 +85,10 @@ class UpdateSystemSettingsRequest extends FormRequest
             'tier_super_premium_custom_features' => 'nullable|array',
             'tier_super_premium_custom_features.*' => 'nullable|string|max:255',
 
+            // Introductory Trial & Annual Discount Settings
+            'subscription_trial_days' => 'nullable|integer|min:0|max:90',
+            'subscription_annual_discount' => 'nullable|numeric|min:0|max:90',
+
             // Mail Engine Validation
             'mail_driver' => 'nullable|string|in:resend,smtp,log',
             'resend_api_key' => 'nullable|string|max:255',

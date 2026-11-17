@@ -24,12 +24,14 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
     const [reviewFilter, setReviewFilter] = useState('all');
 
     // Advanced Drawer / Popover Filter States
+    const [selectedRole, setSelectedRole] = useState('all');
     const [selectedCity, setSelectedCity] = useState('all');
     const [selectedInspectionProgress, setSelectedInspectionProgress] = useState('all');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
 
     // Staged Draft States
+    const [draftRole, setDraftRole] = useState('all');
     const [draftCity, setDraftCity] = useState('all');
     const [draftInspectionProgress, setDraftInspectionProgress] = useState('all');
     const [draftStartDate, setDraftStartDate] = useState('');
@@ -121,6 +123,11 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                 if (submittedCount > 0 && viewed.length >= submittedCount) return false;
             }
 
+            // Role / Applicant Type Filter
+            if (selectedRole !== 'all' && artisan.role !== selectedRole) {
+                return false;
+            }
+
             // Cavite City / Municipality Filter
             if (selectedCity !== 'all') {
                 const artisanCity = normalizeCaviteAddressText(artisan.city || '');
@@ -168,7 +175,7 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                 artisan.barangay,
             ].some((value) => String(value || '').toLowerCase().includes(query));
         });
-    }, [localArtisans, deferredSearchQuery, reviewFilter, viewedDocumentsByArtisan, selectedCity, selectedInspectionProgress, startDate, endDate]);
+    }, [localArtisans, deferredSearchQuery, reviewFilter, viewedDocumentsByArtisan, selectedRole, selectedCity, selectedInspectionProgress, startDate, endDate]);
 
     const [currentPage, setCurrentPage] = useState(1);
     const totalPages = Math.max(1, Math.ceil(filteredArtisans.length / ITEMS_PER_PAGE));
@@ -179,7 +186,7 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [deferredSearchQuery, reviewFilter, selectedCity, selectedInspectionProgress, startDate, endDate]);
+    }, [deferredSearchQuery, reviewFilter, selectedRole, selectedCity, selectedInspectionProgress, startDate, endDate]);
 
     const viewedDocumentsCount = viewingArtisan ? (viewedDocumentsByArtisan[viewingArtisan.id] ?? []).length : 0;
     const submittedDocumentsCount = viewingArtisan?.submitted_document_count ?? currentDocuments.filter((doc) => !!doc.url).length;
@@ -211,6 +218,16 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
 
     const activeFilterTags = useMemo(() => {
         const tags = [];
+        if (selectedRole !== 'all') {
+            tags.push({
+                key: 'role',
+                label: `Type: ${selectedRole === 'supplier' ? 'Suppliers Only' : 'Artisans Only'}`,
+                onRemove: () => {
+                    setSelectedRole('all');
+                    setDraftRole('all');
+                }
+            });
+        }
         if (selectedCity !== 'all') {
             tags.push({
                 key: 'city',
@@ -249,11 +266,12 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
             });
         }
         return tags;
-    }, [selectedCity, selectedInspectionProgress, startDate, endDate]);
+    }, [selectedRole, selectedCity, selectedInspectionProgress, startDate, endDate]);
 
     const activeFiltersCount = activeFilterTags.length;
 
     const handleApplyFilters = () => {
+        setSelectedRole(draftRole);
         setSelectedCity(draftCity);
         setSelectedInspectionProgress(draftInspectionProgress);
         setStartDate(draftStartDate);
@@ -263,10 +281,12 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
     const handleResetAllFilters = () => {
         setReviewFilter('all');
         setSearchQuery('');
+        setSelectedRole('all');
         setSelectedCity('all');
         setSelectedInspectionProgress('all');
         setStartDate('');
         setEndDate('');
+        setDraftRole('all');
         setDraftCity('all');
         setDraftInspectionProgress('all');
         setDraftStartDate('');
@@ -275,7 +295,26 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
 
     const filterPopoverFields = (
         <div className="space-y-4">
-            {/* 1. Date Range Filter */}
+            {/* 1. Applicant Role Filter */}
+            <div>
+                <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                    Applicant Type
+                </label>
+                <div className="relative">
+                    <select
+                        value={draftRole}
+                        onChange={(e) => setDraftRole(e.target.value)}
+                        className="pr-8 text-xs py-2 w-full min-h-[40px] bg-white border border-stone-200 hover:border-stone-300 rounded-xl font-bold text-stone-700 focus:border-clay-500 focus:ring focus:ring-clay-500/10 transition-all cursor-pointer appearance-none px-3"
+                    >
+                        <option value="all">All Applicants (Artisans &amp; Suppliers)</option>
+                        <option value="artisan">Artisan Workshops Only</option>
+                        <option value="supplier">Wholesale Suppliers Only</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={14} />
+                </div>
+            </div>
+
+            {/* 2. Date Range Filter */}
             <div>
                 <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-stone-500 mb-1.5">
                     Application Submitted Date
@@ -403,7 +442,7 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                 onSearchChange={setSearchQuery}
                 searchPlaceholder="Search shop, owner name, phone, or region..."
                 activeFiltersCount={activeFiltersCount}
-                filterPopoverTitle="Filter Artisan Applications"
+                filterPopoverTitle="Filter Applications"
                 filterPopoverFields={filterPopoverFields}
                 onApplyFilters={handleApplyFilters}
                 onResetFilters={handleResetAllFilters}
@@ -416,7 +455,7 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                         <WorkspaceEmptyState
                             icon={CheckCircle}
                             title="Queue is Empty"
-                            description="There are no pending artisan applications at the moment."
+                            description="There are no pending applications at the moment."
                         />
                     </div>
                 ) : (
@@ -424,7 +463,7 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
                         {/* Header Row */}
                         <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-[#FDFBF9] border-b border-stone-200/80 text-[10px] font-extrabold uppercase tracking-wider text-stone-500">
                             <div className="col-span-4">
-                                <span>Artisan Shop</span>
+                                <span>Applicant &amp; Business</span>
                             </div>
                             <div className="col-span-3">Contact & Location</div>
                             <div className="col-span-2">Review Progress</div>

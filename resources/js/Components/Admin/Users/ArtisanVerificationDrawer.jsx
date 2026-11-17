@@ -109,7 +109,7 @@ export default function ArtisanVerificationDrawer({
             <SlideOverDrawer
                 show={!!viewingArtisan}
                 onClose={() => !viewingDoc && !processing && onClose()}
-                title={viewingArtisan ? `${viewingArtisan.shop_name} Verification` : 'Review Application'}
+                title={viewingArtisan ? `${viewingArtisan.shop_name} • ${viewingArtisan.role === 'supplier' ? 'Supplier' : 'Artisan'} Verification` : 'Review Application'}
                 widthClass="max-w-2xl"
                 bodyClassName="relative flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-5"
                 footer={renderFooter()}
@@ -143,10 +143,10 @@ export default function ArtisanVerificationDrawer({
                         <InlineRevisionCard
                             active={revisionMode}
                             selected={isSelected('shop_details')}
-                            label="Shop Name & Contact Info"
+                            label={viewingArtisan.role === 'supplier' ? 'Supplier Company Name & Contact Info' : 'Shop Name & Contact Info'}
                             note={getNote('shop_details')}
                             reviewItem={reviewItemsMap['shop_details']}
-                            onToggle={() => toggleItem('shop_details', 'Shop Name & Contact Info')}
+                            onToggle={() => toggleItem('shop_details', viewingArtisan.role === 'supplier' ? 'Supplier Company Name & Contact Info' : 'Shop Name & Contact Info')}
                             onChangeNote={(val) => updateItemNote('shop_details', val)}
                         >
                             <div className={`${revisionMode ? 'bg-stone-50/70 p-3' : 'rounded-xl bg-stone-50 p-3 border border-stone-100'}`}>
@@ -178,10 +178,10 @@ export default function ArtisanVerificationDrawer({
                         <InlineRevisionCard
                             active={revisionMode}
                             selected={isSelected('shop_address')}
-                            label="Workshop Address & Cavite Map Pin"
+                            label={viewingArtisan.role === 'supplier' ? 'Warehouse Address & Cavite Map Pin' : 'Workshop Address & Cavite Map Pin'}
                             note={getNote('shop_address')}
                             reviewItem={reviewItemsMap['shop_address']}
-                            onToggle={() => toggleItem('shop_address', 'Workshop Address & Cavite Map Pin')}
+                            onToggle={() => toggleItem('shop_address', viewingArtisan.role === 'supplier' ? 'Warehouse Address & Cavite Map Pin' : 'Workshop Address & Cavite Map Pin')}
                             onChangeNote={(val) => updateItemNote('shop_address', val)}
                         >
                             <div className={`${revisionMode ? 'bg-white p-3.5 space-y-2' : 'rounded-xl border border-stone-200 bg-white p-3.5 space-y-2'}`}>

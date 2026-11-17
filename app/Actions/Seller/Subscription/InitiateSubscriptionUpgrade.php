@@ -26,26 +26,33 @@ class InitiateSubscriptionUpgrade
      * @param User $user
      * @param string $targetPlan
      * @param PayMongoService $payMongoService
+     * @param string $billingCycle
      * @return string
      * @throws \Exception
      */
-    public function execute(User $user, string $targetPlan, PayMongoService $payMongoService): string
+    public function execute(User $user, string $targetPlan, PayMongoService $payMongoService, string $billingCycle = 'monthly'): string
     {
         $currentPlan = $this->normalizeTier($user->premium_tier);
         $currentLevel = $this->getTierLevel($currentPlan);
         $targetLevel = $this->getTierLevel($targetPlan);
 
+        // If user is on an introductory trial, they can upgrade/convert to full paid plan even on same tier
+        if ($targetLevel === $currentLevel && !$user->isOnTrial()) {
+            throw new \Exception('already_on_plan');
+        }
+
         if ($targetLevel < $currentLevel) {
             throw new \Exception('downgrade_flow');
         }
 
-        if ($targetLevel === $currentLevel) {
-            throw new \Exception('already_on_plan');
-        }
+        $baseAmount = $this->getPlanPrice($targetPlan);
+        $isYearly = ($billingCycle === 'yearly');
+        $annualDiscount = (float) \App\Facades\Settings::get('subscription_annual_discount', 20.0);
+        $amount = $isYearly 
+            ? round(($baseAmount * 12) * ((100 - $annualDiscount) / 100), 2)
+            : $baseAmount;
 
-        $amount = $this->getPlanPrice($targetPlan);
-
-        $transaction = DB::transaction(function () use ($user, $currentPlan, $targetPlan, $amount) {
+        $transaction = DB::transaction(function () use ($user, $currentPlan, $targetPlan, $amount, $billingCycle, $annualDiscount, $isYearly) {
             return SubscriptionTransaction::create($this->buildSubscriptionTransactionPayload(
                 $user,
                 $currentPlan,
@@ -56,24 +63,27 @@ class InitiateSubscriptionUpgrade
                     'reference_number' => 'SUB-' . strtoupper(Str::random(10)),
                     'metadata' => [
                         'seller_name' => $user->shop_name ?: $user->name,
+                        'billing_cycle' => $billingCycle,
+                        'discount_applied' => $isYearly ? $annualDiscount : 0,
                     ],
                 ],
             ));
         });
 
         $planName = $this->formatPlanName($targetPlan);
+        $cycleLabel = $isYearly ? "Annual ({$annualDiscount}% discount applied)" : "Monthly";
         $checkoutData = [
             'line_items' => [[
                 'currency' => 'PHP',
                 'amount' => (int) round($amount * 100),
-                'description' => "{$planName} seller subscription upgrade",
-                'name' => "{$planName} Subscription",
+                'description' => "{$planName} seller subscription ({$cycleLabel})",
+                'name' => "{$planName} Subscription ({$cycleLabel})",
                 'quantity' => 1,
             ]],
             'payment_method_types' => ['gcash', 'grab_pay', 'paymaya', 'card'],
             'success_url' => URL::signedRoute('seller.subscription.payment.success', ['subscription' => $transaction->reference_number]),
             'cancel_url' => URL::signedRoute('seller.subscription.payment.cancel', ['subscription' => $transaction->reference_number]),
-            'description' => 'Subscription upgrade for ' . ($user->shop_name ?: $user->name),
+            'description' => "Subscription upgrade ({$cycleLabel}) for " . ($user->shop_name ?: $user->name),
             'reference_number' => $transaction->reference_number,
             'send_email_receipt' => true,
         ];
