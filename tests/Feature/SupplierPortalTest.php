@@ -705,4 +705,69 @@ class SupplierPortalTest extends TestCase
         ]);
         $reopenResponse->assertSessionHasErrors('status');
     }
+
+    public function test_approved_supplier_can_list_and_update_material_with_tds_specifications(): void
+    {
+        $supplier = User::factory()->create([
+            'role' => 'supplier',
+            'artisan_status' => 'approved',
+            'setup_completed_at' => now(),
+        ]);
+
+        $response = $this->actingAs($supplier)->post(route('supplier.materials.store'), [
+            'name' => 'High-Fire Stoneware Body',
+            'category' => 'Raw Clay & Slips',
+            'description' => 'Fine grain stoneware for functional pottery tableware.',
+            'price' => 450,
+            'stock' => 500,
+            'moq' => 10,
+            'supply_unit' => 'sack',
+            'weight' => 25.0,
+            'clay_type' => 'Stoneware',
+            'glaze_type' => 'Raw Body',
+            'firing_method' => 'Cone 6 (1220°C)',
+            'food_safe' => true,
+            'lead_time' => 1,
+        ]);
+
+        $response->assertRedirect(route('supplier.materials.index'));
+
+        $this->assertDatabaseHas('products', [
+            'user_id' => $supplier->id,
+            'name' => 'High-Fire Stoneware Body',
+            'clay_type' => 'Stoneware',
+            'firing_method' => 'Cone 6 (1220°C)',
+            'food_safe' => true,
+            'lead_time' => 1,
+        ]);
+
+        $product = Product::where('user_id', $supplier->id)->first();
+
+        // Update technical specifications
+        $updateResponse = $this->actingAs($supplier)->post(route('supplier.materials.update', $product->slug ?: $product->id), [
+            'name' => 'High-Fire Stoneware Body (Updated)',
+            'category' => 'Raw Clay & Slips',
+            'description' => 'Updated formula with lower shrinkage.',
+            'price' => 480,
+            'stock' => 450,
+            'moq' => 15,
+            'supply_unit' => 'sack',
+            'weight' => 25.0,
+            'clay_type' => 'Buff Stoneware',
+            'glaze_type' => 'Unglazed',
+            'firing_method' => 'Cone 10 (1280°C)',
+            'food_safe' => true,
+            'lead_time' => 2,
+        ]);
+
+        $updateResponse->assertRedirect();
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id,
+            'name' => 'High-Fire Stoneware Body (Updated)',
+            'clay_type' => 'Buff Stoneware',
+            'firing_method' => 'Cone 10 (1280°C)',
+            'lead_time' => 2,
+        ]);
+    }
 }

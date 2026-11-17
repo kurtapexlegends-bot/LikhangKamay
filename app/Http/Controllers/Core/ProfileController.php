@@ -34,17 +34,32 @@ class ProfileController extends Controller
                 return redirect()->route('artisan.pending');
             }
 
-            // Workspace profile shell for seller owners, seller staff, and super admins.
-            if (in_array($user->role, ['artisan', 'staff', 'super_admin'], true)) {
+            if ($user->role === 'supplier') {
+                if (is_null($user->setup_completed_at)) {
+                    return redirect()->route('supplier.setup');
+                }
+                if (!$user->isApproved()) {
+                    return redirect()->route('supplier.pending');
+                }
+            }
+
+            // Workspace profile shell for seller owners, seller staff, suppliers, and super admins.
+            if (in_array($user->role, ['artisan', 'staff', 'supplier', 'super_admin'], true)) {
                 $canManagePosVoidPin = in_array($user->role, ['artisan', 'staff'], true)
                     && app(PosCheckoutService::class)->canActorVoidPos($user);
+
+                $shell = match ($user->role) {
+                    'super_admin' => 'admin',
+                    'supplier' => 'supplier',
+                    default => 'seller',
+                };
 
                 return Inertia::render('Seller/Profile/Edit', [
                     'mustVerifyEmail' => $user instanceof MustVerifyEmail,
                     'status' => session('status'),
                     'addresses' => $user->addresses()->orderBy('is_default', 'desc')->get(),
-                    'profileMode' => $user->role === 'artisan' ? 'owner' : 'personal',
-                    'workspaceShell' => $user->role === 'super_admin' ? 'admin' : 'seller',
+                    'profileMode' => in_array($user->role, ['artisan', 'supplier'], true) ? 'owner' : 'personal',
+                    'workspaceShell' => $shell,
                     'canManagePosVoidPin' => $canManagePosVoidPin,
                     'hasPosVoidPin' => $canManagePosVoidPin && $user->hasPosVoidPin(),
                     'posVoidPinUpdatedAt' => $canManagePosVoidPin
@@ -77,6 +92,15 @@ class ProfileController extends Controller
         $user = $request->user();
         if ($user->role === 'artisan' && $user->artisan_status === 'pending') {
             return redirect()->route('artisan.pending');
+        }
+
+        if ($user->role === 'supplier') {
+            if (is_null($user->setup_completed_at)) {
+                return redirect()->route('supplier.setup');
+            }
+            if (!$user->isApproved()) {
+                return redirect()->route('supplier.pending');
+            }
         }
 
         $data = $request->validated();
@@ -186,6 +210,15 @@ class ProfileController extends Controller
 
         if ($user->role === 'artisan' && $user->artisan_status === 'pending') {
             return redirect()->route('artisan.pending');
+        }
+
+        if ($user->role === 'supplier') {
+            if (is_null($user->setup_completed_at)) {
+                return redirect()->route('supplier.setup');
+            }
+            if (!$user->isApproved()) {
+                return redirect()->route('supplier.pending');
+            }
         }
 
         $request->validate([

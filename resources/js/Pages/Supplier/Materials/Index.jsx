@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import SupplierLayout from '@/Layouts/SupplierLayout';
+import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
@@ -10,8 +11,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import { compressImage } from '@/utils/imageCompressor';
 import { 
-    Box, Plus, Search, Edit3, Trash2, X, AlertCircle, 
-    Layers, Package, Check, Tag 
+    Box, Plus, Search, Edit3, Trash2, X, Tag, Flame, ShieldCheck, Clock, Layers 
 } from 'lucide-react';
 
 export default function SupplierMaterialsIndex({ materials, availableCategories = [], availableUnits = {}, filters = {} }) {
@@ -34,6 +34,11 @@ export default function SupplierMaterialsIndex({ materials, availableCategories 
         wholesale_min_qty: '',
         supply_unit: 'kg',
         weight: '1',
+        clay_type: '',
+        glaze_type: '',
+        firing_method: '',
+        food_safe: true,
+        lead_time: '1',
         cover_photo: null,
     });
 
@@ -106,6 +111,11 @@ export default function SupplierMaterialsIndex({ materials, availableCategories 
             wholesale_min_qty: material.wholesale_min_qty ? material.wholesale_min_qty.toString() : '',
             supply_unit: material.supply_unit || 'kg',
             weight: material.weight ? material.weight.toString() : '1',
+            clay_type: material.clay_type || '',
+            glaze_type: material.glaze_type || '',
+            firing_method: material.firing_method || '',
+            food_safe: material.food_safe !== undefined ? Boolean(material.food_safe) : true,
+            lead_time: material.lead_time ? material.lead_time.toString() : '1',
             cover_photo: null,
         });
         setIsAddModalOpen(true);
@@ -147,32 +157,23 @@ export default function SupplierMaterialsIndex({ materials, availableCategories 
         }
     };
 
+    const headerActions = (
+        <button
+            type="button"
+            onClick={openAddModal}
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 py-2 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition-colors active:scale-95 shrink-0 min-h-[40px]"
+        >
+            <Plus size={15} />
+            <span>Add Bulk Material</span>
+        </button>
+    );
+
     return (
-        <SupplierLayout active="materials">
+        <SupplierLayout active="materials" actions={headerActions}>
             <Head title="Wholesale Materials Inventory" />
 
-            {/* Header & Actions */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-stone-200 pb-6">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-900 font-serif">
-                        Wholesale Materials
-                    </h1>
-                    <p className="mt-1 text-xs text-stone-600">
-                        Manage bulk raw crafting supplies, Minimum Order Quantities (MOQ), and volume discount tiers.
-                    </p>
-                </div>
-
-                <button
-                    type="button"
-                    onClick={openAddModal}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-clay-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-clay-700 transition-colors active:scale-95 self-start sm:self-auto"
-                >
-                    <Plus size={16} /> Add Bulk Material
-                </button>
-            </div>
-
             {/* Filter Bar */}
-            <div className="mt-6 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm flex flex-col md:flex-row items-center gap-3">
+            <div className="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-2xs flex flex-col md:flex-row items-center gap-3">
                 <form onSubmit={handleSearch} className="relative flex-1 w-full">
                     <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
                     <input
@@ -203,119 +204,233 @@ export default function SupplierMaterialsIndex({ materials, availableCategories 
                 </div>
             </div>
 
-            {/* Materials Table */}
-            <div className="mt-6 rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                        <thead className="border-b border-stone-200 bg-stone-50/75 text-stone-600 font-bold uppercase tracking-wider">
-                            <tr>
-                                <th className="py-3 px-4">Material</th>
-                                <th className="py-3 px-4">Category</th>
-                                <th className="py-3 px-4 text-right">Base Price</th>
-                                <th className="py-3 px-4 text-center">Unit</th>
-                                <th className="py-3 px-4 text-center">MOQ</th>
-                                <th className="py-3 px-4">Wholesale Tier</th>
-                                <th className="py-3 px-4 text-right">In Stock</th>
-                                <th className="py-3 px-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-stone-100">
-                            {materials.data.length === 0 ? (
-                                <tr>
-                                    <td colSpan="8" className="py-12 text-center text-stone-400">
-                                        <Box size={32} className="mx-auto mb-2 opacity-40" />
-                                        <p className="font-medium">No wholesale materials found.</p>
-                                        <p className="text-[11px] text-stone-400 mt-1">Click "Add Bulk Material" to list raw supplies.</p>
-                                    </td>
-                                </tr>
-                            ) : (
-                                materials.data.map((item) => (
-                                    <tr key={item.id} className="hover:bg-stone-50/50 transition-colors">
-                                        <td className="py-3.5 px-4">
-                                            <div className="flex items-center gap-3">
-                                                {item.cover_photo_url ? (
-                                                    <img
-                                                        src={item.cover_photo_url}
-                                                        alt={item.name}
-                                                        className="h-10 w-10 rounded-lg object-cover border border-stone-200"
-                                                    />
-                                                ) : (
-                                                    <div className="h-10 w-10 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-400">
-                                                        <Box size={18} />
-                                                    </div>
-                                                )}
-                                                <div>
-                                                    <p className="font-bold text-stone-900">{item.name}</p>
-                                                    <p className="text-[10px] text-stone-400 font-mono">{item.sku}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="py-3.5 px-4 text-stone-600">{item.category}</td>
-                                        <td className="py-3.5 px-4 text-right font-bold text-stone-900 font-serif">
-                                            ₱{item.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                        </td>
-                                        <td className="py-3.5 px-4 text-center">
-                                            <span className="inline-block px-2 py-0.5 rounded bg-stone-100 text-stone-700 font-mono text-[11px]">
-                                                {item.supply_unit}
-                                            </span>
-                                        </td>
-                                        <td className="py-3.5 px-4 text-center font-bold text-stone-800">
-                                            {item.moq}
-                                        </td>
-                                        <td className="py-3.5 px-4">
-                                            {item.wholesale_price && item.wholesale_min_qty ? (
-                                                <div className="text-[11px]">
-                                                    <span className="font-bold text-emerald-700">
-                                                        ₱{item.wholesale_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                    </span>
-                                                    <span className="text-stone-500"> for {item.wholesale_min_qty}+ {item.supply_unit}</span>
-                                                </div>
-                                            ) : (
-                                                <span className="text-[11px] text-stone-400">None set</span>
-                                            )}
-                                        </td>
-                                        <td className="py-3.5 px-4 text-right">
-                                            <span className={`inline-block px-2 py-0.5 rounded font-extrabold text-[11px] ${
-                                                item.stock <= 10
-                                                    ? 'bg-amber-100 text-amber-900'
-                                                    : 'bg-emerald-50 text-emerald-800'
-                                            }`}>
-                                                {item.stock} {item.supply_unit}
-                                            </span>
-                                        </td>
-                                        <td className="py-3.5 px-4 text-right">
-                                            <div className="inline-flex items-center gap-1">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openEditModal(item)}
-                                                    className="p-1.5 text-stone-500 hover:text-clay-600 rounded-lg hover:bg-stone-100 transition-colors"
-                                                    title="Edit material"
-                                                >
-                                                    <Edit3 size={15} />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => deleteMaterial(item)}
-                                                    className="p-1.5 text-stone-500 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                                                    title="Delete material"
-                                                >
-                                                    <Trash2 size={15} />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+            {/* Materials Catalog: Desktop Table & Mobile Card Stack */}
+            {materials.data.length === 0 ? (
+                <div className="mt-6 bg-white rounded-2xl border border-stone-200 p-8 shadow-sm">
+                    <WorkspaceEmptyState
+                        compact
+                        icon={Box}
+                        title="No wholesale materials found"
+                        description="Click 'List Raw Material' to register bulk raw supplies for Cavite artisan workshops."
+                        actionLabel="List Raw Material"
+                        onAction={openAddModal}
+                    />
                 </div>
-            </div>
+            ) : (
+                <div className="mt-6">
+                    {/* Desktop Table */}
+                    <div className="hidden md:block rounded-2xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs">
+                                <thead className="border-b border-stone-200 bg-stone-50/75 text-stone-600 font-bold uppercase tracking-wider">
+                                    <tr>
+                                        <th className="py-3 px-4">Material</th>
+                                        <th className="py-3 px-4">Category</th>
+                                        <th className="py-3 px-4 text-right">Base Price</th>
+                                        <th className="py-3 px-4 text-center">Unit</th>
+                                        <th className="py-3 px-4 text-center">MOQ</th>
+                                        <th className="py-3 px-4">Wholesale Tier</th>
+                                        <th className="py-3 px-4 text-right">In Stock</th>
+                                        <th className="py-3 px-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-stone-100">
+                                    {materials.data.map((item) => (
+                                        <tr key={item.id} className="hover:bg-stone-50/50 transition-colors">
+                                            <td className="py-3.5 px-4">
+                                                <div className="flex items-center gap-3">
+                                                    {item.cover_photo_url ? (
+                                                        <img
+                                                            src={item.cover_photo_url}
+                                                            alt={item.name}
+                                                            className="h-10 w-10 rounded-lg object-cover border border-stone-200"
+                                                            onError={(e) => {
+                                                                e.currentTarget.onerror = null;
+                                                                e.currentTarget.src = '/images/placeholder.svg';
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div className="h-10 w-10 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-400">
+                                                            <Box size={18} />
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <p className="font-bold text-stone-900">{item.name}</p>
+                                                        <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                                                            <span className="text-[10px] text-stone-400 font-mono">{item.sku}</span>
+                                                            {item.lead_time && item.lead_time <= 2 && (
+                                                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                                                    ⚡ Ships in {item.lead_time}d
+                                                                </span>
+                                                            )}
+                                                            {item.firing_method && (
+                                                                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-semibold bg-stone-100 text-stone-700">
+                                                                    {item.firing_method}
+                                                                </span>
+                                                            )}
+                                                            {item.food_safe && (
+                                                                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-semibold bg-emerald-50 text-emerald-800">
+                                                                    Food Safe
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="py-3.5 px-4 text-stone-600">{item.category}</td>
+                                            <td className="py-3.5 px-4 text-right font-bold text-stone-900 font-sans tabular-nums">
+                                                ₱{item.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="py-3.5 px-4 text-center">
+                                                <span className="inline-block px-2 py-0.5 rounded bg-stone-100 text-stone-700 font-mono text-[11px]">
+                                                    {item.supply_unit}
+                                                </span>
+                                            </td>
+                                            <td className="py-3.5 px-4 text-center font-bold text-stone-800">
+                                                {item.moq}
+                                            </td>
+                                            <td className="py-3.5 px-4">
+                                                {item.wholesale_price && item.wholesale_min_qty ? (
+                                                    <div className="text-[11px]">
+                                                        <span className="font-bold text-emerald-700">
+                                                            ₱{item.wholesale_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        </span>
+                                                        <span className="text-stone-500"> for {item.wholesale_min_qty}+ {item.supply_unit}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-[11px] text-stone-400">None set</span>
+                                                )}
+                                            </td>
+                                            <td className="py-3.5 px-4 text-right">
+                                                <span className={`inline-block px-2 py-0.5 rounded font-extrabold text-[11px] ${
+                                                    item.stock <= 10
+                                                        ? 'bg-amber-100 text-amber-900'
+                                                        : 'bg-emerald-50 text-emerald-800'
+                                                }`}>
+                                                    {item.stock} {item.supply_unit}
+                                                </span>
+                                            </td>
+                                            <td className="py-3.5 px-4 text-right">
+                                                <div className="inline-flex items-center gap-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openEditModal(item)}
+                                                        className="p-1.5 text-stone-500 hover:text-clay-600 rounded-lg hover:bg-stone-100 transition-colors"
+                                                        title="Edit material"
+                                                    >
+                                                        <Edit3 size={15} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => deleteMaterial(item)}
+                                                        className="p-1.5 text-stone-500 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                                                        title="Delete material"
+                                                    >
+                                                        <Trash2 size={15} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Mobile Card Stack */}
+                    <div className="md:hidden space-y-3">
+                        {materials.data.map((item) => (
+                            <div key={item.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm space-y-3">
+                                <div className="flex items-center gap-3">
+                                    {item.cover_photo_url ? (
+                                        <img
+                                            src={item.cover_photo_url}
+                                            alt={item.name}
+                                            className="h-12 w-12 rounded-xl object-cover border border-stone-200 shrink-0"
+                                            onError={(e) => {
+                                                e.currentTarget.onerror = null;
+                                                e.currentTarget.src = '/images/placeholder.svg';
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="h-12 w-12 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-400 shrink-0">
+                                            <Box size={20} />
+                                        </div>
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                        <h3 className="font-bold text-sm text-stone-900 truncate">{item.name}</h3>
+                                        <p className="text-[11px] text-stone-500">{item.category} • <span className="font-mono">{item.sku}</span></p>
+                                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                                            {item.lead_time && item.lead_time <= 2 && (
+                                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                                    ⚡ Ships in {item.lead_time}d
+                                                </span>
+                                            )}
+                                            {item.firing_method && (
+                                                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-semibold bg-stone-100 text-stone-700">
+                                                    {item.firing_method}
+                                                </span>
+                                            )}
+                                            {item.food_safe && (
+                                                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-semibold bg-emerald-50 text-emerald-800">
+                                                    Food Safe
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <span className={`inline-block px-2 py-0.5 rounded font-extrabold text-[10px] shrink-0 ${
+                                        item.stock <= 10 ? 'bg-amber-100 text-amber-900' : 'bg-emerald-50 text-emerald-800'
+                                    }`}>
+                                        {item.stock} {item.supply_unit}
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-stone-100 bg-stone-50/60 p-2.5 rounded-xl">
+                                    <div>
+                                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Base Price</span>
+                                        <span className="font-bold text-stone-900 tabular-nums">₱{item.price.toLocaleString(undefined, { minimumFractionDigits: 2 })} / {item.supply_unit}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Min. Order (MOQ)</span>
+                                        <span className="font-bold text-stone-800">{item.moq} {item.supply_unit}</span>
+                                    </div>
+                                </div>
+
+                                {item.wholesale_price && item.wholesale_min_qty && (
+                                    <div className="text-[11px] text-emerald-800 bg-emerald-50/70 border border-emerald-100 px-3 py-1.5 rounded-xl">
+                                        <span className="font-bold">Tier:</span> ₱{item.wholesale_price.toLocaleString(undefined, { minimumFractionDigits: 2 })} for {item.wholesale_min_qty}+ {item.supply_unit}
+                                    </div>
+                                )}
+
+                                <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
+                                    <button
+                                        type="button"
+                                        onClick={() => openEditModal(item)}
+                                        className="flex-1 min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 bg-stone-50 text-xs font-bold text-stone-700 hover:bg-stone-100 transition-colors"
+                                    >
+                                        <Edit3 size={14} />
+                                        <span>Edit</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => deleteMaterial(item)}
+                                        className="min-h-[44px] px-3.5 inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-xs font-bold text-rose-700 hover:bg-rose-100 transition-colors"
+                                        title="Delete material"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Modal: Add / Edit Material */}
             <Modal show={isAddModalOpen} onClose={closeModal} maxWidth="2xl">
                 <form onSubmit={submitMaterial} className="p-6 space-y-4">
                     <div className="flex items-center justify-between border-b border-stone-200 pb-3">
-                        <h2 className="text-lg font-bold text-stone-900 font-serif">
+                        <h2 className="text-lg font-bold text-stone-900">
                             {editingMaterial ? 'Edit Bulk Raw Material' : 'List New Wholesale Material'}
                         </h2>
                         <button type="button" onClick={closeModal} className="text-stone-400 hover:text-stone-600">
@@ -453,6 +568,90 @@ export default function SupplierMaterialsIndex({ materials, availableCategories 
                                 />
                                 <InputError message={errors.wholesale_price} className="mt-1" />
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Technical Specifications (TDS) Section */}
+                    <div className="rounded-xl border border-stone-200 bg-stone-50/75 p-3.5 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                                <Layers size={15} className="text-clay-600" />
+                                <span className="text-xs font-bold text-stone-800">Technical Specifications (TDS)</span>
+                            </div>
+                            <span className="text-[10px] font-semibold text-stone-500 bg-stone-200/60 px-2 py-0.5 rounded-full">
+                                B2B Verified Specs
+                            </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <InputLabel htmlFor="clay_type" value="Clay / Mineral Body Type" />
+                                <TextInput
+                                    id="clay_type"
+                                    value={data.clay_type}
+                                    onChange={(e) => setData('clay_type', e.target.value)}
+                                    placeholder="e.g. Stoneware, Red Terracotta, Porcelain"
+                                    className="mt-1 block w-full text-xs"
+                                />
+                                <InputError message={errors.clay_type} className="mt-1" />
+                            </div>
+
+                            <div>
+                                <InputLabel htmlFor="firing_method" value="Kiln Firing Range / Cone" />
+                                <TextInput
+                                    id="firing_method"
+                                    value={data.firing_method}
+                                    onChange={(e) => setData('firing_method', e.target.value)}
+                                    placeholder="e.g. Cone 6 (1220°C), Cone 10, Low Fire"
+                                    className="mt-1 block w-full text-xs"
+                                />
+                                <InputError message={errors.firing_method} className="mt-1" />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <InputLabel htmlFor="glaze_type" value="Glaze / Surface Finish (If Applicable)" />
+                                <TextInput
+                                    id="glaze_type"
+                                    value={data.glaze_type}
+                                    onChange={(e) => setData('glaze_type', e.target.value)}
+                                    placeholder="e.g. Glossy Transparent, Semi-Matte, Celadon"
+                                    className="mt-1 block w-full text-xs"
+                                />
+                                <InputError message={errors.glaze_type} className="mt-1" />
+                            </div>
+
+                            <div>
+                                <InputLabel htmlFor="lead_time" value="Factory Dispatch Commitment" />
+                                <select
+                                    id="lead_time"
+                                    value={data.lead_time}
+                                    onChange={(e) => setData('lead_time', e.target.value)}
+                                    className="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-clay-500 focus:ring-clay-500 text-xs font-semibold"
+                                >
+                                    <option value="1">⚡ Ships in 24h (1 Business Day)</option>
+                                    <option value="2">⚡ Ships in 48h (2 Business Days)</option>
+                                    <option value="3">Standard Dispatch (3 Business Days)</option>
+                                    <option value="5">Bulk Freight Prep (5 Business Days)</option>
+                                </select>
+                                <InputError message={errors.lead_time} className="mt-1" />
+                            </div>
+                        </div>
+
+                        <div className="pt-1">
+                            <label className="flex items-center gap-2 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={Boolean(data.food_safe)}
+                                    onChange={(e) => setData('food_safe', e.target.checked)}
+                                    className="rounded border-stone-300 text-emerald-600 shadow-sm focus:ring-emerald-500"
+                                />
+                                <span className="text-xs font-medium text-stone-700">
+                                    Certified Food-Safe (Dinnerware & Drinkware Compliant, Lead & Cadmium Free)
+                                </span>
+                            </label>
+                            <InputError message={errors.food_safe} className="mt-1" />
                         </div>
                     </div>
 

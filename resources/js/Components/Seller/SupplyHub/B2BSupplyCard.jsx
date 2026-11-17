@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
     Store, ShieldCheck, MapPin, Plus, Minus, 
-    ShoppingCart, Bike, Car, Truck, Eye 
+    ShoppingCart, Bike, Car, Truck, Eye, Building2 
 } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { resolveImageUrl } from '@/lib/media';
@@ -122,10 +122,20 @@ function B2BSupplyCard({
                     {/* Studio Attribution & City */}
                     <div className="flex items-center justify-between gap-1.5 text-[10px] sm:text-[11px] text-stone-500">
                         <div className="flex items-center gap-1 min-w-0 flex-1 font-medium">
-                            <Store size={11} className="text-clay-600 shrink-0" />
+                            {item.seller?.is_supplier ? (
+                                <Building2 size={11} className="text-emerald-600 shrink-0" />
+                            ) : (
+                                <Store size={11} className="text-clay-600 shrink-0" />
+                            )}
                             <span className="truncate font-semibold text-stone-800" title={sellerName}>{sellerName}</span>
-                            {isSellerVerified && (
-                                <ShieldCheck size={11} className="text-blue-600 shrink-0" />
+                            {item.seller?.is_supplier ? (
+                                <span className="hidden sm:inline-block px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0 uppercase tracking-wider">
+                                    Factory Direct
+                                </span>
+                            ) : (
+                                isSellerVerified && (
+                                    <ShieldCheck size={11} className="text-blue-600 shrink-0" />
+                                )
                             )}
                         </div>
                         <span className="hidden min-[480px]:flex items-center gap-0.5 text-stone-400 shrink-0 text-[9px] sm:text-[10px]">
@@ -134,7 +144,7 @@ function B2BSupplyCard({
                         </span>
                     </div>
 
-                    {/* Material Title & Category */}
+                    {/* Material Title & Category / TDS Specs */}
                     <div>
                         <h3 
                             onClick={handleDetailClick}
@@ -143,9 +153,31 @@ function B2BSupplyCard({
                         >
                             {item.name}
                         </h3>
-                        <span className="inline-block rounded bg-stone-100 px-1.5 py-0.2 text-[8px] sm:text-[9px] font-semibold text-stone-500 mt-1">
-                            {item.category}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                            <span className="inline-block rounded bg-stone-100 px-1.5 py-0.2 text-[8px] sm:text-[9px] font-semibold text-stone-600">
+                                {item.category}
+                            </span>
+                            {item.lead_time && item.lead_time <= 2 && (
+                                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-bold bg-amber-50 text-amber-800 border border-amber-200/70">
+                                    ⚡ Ships in {item.lead_time}d
+                                </span>
+                            )}
+                            {item.firing_method && (
+                                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-medium bg-stone-100 text-stone-700">
+                                    {item.firing_method}
+                                </span>
+                            )}
+                            {item.clay_type && (
+                                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-medium bg-stone-100 text-stone-700">
+                                    {item.clay_type}
+                                </span>
+                            )}
+                            {item.food_safe && (
+                                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-medium bg-emerald-50 text-emerald-800">
+                                    Food Safe
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     {/* Pricing Block */}

@@ -54,6 +54,11 @@ class FetchB2BCatalog
                 'products.supply_unit',
                 'products.cover_photo_path',
                 'products.gallery_paths',
+                'products.clay_type',
+                'products.glaze_type',
+                'products.firing_method',
+                'products.food_safe',
+                'products.lead_time',
                 'products.created_at',
             ])
             ->with([
@@ -104,6 +109,15 @@ class FetchB2BCatalog
         // Bulk Tier Wholesale Discount Filter
         if ($request->boolean('has_wholesale')) {
             $query->whereNotNull('wholesale_price');
+        }
+
+        // Seller Type Filter: all, supplier (Factory Direct), artisan (Peer Workshop)
+        if ($request->filled('seller_type') && $request->seller_type !== 'all') {
+            if ($request->seller_type === 'supplier') {
+                $query->whereHas('user', fn($uq) => $uq->where('role', 'supplier'));
+            } elseif ($request->seller_type === 'artisan') {
+                $query->whereHas('user', fn($uq) => $uq->where('role', 'artisan'));
+            }
         }
 
         // MOQ Tier Filter
@@ -163,6 +177,11 @@ class FetchB2BCatalog
                 'moq' => $moq,
                 'supply_unit' => $product->supply_unit ?: 'pcs',
                 'weight' => $unitWeight,
+                'clay_type' => $product->clay_type,
+                'glaze_type' => $product->glaze_type,
+                'firing_method' => $product->firing_method,
+                'food_safe' => (bool) $product->food_safe,
+                'lead_time' => $product->lead_time !== null ? (int) $product->lead_time : 1,
                 'stock' => (int) $product->stock,
                 'img' => $product->img,
                 'seller' => [
@@ -170,7 +189,9 @@ class FetchB2BCatalog
                     'name' => $product->user?->name ?? 'Artisan Studio',
                     'shop_name' => $product->user?->shop_name ?: ($product->user?->name ?? 'Artisan Studio'),
                     'city' => $product->user?->city ?? 'Cavite',
-                    'is_verified' => $product->user ? $product->user->isArtisan() : true,
+                    'role' => $product->user?->role ?? 'artisan',
+                    'is_supplier' => ($product->user?->role === 'supplier'),
+                    'is_verified' => $product->user ? ($product->user->isSupplier() || $product->user->isArtisan()) : true,
                     'avatar' => $product->user?->avatar_url ?? null,
                 ],
                 'vehicle_preview' => $vehicleInfo,
@@ -234,6 +255,7 @@ class FetchB2BCatalog
                 'price_max' => $request->input('price_max', ''),
                 'locations' => $request->input('locations', ''),
                 'has_wholesale' => $request->boolean('has_wholesale'),
+                'seller_type' => $request->input('seller_type', 'all'),
                 'moq_tier' => $request->input('moq_tier', 'all'),
                 'sort' => $sort,
             ],

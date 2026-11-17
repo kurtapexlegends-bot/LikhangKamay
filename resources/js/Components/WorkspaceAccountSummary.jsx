@@ -4,6 +4,7 @@ export const getWorkspaceAccountLabel = (user) => {
     if (!user) return 'Workspace Account';
 
     if (user.role === 'super_admin') return 'Super Admin';
+    if (user.role === 'supplier') return 'Wholesale Supplier';
     if (user.role === 'staff') {
         const presetKey = user.staff_role_preset_key || user.role_preset_key;
         const labels = {
@@ -27,6 +28,10 @@ export const getWorkspaceAccountDisplayName = (user) => {
 
     if (user.role === 'artisan') {
         return user.shop_name || user.first_name;
+    }
+
+    if (user.role === 'supplier') {
+        return user.shop_name || user.company_name || user.name || user.first_name;
     }
 
     return user.first_name;

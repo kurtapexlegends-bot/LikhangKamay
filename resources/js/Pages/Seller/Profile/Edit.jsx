@@ -2,6 +2,7 @@ import React from 'react';
 import { Head, usePage } from '@inertiajs/react';
 import SellerWorkspaceLayout, { useSellerWorkspaceShell } from '@/Layouts/SellerWorkspaceLayout';
 import AdminLayout from '@/Layouts/AdminLayout';
+import SupplierLayout from '@/Layouts/SupplierLayout';
 import SellerHeader from '@/Layouts/SellerHeader';
 import { User, Shield, MapPin, AlertTriangle } from 'lucide-react';
 import DeleteUserForm from '@/Pages/Consumer/Profile/Partials/DeleteUserForm';
@@ -122,6 +123,21 @@ export default function Edit({
         );
     }
 
+    if (workspaceShell === 'supplier') {
+        return (
+            <SupplierLayout
+                active="profile"
+                title="Warehouse Profile"
+                subtitle="Update facility details, address, and credentials"
+            >
+                <Head title="Warehouse Profile" />
+                <div className="max-w-4xl">
+                    {profileContent}
+                </div>
+            </SupplierLayout>
+        );
+    }
+
     return (
         <>
             <Head title="My Profile" />
@@ -143,7 +159,7 @@ export default function Edit({
 
 Edit.layout = (page) => {
     const { workspaceShell } = page.props;
-    if (workspaceShell === 'admin') {
+    if (workspaceShell === 'admin' || workspaceShell === 'supplier') {
         return <>{page}</>;
     }
     return <SellerWorkspaceLayout active="">{page}</SellerWorkspaceLayout>;

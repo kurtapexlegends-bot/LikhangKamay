@@ -35,6 +35,10 @@ class EnsureSellerWorkspaceAccess
             }
         }
 
+        if ($user && $user->isSupplier()) {
+            return redirect()->route('supplier.dashboard');
+        }
+
         if (!$user || !$user->canAccessSellerWorkspace()) {
             abort(403, 'Unauthorized action. Seller workspace access only.');
         }

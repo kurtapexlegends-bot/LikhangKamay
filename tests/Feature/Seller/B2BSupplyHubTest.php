@@ -892,5 +892,62 @@ class B2BSupplyHubTest extends TestCase
 
         $response->assertNotFound();
     }
+
+    public function test_artisan_can_filter_b2b_supply_hub_by_seller_type_and_view_tds_specifications(): void
+    {
+        $wholesaleSupplier = User::factory()->create([
+            'role' => 'supplier',
+            'shop_name' => 'Cavite Industrial Clay Depot',
+            'artisan_status' => 'approved',
+            'setup_completed_at' => now(),
+        ]);
+
+        $supplierMaterial = Product::create([
+            'user_id' => $wholesaleSupplier->id,
+            'sku' => 'B2B-SUP-TEST01',
+            'name' => 'Factory Direct Ball Clay',
+            'slug' => 'factory-direct-ball-clay',
+            'category' => 'Raw Clay & Slips',
+            'price' => 400.00,
+            'cost_price' => 400.00,
+            'stock' => 1000,
+            'moq' => 20,
+            'supply_unit' => 'sack',
+            'weight' => 25.0,
+            'is_b2b_supply' => true,
+            'clay_type' => 'Ball Clay',
+            'glaze_type' => 'Raw Slip',
+            'firing_method' => 'Cone 6 (1220°C)',
+            'food_safe' => true,
+            'lead_time' => 1,
+            'status' => 'Active',
+        ]);
+
+        // 1. Filter by Factory Direct Suppliers
+        $responseSupplierOnly = $this->actingAs($this->buyerArtisan)
+            ->get(route('seller.supply-hub.index', ['seller_type' => 'supplier']));
+
+        $responseSupplierOnly->assertOk();
+        $responseSupplierOnly->assertInertia(fn ($page) => $page
+            ->component('Seller/SupplyHub/Index')
+            ->has('supplies.data', 1)
+            ->where('supplies.data.0.name', 'Factory Direct Ball Clay')
+            ->where('supplies.data.0.clay_type', 'Ball Clay')
+            ->where('supplies.data.0.firing_method', 'Cone 6 (1220°C)')
+            ->where('supplies.data.0.lead_time', 1)
+            ->where('supplies.data.0.food_safe', true)
+            ->where('supplies.data.0.seller.is_supplier', true)
+        );
+
+        // 2. Filter by Peer Artisan Surplus
+        $responseArtisanOnly = $this->actingAs($this->buyerArtisan)
+            ->get(route('seller.supply-hub.index', ['seller_type' => 'artisan']));
+
+        $responseArtisanOnly->assertOk();
+        $responseArtisanOnly->assertInertia(fn ($page) => $page
+            ->component('Seller/SupplyHub/Index')
+            ->where('supplies.data.0.seller.is_supplier', false)
+        );
+    }
 }
 

@@ -150,6 +150,19 @@ function SourcingCatalogToolbar({
                         </span>
                     )}
 
+                    {filters.seller_type && filters.seller_type !== 'all' && (
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold shadow-2xs border ${
+                            filters.seller_type === 'supplier'
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                : 'bg-clay-50 border-clay-200 text-clay-800'
+                        }`}>
+                            {filters.seller_type === 'supplier' ? 'Channel: Factory Direct' : 'Channel: Artisan Surplus'}
+                            <button type="button" onClick={() => onRemoveFilter('seller_type')} className="hover:opacity-75">
+                                <X size={12} />
+                            </button>
+                        </span>
+                    )}
+
                     <button
                         type="button"
                         onClick={onResetAllFilters}

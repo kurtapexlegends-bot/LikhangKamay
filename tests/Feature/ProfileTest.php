@@ -76,6 +76,59 @@ class ProfileTest extends TestCase
         );
     }
 
+    public function test_supplier_profile_page_uses_supplier_workspace_profile_shell(): void
+    {
+        $supplier = User::factory()->createOne([
+            'role' => 'supplier',
+            'artisan_status' => 'approved',
+            'setup_completed_at' => now(),
+            'email_verified_at' => now(),
+            'shop_name' => 'Cavite Bulk Minerals',
+        ]);
+
+        $response = $this
+            ->actingAs($supplier)
+            ->get('/profile');
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Seller/Profile/Edit')
+            ->where('profileMode', 'owner')
+            ->where('workspaceShell', 'supplier')
+        );
+    }
+
+    public function test_uncompleted_supplier_cannot_access_profile_and_redirects_to_setup(): void
+    {
+        $supplier = User::factory()->createOne([
+            'role' => 'supplier',
+            'setup_completed_at' => null,
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this
+            ->actingAs($supplier)
+            ->get('/profile');
+
+        $response->assertRedirect(route('supplier.setup'));
+    }
+
+    public function test_pending_supplier_cannot_access_profile_and_redirects_to_pending(): void
+    {
+        $supplier = User::factory()->createOne([
+            'role' => 'supplier',
+            'setup_completed_at' => now(),
+            'artisan_status' => 'pending',
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this
+            ->actingAs($supplier)
+            ->get('/profile');
+
+        $response->assertRedirect(route('supplier.pending'));
+    }
+
     public function test_profile_information_can_be_updated(): void
     {
         Notification::fake();

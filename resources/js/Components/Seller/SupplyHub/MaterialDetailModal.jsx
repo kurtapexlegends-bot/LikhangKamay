@@ -3,7 +3,8 @@ import { Link, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import { 
     X, Store, ShieldCheck, MapPin, Plus, Minus, 
-    ShoppingCart, ArrowUpRight, Bike, Car, Truck, Tag, Percent, Package, CheckCircle2, MessageSquare
+    ShoppingCart, ArrowUpRight, Bike, Car, Truck, Tag, Percent, Package, CheckCircle2, MessageSquare,
+    Building2, Layers
 } from 'lucide-react';
 
 const formatCurrency = (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -111,10 +112,20 @@ export default function MaterialDetailModal({
                         <div className="bg-stone-50 border border-stone-200 rounded-xl p-3.5 space-y-2">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1.5 font-bold text-stone-800">
-                                    <Store size={14} className="text-clay-600" />
+                                    {item.seller?.is_supplier ? (
+                                        <Building2 size={14} className="text-emerald-600" />
+                                    ) : (
+                                        <Store size={14} className="text-clay-600" />
+                                    )}
                                     <span>{sellerName}</span>
-                                    {isSellerVerified && (
-                                        <ShieldCheck size={13} className="text-blue-600" />
+                                    {item.seller?.is_supplier ? (
+                                        <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase tracking-wider">
+                                            Factory Direct
+                                        </span>
+                                    ) : (
+                                        isSellerVerified && (
+                                            <ShieldCheck size={13} className="text-blue-600" />
+                                        )
                                     )}
                                 </div>
                                 <span className="flex items-center gap-1 text-[11px] text-stone-500 font-medium">
@@ -123,7 +134,9 @@ export default function MaterialDetailModal({
                                 </span>
                             </div>
                             <p className="text-[11px] text-stone-500 font-medium leading-relaxed">
-                                Verified workshop supplier. Orders dispatched directly from artisan warehouse.
+                                {item.seller?.is_supplier 
+                                    ? 'Verified wholesale raw material supplier. Dispatched directly from commercial warehouse depot.'
+                                    : 'Verified workshop supplier. Orders dispatched directly from artisan craft studio.'}
                             </p>
                         </div>
                     </div>
@@ -168,6 +181,56 @@ export default function MaterialDetailModal({
                                 <p className="text-stone-600 text-xs leading-relaxed font-medium">
                                     {item.description}
                                 </p>
+                            </div>
+                        )}
+
+                        {/* Technical Data Sheet (TDS) */}
+                        {(item.clay_type || item.firing_method || item.glaze_type || item.food_safe !== undefined || item.lead_time) && (
+                            <div className="rounded-xl border border-stone-200 bg-stone-50/70 p-3 space-y-2">
+                                <div className="flex items-center justify-between border-b border-stone-200/80 pb-1.5">
+                                    <div className="flex items-center gap-1.5 font-bold text-stone-800 text-[11px]">
+                                        <Layers size={13} className="text-clay-600" />
+                                        <span>Technical Data Sheet (TDS)</span>
+                                    </div>
+                                    {item.food_safe ? (
+                                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200">
+                                            <ShieldCheck size={10} className="text-emerald-600" /> Food-Safe Certified
+                                        </span>
+                                    ) : (
+                                        <span className="text-[9px] font-medium text-stone-500 bg-stone-100 px-1.5 py-0.5 rounded">
+                                            Decorative Studio Grade
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                                    {item.firing_method && (
+                                        <div className="bg-white p-2 rounded-lg border border-stone-150">
+                                            <span className="text-stone-400 font-bold block text-[9px] uppercase tracking-wider">Kiln Firing Range</span>
+                                            <span className="font-extrabold text-stone-900">{item.firing_method}</span>
+                                        </div>
+                                    )}
+                                    {item.clay_type && (
+                                        <div className="bg-white p-2 rounded-lg border border-stone-150">
+                                            <span className="text-stone-400 font-bold block text-[9px] uppercase tracking-wider">Clay / Mineral Body</span>
+                                            <span className="font-extrabold text-stone-900">{item.clay_type}</span>
+                                        </div>
+                                    )}
+                                    {item.glaze_type && (
+                                        <div className="bg-white p-2 rounded-lg border border-stone-150">
+                                            <span className="text-stone-400 font-bold block text-[9px] uppercase tracking-wider">Surface / Finish</span>
+                                            <span className="font-extrabold text-stone-900">{item.glaze_type}</span>
+                                        </div>
+                                    )}
+                                    {item.lead_time && (
+                                        <div className="bg-white p-2 rounded-lg border border-stone-150">
+                                            <span className="text-stone-400 font-bold block text-[9px] uppercase tracking-wider">Dispatch Commitment</span>
+                                            <span className="font-extrabold text-stone-900">
+                                                {item.lead_time <= 2 ? `⚡ Within ${item.lead_time * 24} Hours` : `${item.lead_time} Business Days`}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 

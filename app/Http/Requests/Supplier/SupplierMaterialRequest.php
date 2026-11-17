@@ -39,6 +39,11 @@ class SupplierMaterialRequest extends FormRequest
             'wholesale_min_qty' => ['nullable', 'integer', 'min:2', 'max:50000'],
             'supply_unit' => ['required', 'string', Rule::in(array_keys(B2BSupplyHubService::SUPPLY_UNITS))],
             'weight' => ['nullable', 'numeric', 'min:0.01'],
+            'clay_type' => ['nullable', 'string', 'max:100'],
+            'glaze_type' => ['nullable', 'string', 'max:100'],
+            'firing_method' => ['nullable', 'string', 'max:100'],
+            'food_safe' => ['nullable', 'boolean'],
+            'lead_time' => ['nullable', 'integer', 'min:1', 'max:30'],
             'cover_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ];
     }

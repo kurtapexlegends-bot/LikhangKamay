@@ -1,168 +1,224 @@
 /* global route */
-import React, { useState } from 'react';
-import { Link, usePage } from '@inertiajs/react';
-import { 
-    LayoutDashboard, Box, ClipboardList, LogOut, 
-    Menu, X, Building2, ExternalLink, ChevronDown, User, ShieldCheck
-} from 'lucide-react';
-import Dropdown from '@/Components/Dropdown';
+import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
+import { usePage } from '@inertiajs/react';
+import SupplierSidebar from '@/Layouts/SupplierSidebar';
+import SupplierHeader from '@/Layouts/SupplierHeader';
+import ScrollToTop from '@/Components/ScrollToTop';
+import { useResizableSidebar } from '@/hooks/useResizableSidebar';
 
-export default function SupplierLayout({ children, active = 'dashboard' }) {
+const SupplierWorkspaceShellContext = createContext({
+    openSidebar: () => {},
+    closeSidebar: () => {},
+});
+
+export default function SupplierLayout({
+    children,
+    active = 'dashboard',
+    title = null,
+    subtitle = null,
+    badge = null,
+    actions = null,
+    breadcrumbs = null,
+    showHeader = true
+}) {
     const { auth } = usePage().props;
-    const user = auth?.user;
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return window.localStorage.getItem('supplier_sidebar_collapsed_v1') === 'true';
+    });
 
-    const navItems = [
-        {
-            key: 'dashboard',
-            label: 'Overview',
-            href: route('supplier.dashboard'),
-            icon: LayoutDashboard,
-        },
-        {
-            key: 'materials',
-            label: 'Wholesale Materials',
-            href: route('supplier.materials.index'),
-            icon: Box,
-        },
-        {
-            key: 'orders',
-            label: 'Workshop Orders',
-            href: route('supplier.orders.index'),
-            icon: ClipboardList,
-        },
-    ];
+    const handleToggleCollapse = (value) => {
+        setIsCollapsed(value);
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem('supplier_sidebar_collapsed_v1', value ? 'true' : 'false');
+        }
+    };
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const stored = parseInt(window.localStorage.getItem('supplier_sidebar_width_v1'), 10);
+            if (stored && (stored > 240 || stored < 180)) {
+                window.localStorage.setItem('supplier_sidebar_width_v1', '220');
+            }
+        }
+    }, []);
+
+    const {
+        width: sidebarWidth,
+        isDragging: isSidebarDragging,
+        isDesktop,
+        startResizing: handleStartSidebarResize,
+        resetWidth: handleResetSidebarWidth,
+    } = useResizableSidebar({
+        storageKey: 'supplier_sidebar_width_v1',
+        collapseStorageKey: 'supplier_sidebar_collapsed_v1',
+        defaultWidth: 220,
+        minExpandedWidth: 180,
+        maxWidth: 360,
+        collapsedWidth: 64,
+        snapThreshold: 130,
+        isCollapsed,
+        onToggleCollapse: handleToggleCollapse,
+    });
+
+    // Reset scroll on navigation across supplier pages
+    useEffect(() => {
+        const mainContent = document.getElementById('supplier-main-content');
+        if (mainContent) {
+            mainContent.scrollTop = 0;
+        }
+    }, [active]);
+
+    // Touch gesture reveal for mobile sidebar
+    useEffect(() => {
+        let touchStartX = 0;
+        let touchStartY = 0;
+        const edgeThreshold = 40;
+        const swipeThreshold = 50;
+
+        const handleTouchStart = (e) => {
+            if (!e.touches || e.touches.length === 0) return;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        };
+
+        const handleTouchEnd = (e) => {
+            if (!e.changedTouches || e.changedTouches.length === 0) return;
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = Math.abs(touchEndY - touchStartY);
+
+            if (touchStartX < edgeThreshold && deltaX > swipeThreshold && deltaX > deltaY) {
+                setSidebarOpen(true);
+            }
+        };
+
+        window.addEventListener('touchstart', handleTouchStart, { passive: true });
+        window.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+        return () => {
+            window.removeEventListener('touchstart', handleTouchStart);
+            window.removeEventListener('touchend', handleTouchEnd);
+        };
+    }, []);
+
+    const shell = useMemo(() => ({
+        openSidebar: () => setSidebarOpen(true),
+        closeSidebar: () => setSidebarOpen(false),
+    }), []);
+
+    // Intelligent default headers based on active page
+    const defaultHeaders = useMemo(() => {
+        const user = auth?.user;
+        const companyName = user?.shop_name || user?.name || 'Wholesale Supplier';
+
+        if (active === 'dashboard' || active === 'overview') {
+            const hour = new Date().getHours();
+            const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+            return {
+                title: `${greeting}, ${companyName}`,
+                subtitle: `Cavite B2B Wholesale Hub • ${user?.city || 'General Trias'}, Cavite`,
+                badge: { label: 'Verified Supplier', iconColor: 'text-emerald-400' }
+            };
+        }
+
+        if (active === 'materials') {
+            return {
+                title: 'Wholesale Materials Inventory',
+                subtitle: 'Manage bulk raw crafting supplies, Minimum Order Quantities (MOQ), and volume pricing tiers.',
+                badge: { label: 'Supply Catalog', iconColor: 'text-teal-400' }
+            };
+        }
+
+        if (active === 'orders') {
+            return {
+                title: 'Artisan Workshop Orders',
+                subtitle: 'Inbound raw material procurement orders placed by Cavite artisan studios.',
+                badge: { label: 'B2B Procurement', iconColor: 'text-amber-400' }
+            };
+        }
+
+        return {
+            title: companyName,
+            subtitle: 'Cavite B2B Supply Network',
+            badge: { label: 'Supplier Portal', iconColor: 'text-teal-400' }
+        };
+    }, [active, auth?.user]);
+
+    const resolvedTitle = title || defaultHeaders.title;
+    const resolvedSubtitle = subtitle || defaultHeaders.subtitle;
+    const resolvedBadge = badge || defaultHeaders.badge;
 
     return (
-        <div className="min-h-screen bg-[#FDFBF9] text-stone-800 font-sans">
-            {/* Top Navigation Bar */}
-            <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/95 backdrop-blur-sm">
-                <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-                    {/* Brand & Portal Badge */}
-                    <div className="flex items-center gap-4">
-                        <Link href={route('supplier.dashboard')} className="flex items-center gap-2.5">
-                            <img
-                                src="/images/logo.png"
-                                alt="LikhangKamay"
-                                className="h-8 w-8 object-contain"
-                                onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src = '/images/logo.png';
-                                }}
-                            />
-                            <div className="flex flex-col">
-                                <span className="font-serif text-lg font-bold tracking-tight text-stone-900 leading-none">
-                                    LikhangKamay
-                                </span>
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">
-                                    B2B Supplier Portal
-                                </span>
-                            </div>
-                        </Link>
+        <SupplierWorkspaceShellContext.Provider value={shell}>
+            <a
+                href="#supplier-main-content"
+                className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 z-[100] px-4 py-2 bg-clay-700 text-white text-xs font-semibold rounded-lg shadow-lg ring-2 ring-clay-500 focus:outline-none transition-transform"
+            >
+                Skip to main content
+            </a>
 
-                        {/* Desktop Nav Pills */}
-                        <nav className="hidden md:flex items-center gap-1.5 ml-6 border-l border-stone-200 pl-6">
-                            {navItems.map((item) => {
-                                const Icon = item.icon;
-                                const isActive = active === item.key;
-                                return (
-                                    <Link
-                                        key={item.key}
-                                        href={item.href}
-                                        className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                                            isActive
-                                                ? 'bg-clay-600 text-white shadow-sm'
-                                                : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900'
-                                        }`}
-                                    >
-                                        <Icon size={15} />
-                                        <span>{item.label}</span>
-                                    </Link>
-                                );
-                            })}
-                        </nav>
-                    </div>
-
-                    {/* Right Tray: Supplier Shop Name & Profile Dropdown */}
-                    <div className="flex items-center gap-3">
-                        <div className="hidden sm:flex flex-col text-right">
-                            <span className="text-xs font-bold text-stone-900 truncate max-w-[200px]">
-                                {user?.shop_name || user?.name}
-                            </span>
-                            <span className="text-[11px] text-stone-500 flex items-center justify-end gap-1">
-                                <ShieldCheck size={12} className="text-emerald-600" /> Verified Supplier
-                            </span>
-                        </div>
-
-                        <Dropdown>
-                            <Dropdown.Trigger>
-                                <button
-                                    type="button"
-                                    className="flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 p-1.5 sm:px-3 hover:bg-stone-100 transition-colors"
-                                >
-                                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-clay-100 text-clay-700 font-bold text-xs">
-                                        {(user?.name || 'S').charAt(0).toUpperCase()}
-                                    </div>
-                                    <ChevronDown size={14} className="text-stone-500 hidden sm:block" />
-                                </button>
-                            </Dropdown.Trigger>
-                            <Dropdown.Content width="48">
-                                <div className="px-4 py-2 border-b border-stone-100 text-xs">
-                                    <p className="font-bold text-stone-900 truncate">{user?.name}</p>
-                                    <p className="text-stone-500 truncate">{user?.email}</p>
-                                </div>
-                                <Dropdown.Link href={route('profile.edit')}>
-                                    <User size={14} className="inline mr-2" /> Profile Settings
-                                </Dropdown.Link>
-                                <div className="border-t border-stone-100 my-1" />
-                                <Dropdown.Link href={route('logout')} method="post" as="button" className="text-red-600 hover:bg-red-50">
-                                    <LogOut size={14} className="inline mr-2" /> Log Out
-                                </Dropdown.Link>
-                            </Dropdown.Content>
-                        </Dropdown>
-
-                        {/* Mobile Menu Trigger */}
-                        <button
-                            type="button"
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="md:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-100"
-                            aria-label="Toggle Navigation Menu"
-                        >
-                            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-                        </button>
-                    </div>
+            <div 
+                className="h-screen overflow-hidden bg-[#FDFBF9] flex font-sans text-stone-800 relative"
+                style={{ '--sidebar-width': `${sidebarWidth}px` }}
+            >
+                {/* Ambient Decorative Gradient Spheres (Lightweight, No Repaint Bottlenecks) */}
+                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-35">
+                    <div className="absolute top-[-5%] left-[-5%] w-[35%] h-[35%] rounded-full bg-teal-100/50 blur-[60px]" />
+                    <div className="absolute bottom-[-5%] right-[-5%] w-[25%] h-[25%] rounded-full bg-clay-100/40 blur-[50px]" />
                 </div>
 
-                {/* Mobile Drawer */}
-                {mobileMenuOpen && (
-                    <div className="md:hidden border-t border-stone-200 bg-white px-4 pt-2 pb-4 space-y-1">
-                        {navItems.map((item) => {
-                            const Icon = item.icon;
-                            const isActive = active === item.key;
-                            return (
-                                <Link
-                                    key={item.key}
-                                    href={item.href}
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold transition-colors ${
-                                        isActive
-                                            ? 'bg-clay-600 text-white'
-                                            : 'text-stone-700 hover:bg-stone-100'
-                                    }`}
-                                >
-                                    <Icon size={18} />
-                                    <span>{item.label}</span>
-                                </Link>
-                            );
-                        })}
-                    </div>
-                )}
-            </header>
+                {/* Left Workspace Sidebar */}
+                <SupplierSidebar
+                    active={active}
+                    user={auth?.user}
+                    mobileOpen={sidebarOpen}
+                    onClose={() => setSidebarOpen(false)}
+                    isCollapsed={isCollapsed}
+                    onToggleCollapse={handleToggleCollapse}
+                    sidebarWidth={sidebarWidth}
+                    isDragging={isSidebarDragging}
+                    isDesktop={isDesktop}
+                    onStartResize={handleStartSidebarResize}
+                    onResetWidth={handleResetSidebarWidth}
+                />
 
-            {/* Main Content Viewport */}
-            <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                {children}
-            </main>
-        </div>
+                {/* Main Content Area */}
+                <main
+                    scroll-region="true"
+                    id="supplier-main-content"
+                    tabIndex={-1}
+                    style={isDesktop ? { marginLeft: `${isCollapsed ? 64 : sidebarWidth}px` } : undefined}
+                    className={`flex min-w-0 flex-1 flex-col overscroll-contain focus:outline-none overflow-y-auto [scrollbar-gutter:stable] ${
+                        isSidebarDragging ? 'transition-none' : 'transition-[margin] duration-300 cubic-bezier(0.4, 0, 0.2, 1)'
+                    }`}
+                >
+                    {/* Top Header */}
+                    {showHeader && (
+                        <SupplierHeader
+                            title={resolvedTitle}
+                            subtitle={resolvedSubtitle}
+                            badge={resolvedBadge}
+                            actions={actions}
+                            breadcrumbs={breadcrumbs}
+                            onMenuClick={() => setSidebarOpen(true)}
+                        />
+                    )}
+
+                    {/* Page Content Container */}
+                    <div className="max-w-[90rem] mx-auto w-full flex-1 flex flex-col min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
+                        {children}
+                    </div>
+                </main>
+            </div>
+
+            <ScrollToTop targetSelector='[scroll-region="true"]' />
+        </SupplierWorkspaceShellContext.Provider>
     );
+}
+
+export function useSupplierWorkspaceShell() {
+    return useContext(SupplierWorkspaceShellContext);
 }

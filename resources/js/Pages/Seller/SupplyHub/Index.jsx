@@ -14,7 +14,7 @@ import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import CompactPagination from '@/Components/CompactPagination';
 import { 
     Store, Package, ShoppingCart, 
-    ListOrdered, RotateCcw, Boxes
+    ListOrdered, RotateCcw, Boxes, Building2 
 } from 'lucide-react';
 import { useToast } from '@/Components/ToastContext';
 
@@ -61,6 +61,7 @@ export default function Index({
         if (filters.price_min || filters.price_max) count++;
         if (filters.locations) count++;
         if (filters.has_wholesale) count++;
+        if (filters.seller_type && filters.seller_type !== 'all') count++;
         if (filters.moq_tier && filters.moq_tier !== 'all') count++;
         return count;
     }, [filters]);
@@ -94,6 +95,8 @@ export default function Index({
         } else if (filterKey === 'search') {
             setSearchInput('');
             handleFilterChange('search', '');
+        } else if (filterKey === 'seller_type') {
+            handleFilterChange('seller_type', 'all');
         } else {
             handleFilterChange(filterKey, filterKey === 'category' ? 'All' : filterKey === 'moq_tier' ? 'all' : '');
         }
@@ -225,6 +228,59 @@ export default function Index({
                             )}
                         </Link>
                     </div>
+                </div>
+
+                {/* 3-Way Sourcing Segmented Switch: All vs Factory Direct vs Peer Artisan */}
+                <div className="flex flex-wrap items-center justify-between gap-2.5 bg-stone-50/80 border border-stone-200/90 rounded-2xl p-2 sm:p-2.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider hidden sm:inline ml-1">
+                            Sourcing Channel:
+                        </span>
+                        <div className="inline-flex rounded-xl bg-stone-200/70 p-0.5">
+                            <button
+                                type="button"
+                                onClick={() => handleFilterChange('seller_type', 'all')}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                    (!filters.seller_type || filters.seller_type === 'all')
+                                        ? 'bg-white text-stone-900 shadow-2xs font-extrabold'
+                                        : 'text-stone-600 hover:text-stone-900'
+                                }`}
+                            >
+                                All Sourcing
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleFilterChange('seller_type', 'supplier')}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                    filters.seller_type === 'supplier'
+                                        ? 'bg-emerald-600 text-white shadow-2xs font-extrabold'
+                                        : 'text-stone-600 hover:text-stone-900'
+                                }`}
+                            >
+                                <Building2 size={13} className={filters.seller_type === 'supplier' ? 'text-emerald-100' : 'text-emerald-600'} />
+                                <span>Factory Direct (Suppliers)</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleFilterChange('seller_type', 'artisan')}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                    filters.seller_type === 'artisan'
+                                        ? 'bg-clay-600 text-white shadow-2xs font-extrabold'
+                                        : 'text-stone-600 hover:text-stone-900'
+                                }`}
+                            >
+                                <Store size={13} className={filters.seller_type === 'artisan' ? 'text-clay-100' : 'text-clay-600'} />
+                                <span>Artisan Surplus</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {filters.seller_type === 'supplier' && (
+                        <div className="hidden md:flex items-center gap-1.5 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-xl font-medium">
+                            <Building2 size={13} className="text-emerald-600" />
+                            <span>Showing wholesale industrial depots with guaranteed 24–48h dispatch.</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Main 2-Column Desktop Layout: Sidebar + Catalog */}

@@ -48,12 +48,18 @@ export default function SellerUpdateProfileInformation({
         return () => revokePreview(data.preview_url);
     }, [data.preview_url]);
 
+    const isSupplier = user?.role === 'supplier';
+
     return (
         <section className={className}>
             <header className="mb-6">
-                <h3 className="text-lg font-bold text-stone-900">Shop Profile</h3>
+                <h3 className="text-lg font-bold text-stone-900">
+                    {isSupplier ? 'Warehouse & Company Profile' : 'Shop Profile'}
+                </h3>
                 <p className="mt-1 text-sm text-stone-500">
-                    Your shop identity is visible to customers and partners.
+                    {isSupplier 
+                        ? 'Your warehouse facility and company identity are used in wholesale supply listings and logistics dispatch.'
+                        : 'Your shop identity is visible to customers and partners.'}
                 </p>
             </header>
 
@@ -101,7 +107,9 @@ export default function SellerUpdateProfileInformation({
                     </div>
 
                     <div className="flex-1 text-center sm:text-left">
-                        <h4 className="text-sm font-bold text-stone-900 mb-2.5">Shop Avatar</h4>
+                        <h4 className="text-sm font-bold text-stone-900 mb-2.5">
+                            {isSupplier ? 'Warehouse Logo / Photo' : 'Shop Avatar'}
+                        </h4>
                         
                         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                             <label htmlFor="avatar" className="px-3 py-1.5 bg-white border border-stone-200 text-stone-700 text-xs font-bold rounded-lg hover:bg-stone-50 transition-colors cursor-pointer">
@@ -137,7 +145,7 @@ export default function SellerUpdateProfileInformation({
                         </div>
 
                         <div>
-                            <InputLabel value="Shop Name" className="text-stone-400 font-bold" />
+                            <InputLabel value={isSupplier ? "Company / Warehouse Name" : "Shop Name"} className="text-stone-400 font-bold" />
                             <div className="mt-1 px-4 py-2 bg-stone-50 border border-stone-100 rounded-xl text-sm font-bold text-stone-500 cursor-not-allowed">
                                 {data.shop_name}
                             </div>

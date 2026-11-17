@@ -84,6 +84,7 @@ function B2BFilterSidebar({
         if (currentMinPrice || currentMaxPrice) count++;
         if (currentLocations.length > 0) count++;
         if (currentHasWholesale) count++;
+        if (filters?.seller_type && filters?.seller_type !== 'all') count++;
         if (currentMoqTier && currentMoqTier !== 'all') count++;
         return count;
     }, [propActiveFilterCount, currentCategory, currentMinPrice, currentMaxPrice, currentLocations, currentHasWholesale, currentMoqTier]);
