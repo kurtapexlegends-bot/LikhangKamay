@@ -54,6 +54,7 @@ export default function MessageInput({
     templateSelectorRef,
     currentOrderContext,
     handleOrderDecision,
+    onOpenDownpaymentModal = null,
 
     // Optimistic UI update callbacks
     onSendStart,
@@ -129,7 +130,8 @@ export default function MessageInput({
         message: data.message,
         setMessage: (val) => setData('message', val),
         inputRef,
-        chatTemplates
+        chatTemplates,
+        onOpenDownpaymentModal
     });
 
     const {
@@ -414,6 +416,7 @@ export default function MessageInput({
                             fileInputRef={fileInputRef}
                             userOrders={userOrders}
                             toggleManualPicker={toggleManualPicker}
+                            onOpenDownpaymentModal={onOpenDownpaymentModal}
                         />
 
                         <textarea
@@ -449,6 +452,12 @@ export default function MessageInput({
 
                                 if (event.key === 'Enter' && !event.shiftKey) {
                                     event.preventDefault();
+                                    const trimmed = data.message.trim().toLowerCase();
+                                    if ((trimmed === '/downpayment' || trimmed === '/deposit') && onOpenDownpaymentModal) {
+                                        setData('message', '');
+                                        onOpenDownpaymentModal();
+                                        return;
+                                    }
                                     handleSubmit(event);
                                 } else {
                                     signalTyping();

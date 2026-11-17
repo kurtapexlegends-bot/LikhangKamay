@@ -17,6 +17,7 @@ import useChatRealtime from './useChatRealtime';
 import useChatMessaging from './useChatMessaging';
 import MessageWindow from '@/Components/Seller/Chat/MessageWindow';
 import MessageInput from '@/Components/Seller/Chat/MessageInput';
+import CustomCommissionModal from '@/Components/Seller/Chat/CustomCommissionModal';
 
 export default function Chat({
     auth,
@@ -36,6 +37,7 @@ export default function Chat({
     const [showInfoPanel, setShowInfoPanel] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showAutomationModal, setShowAutomationModal] = useState(false);
+    const [showCommissionModal, setShowCommissionModal] = useState(false);
     const [activeMedia, setActiveMedia] = useState(null);
     const [timeNow, setTimeNow] = useState(() => Date.now());
     const [typingUserId, setTypingUserId] = useState(null);
@@ -125,6 +127,16 @@ export default function Chat({
         if (!senderId) return;
         window.axios.post(route('chat.seen'), { sender_id: senderId });
     }, []);
+
+    const handleCommissionSuccess = useCallback((commission, messageItem) => {
+        if (messageItem) {
+            setMessages(prev => {
+                if (prev.some(m => m.id === messageItem.id)) return prev;
+                return [...prev, messageItem];
+            });
+        }
+        setShowCommissionModal(false);
+    }, [setMessages]);
 
     // Real-Time WebSockets & Polling
     useChatRealtime({
@@ -435,6 +447,7 @@ export default function Chat({
                                 injectTemplate={injectTemplate}
                                 onSendStart={onSendStart}
                                 onSendFinished={onSendFinished}
+                                onOpenDownpaymentModal={() => setShowCommissionModal(true)}
                             />
                         </>
                     ) : (
@@ -471,6 +484,13 @@ export default function Chat({
                 setShowAutomationModal={setShowAutomationModal}
                 autoReplySettings={autoReplySettings}
                 canEditMessages={canEditMessages}
+            />
+
+            <CustomCommissionModal
+                show={showCommissionModal}
+                onClose={() => setShowCommissionModal(false)}
+                currentChatUser={selectedUser}
+                onSuccess={handleCommissionSuccess}
             />
         </>
     );

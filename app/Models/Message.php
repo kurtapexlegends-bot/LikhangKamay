@@ -9,7 +9,7 @@ class Message extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['sender_id', 'receiver_id', 'message', 'attachment_path', 'attachment_type', 'is_read'];
+    protected $fillable = ['sender_id', 'receiver_id', 'commission_id', 'message', 'attachment_path', 'attachment_type', 'is_read'];
 
     protected $casts = [
         'is_read' => \App\Casts\PostgresCompatibleBoolean::class,
@@ -28,5 +28,9 @@ class Message extends Model
 
     public function receiver() {
         return $this->belongsTo(User::class, 'receiver_id');
+    }
+
+    public function commission() {
+        return $this->belongsTo(CustomCommission::class, 'commission_id');
     }
 }

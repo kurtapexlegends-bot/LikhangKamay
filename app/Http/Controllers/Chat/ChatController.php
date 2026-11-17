@@ -36,6 +36,15 @@ class ChatController extends Controller
     // 2. BUYER VIEW
     public function buyerIndex(Request $request)
     {
+        if ($request->filled('commission_id') && $request->filled('paid_step')) {
+            $commission = \App\Models\CustomCommission::find($request->integer('commission_id'));
+            if ($commission && $commission->buyer_id === $request->user()->id) {
+                $step = (string) $request->input('paid_step');
+                $sessionId = $request->input('session_id');
+                app(\App\Services\CustomCommissionService::class)->reconcilePaymentSession($commission, $step, $sessionId);
+            }
+        }
+
         return $this->getChatData($request, 'Consumer/Buyer/Chat', false);
     }
 

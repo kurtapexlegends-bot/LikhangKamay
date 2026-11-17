@@ -24,6 +24,10 @@ This document details the communication topology, internal chat channels, custom
 *   **Chat Message Template**: [ChatMessageTemplate.php](file:///c:/laragon/www/LikhangKamay/app/Models/ChatMessageTemplate.php)
     *   Stores quick-reply templates for artisan customer support interactions with inline slash-command (`/keyword`) autocomplete triggers.
     *   Fields: `user_id`, `title`, `shortcut`, `content`.
+*   **Custom Commission**: [CustomCommission.php](file:///c:/laragon/www/LikhangKamay/app/Models/CustomCommission.php)
+    *   Tracks bespoke artisan crafting milestones, downpayments, and final balance fulfillment.
+    *   Fields: `artisan_id`, `buyer_id`, `order_id`, `commission_number`, `title`, `description`, `total_amount`, `deposit_amount`, `balance_amount`, `deposit_percentage`, `status`, `deposit_payment_method`, `deposit_payment_id`, `deposit_paid_at`, `balance_payment_method`, `balance_payment_id`, `balance_paid_at`, `paymongo_deposit_session_id`, `paymongo_balance_session_id`, `cancelled_at`, `cancellation_reason`.
+    *   Statuses: `awaiting_deposit`, `in_progress`, `ready_for_balance`, `completed`, `cancelled`.
 
 ---
 
@@ -59,6 +63,7 @@ Security checks are managed in [TeamMessageController.php](file:///c:/laragon/ww
 
 ### Messaging Controllers
 *   [ChatController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Chat/ChatController.php), [TeamMessageController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/TeamMessageController.php): Manages message routing, scope isolation, and websocket broadcasting endpoints.
+*   [CustomCommissionController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Chat/CustomCommissionController.php): Manages custom commission proposals, two-phase PayMongo downpayment and final balance checkout sessions, craft completion notifications, and cancellations.
 
 ### Real-Time WebSocket Events
 The real-time interface is driven by dedicated broadcasting events:
@@ -69,7 +74,11 @@ The real-time interface is driven by dedicated broadcasting events:
 
 ### Messaging Domain Services
 *   [DirectMessageService.php](file:///c:/laragon/www/LikhangKamay/app/Services/Chat/DirectMessageService.php): Handles customer messaging threads, replies, and templates.
+*   [CustomCommissionService.php](file:///c:/laragon/www/LikhangKamay/app/Services/CustomCommissionService.php): Handles bespoke commission milestone state transitions, PayMongo checkout sessions, optimistic concurrency locking with `lockForUpdate()`, and automated fulfillment `Order` generation upon final balance receipt.
 *   [TeamMessageQueryService.php](file:///c:/laragon/www/LikhangKamay/app/Services/Chat/TeamMessageQueryService.php): Handles loading team channel message histories.
+
+### Form Requests
+*   [StoreCommissionRequest.php](file:///c:/laragon/www/LikhangKamay/app/Http/Requests/Commission/StoreCommissionRequest.php): Validates bespoke custom commission requests, strictly enforcing ₱20 minimum transaction bounds for both downpayment and balance phases.
 
 ### Chat Notifications
 *   [NewMessageNotification.php](file:///c:/laragon/www/LikhangKamay/app/Notifications/NewMessageNotification.php): Dispatches push alerts on receiving a message.

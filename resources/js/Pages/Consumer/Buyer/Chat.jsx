@@ -205,6 +205,7 @@ export default function BuyerChat({ auth, conversations = [], activeMessages = [
                     attachment_path: e.message.attachment_path,
                     attachment_url: e.message.attachment_url,
                     attachment_type: e.message.attachment_type,
+                    commission: e.message.commission || null,
                     sender: 'other',
                     created_at: e.message.created_at,
                     time: new Date(e.message.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),

@@ -134,7 +134,7 @@ class DirectMessageService
                     $query->where('id', '<', $beforeId);
                 }
 
-                $rawMessages = $query->orderBy('id', 'desc')->limit($limit + 1)->get();
+                $rawMessages = $query->with('commission')->orderBy('id', 'desc')->limit($limit + 1)->get();
                 $hasMore = $rawMessages->count() > $limit;
                 $messages = $rawMessages->take($limit)->reverse()->values()->map(function($m) use ($userId) {
                     return $this->formatMessageItem($m, $userId);
@@ -152,12 +152,33 @@ class DirectMessageService
 
     public function formatMessageItem(Message $m, int $userId): array
     {
+        $commissionData = null;
+        if ($m->commission) {
+            $comm = $m->commission;
+            $commissionData = [
+                'id' => $comm->id,
+                'commission_number' => $comm->commission_number,
+                'title' => $comm->title,
+                'description' => $comm->description,
+                'total_amount' => (float) $comm->total_amount,
+                'deposit_amount' => (float) $comm->deposit_amount,
+                'balance_amount' => (float) $comm->balance_amount,
+                'deposit_percentage' => $comm->deposit_percentage !== null ? (float) $comm->deposit_percentage : null,
+                'status' => $comm->status,
+                'deposit_payment_method' => $comm->deposit_payment_method,
+                'deposit_paid_at' => $comm->deposit_paid_at?->format('M d, Y h:i A'),
+                'balance_payment_method' => $comm->balance_payment_method,
+                'balance_paid_at' => $comm->balance_paid_at?->format('M d, Y h:i A'),
+            ];
+        }
+
         return [
             'id' => $m->id,
             'text' => $m->message,
             'attachment_path' => $m->attachment_path,
             'attachment_url' => $m->attachment_url ?? ($m->attachment_path ? StorageUrl::url($m->attachment_path) : null),
             'attachment_type' => $m->attachment_type,
+            'commission' => $commissionData,
             'sender' => $m->sender_id === $userId ? 'me' : 'other',
             'created_at' => $m->created_at?->toIso8601String(),
             'time' => $m->created_at ? $m->created_at->format('g:i A') : '',
@@ -176,7 +197,7 @@ class DirectMessageService
             $q->where('sender_id', $activeChatId)->where('receiver_id', $userId);
         })->where('id', '<', $beforeId);
 
-        $rawMessages = $query->orderBy('id', 'desc')->limit($limit + 1)->get();
+        $rawMessages = $query->with('commission')->orderBy('id', 'desc')->limit($limit + 1)->get();
         $hasMore = $rawMessages->count() > $limit;
         $messages = $rawMessages->take($limit)->reverse()->values()->map(function($m) use ($userId) {
             return $this->formatMessageItem($m, $userId);

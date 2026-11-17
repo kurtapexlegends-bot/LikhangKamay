@@ -4,6 +4,7 @@ import {
     Paperclip,
     MessageCircle,
     Package,
+    Receipt,
 } from 'lucide-react';
 
 export default function MessageActionButtons({
@@ -15,6 +16,7 @@ export default function MessageActionButtons({
     fileInputRef,
     userOrders = [],
     toggleManualPicker,
+    onOpenDownpaymentModal = null,
 }) {
     return (
         <div className="flex items-center gap-0.5 px-1">
@@ -34,6 +36,18 @@ export default function MessageActionButtons({
                     title="Quick Templates"
                 >
                     <MessageCircle size={20} />
+                </button>
+            )}
+
+            {!isTeamChat && onOpenDownpaymentModal && (
+                <button
+                    type="button"
+                    onClick={onOpenDownpaymentModal}
+                    disabled={isMessagesReadOnly}
+                    className="rounded-xl p-2 text-gray-400 transition-all duration-200 hover:bg-white hover:text-clay-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Request Downpayment (/downpayment)"
+                >
+                    <Receipt size={20} />
                 </button>
             )}
 

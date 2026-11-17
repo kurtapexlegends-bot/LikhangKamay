@@ -359,6 +359,13 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
         Route::get('/chat/{user:id}/older-messages', [\App\Http\Controllers\Chat\ChatController::class, 'olderMessages'])->name('chat.older-messages');
         Route::get('/buyer/chat', [\App\Http\Controllers\Chat\ChatController::class, 'buyerIndex'])->name('buyer.chat');
+
+        // Custom Commissions & Milestone Downpayments
+        Route::post('/chat/commissions', [\App\Http\Controllers\Chat\CustomCommissionController::class, 'store'])->name('chat.commissions.store');
+        Route::post('/chat/commissions/{commission}/checkout-deposit', [\App\Http\Controllers\Chat\CustomCommissionController::class, 'checkoutDeposit'])->name('chat.commissions.checkout-deposit');
+        Route::post('/chat/commissions/{commission}/mark-ready', [\App\Http\Controllers\Chat\CustomCommissionController::class, 'markReady'])->name('chat.commissions.mark-ready');
+        Route::post('/chat/commissions/{commission}/checkout-balance', [\App\Http\Controllers\Chat\CustomCommissionController::class, 'checkoutBalance'])->name('chat.commissions.checkout-balance');
+        Route::post('/chat/commissions/{commission}/cancel', [\App\Http\Controllers\Chat\CustomCommissionController::class, 'cancel'])->name('chat.commissions.cancel');
     });
 
     Route::get('/team-messages', [\App\Http\Controllers\Seller\TeamMessageController::class, 'index'])->middleware(['seller.workspace', 'staff.attendance', 'seller.module:team_messages'])->name('team-messages.index');

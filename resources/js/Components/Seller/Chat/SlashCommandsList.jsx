@@ -57,14 +57,36 @@ export const SlashCommandsList = forwardRef(({
 
 SlashCommandsList.displayName = 'SlashCommandsList';
 
-export function useSlashCommands({ message, setMessage, inputRef, chatTemplates = [] }) {
+const BUILT_IN_SLASH_COMMANDS = [
+    {
+        id: 'builtin-downpayment',
+        title: 'Request Downpayment',
+        shortcut: '/downpayment',
+        content: 'Two-phase milestone downpayment for custom artisan commissions.',
+        isAction: 'downpayment',
+    },
+    {
+        id: 'builtin-deposit',
+        title: 'Request Milestone Deposit',
+        shortcut: '/deposit',
+        content: 'Two-phase milestone downpayment for custom artisan commissions.',
+        isAction: 'downpayment',
+    },
+];
+
+export function useSlashCommands({ message, setMessage, inputRef, chatTemplates = [], onOpenDownpaymentModal = null }) {
     const [slashSearch, setSlashSearch] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [showSlashMenu, setShowSlashMenu] = useState(false);
     const [slashStart, setSlashStart] = useState(-1);
 
+    const allCommands = useMemo(() => {
+        const custom = Array.isArray(chatTemplates) ? chatTemplates : [];
+        return onOpenDownpaymentModal ? [...BUILT_IN_SLASH_COMMANDS, ...custom] : custom;
+    }, [chatTemplates, onOpenDownpaymentModal]);
+
     const checkSlashCommands = (text, cursorPosition) => {
-        if (!chatTemplates || chatTemplates.length === 0) {
+        if (!allCommands || allCommands.length === 0) {
             setShowSlashMenu(false);
             return;
         }
@@ -92,25 +114,36 @@ export function useSlashCommands({ message, setMessage, inputRef, chatTemplates 
     };
 
     const filteredTemplates = useMemo(() => {
-        if (!showSlashMenu || !chatTemplates || chatTemplates.length === 0) return [];
+        if (!showSlashMenu || !allCommands || allCommands.length === 0) return [];
         const search = slashSearch.toLowerCase();
         
         if (!search) {
-            return chatTemplates;
+            return allCommands;
         }
 
-        return chatTemplates.filter(tpl => {
+        return allCommands.filter(tpl => {
             const shortcutMatch = tpl.shortcut && tpl.shortcut.toLowerCase().replace(/^\//, '').includes(search);
             const titleMatch = tpl.title && tpl.title.toLowerCase().includes(search);
             const contentMatch = tpl.content && tpl.content.toLowerCase().includes(search);
             return shortcutMatch || titleMatch || contentMatch;
         });
-    }, [chatTemplates, showSlashMenu, slashSearch]);
+    }, [allCommands, showSlashMenu, slashSearch]);
 
     const isDropdownVisible = showSlashMenu && filteredTemplates.length > 0;
 
     const selectTemplate = (template) => {
         if (slashStart === -1) return;
+
+        if (template.isAction === 'downpayment' && onOpenDownpaymentModal) {
+            // Remove the /command string and open the commission modal
+            const beforeSlash = message.slice(0, slashStart);
+            const cursorPosition = inputRef.current ? inputRef.current.selectionStart : message.length;
+            const afterSlash = message.slice(cursorPosition);
+            setMessage(beforeSlash + afterSlash);
+            setShowSlashMenu(false);
+            onOpenDownpaymentModal();
+            return;
+        }
         
         const beforeSlash = message.slice(0, slashStart);
         const cursorPosition = inputRef.current ? inputRef.current.selectionStart : message.length;

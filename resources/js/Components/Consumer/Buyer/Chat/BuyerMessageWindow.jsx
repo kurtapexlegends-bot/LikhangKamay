@@ -6,6 +6,7 @@ import OrderContextCard from '@/Components/Chat/OrderContextCard';
 import OrderMentionChip from '@/Components/Chat/OrderMentionChip';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import { formatChatClock, formatChatRelative } from '@/lib/chatTime';
+import CommissionMilestoneCard from '@/Components/Chat/CommissionMilestoneCard';
 
 export default function BuyerMessageWindow({
     currentChatUser,
@@ -147,60 +148,64 @@ export default function BuyerMessageWindow({
                                 <div className="space-y-2.5">
                                     {messages.map((msg) => (
                                         <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
-                                            <div className="max-w-[85%] sm:max-w-[70%] group">
-                                                <div className={`rounded-2xl px-4 py-2.5 text-sm sm:text-sm shadow-2xs leading-relaxed ${
-                                                    msg.sender === 'me' 
-                                                    ? 'bg-clay-600 text-white rounded-br-xs' 
-                                                    : 'bg-white text-gray-800 border border-stone-200/70 rounded-bl-xs'
-                                                }`}>
-                                                    {msg.attachment_path && msg.attachment_type === 'image' && (
-                                                        <div className="mb-2 rounded-xl overflow-hidden bg-white/10 group-hover:shadow-xs transition-shadow">
-                                                            <img 
-                                                                src={msg.attachment_url || (msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') || msg.attachment_path.startsWith('http') || msg.attachment_path.startsWith('/storage') ? msg.attachment_path : `/storage/${msg.attachment_path}`)} 
-                                                                alt="Attachment" 
-                                                                className="max-h-56 md:max-h-64 object-contain w-full cursor-zoom-in hover:scale-102 transition-transform duration-200"
-                                                                onClick={() => {
-                                                                    const index = galleryImages.findIndex(img => img.id === msg.id);
-                                                                    setActiveMedia({ 
-                                                                        index: index >= 0 ? index : 0,
-                                                                        ...galleryImages[index >= 0 ? index : 0]
-                                                                    });
-                                                                }}
-                                                                onError={(e) => {
-                                                                    e.currentTarget.onerror = null;
-                                                                    e.currentTarget.src = '/images/placeholder.svg';
-                                                                }}
-                                                            />
-                                                        </div>
-                                                    )}
-                                                    {msg.attachment_path && msg.attachment_type === 'document' && (
-                                                        <a 
-                                                            href={msg.attachment_url || (msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') || msg.attachment_path.startsWith('http') || msg.attachment_path.startsWith('/storage') ? msg.attachment_path : `/storage/${msg.attachment_path}`)} 
-                                                            target="_blank" 
-                                                            rel="noreferrer"
-                                                            className={`flex items-center gap-2.5 p-2.5 rounded-xl mb-1.5 transition-colors ${
-                                                                msg.sender === 'me' 
-                                                                ? 'bg-clay-500/30 hover:bg-clay-500/40' 
-                                                                : 'bg-stone-50 hover:bg-stone-100'
-                                                            }`}
-                                                        >
-                                                            <div className={`p-2 rounded-lg ${msg.sender === 'me' ? 'bg-clay-500 text-white' : 'bg-white text-stone-500 shadow-2xs'}`}>
-                                                                <FileIcon size={16} />
+                                            <div className="max-w-[85%] sm:max-w-[75%] group">
+                                                {msg.attachment_type === 'commission_milestone' && msg.commission ? (
+                                                    <CommissionMilestoneCard msg={msg} viewer="buyer" />
+                                                ) : (
+                                                    <div className={`rounded-2xl px-4 py-2.5 text-sm sm:text-sm shadow-2xs leading-relaxed ${
+                                                        msg.sender === 'me' 
+                                                        ? 'bg-clay-600 text-white rounded-br-xs' 
+                                                        : 'bg-white text-gray-800 border border-stone-200/70 rounded-bl-xs'
+                                                    }`}>
+                                                        {msg.attachment_path && msg.attachment_type === 'image' && (
+                                                            <div className="mb-2 rounded-xl overflow-hidden bg-white/10 group-hover:shadow-xs transition-shadow">
+                                                                <img 
+                                                                    src={msg.attachment_url || (msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') || msg.attachment_path.startsWith('http') || msg.attachment_path.startsWith('/storage') ? msg.attachment_path : `/storage/${msg.attachment_path}`)} 
+                                                                    alt="Attachment" 
+                                                                    className="max-h-56 md:max-h-64 object-contain w-full cursor-zoom-in hover:scale-102 transition-transform duration-200"
+                                                                    onClick={() => {
+                                                                        const index = galleryImages.findIndex(img => img.id === msg.id);
+                                                                        setActiveMedia({ 
+                                                                            index: index >= 0 ? index : 0,
+                                                                            ...galleryImages[index >= 0 ? index : 0]
+                                                                        });
+                                                                    }}
+                                                                    onError={(e) => {
+                                                                        e.currentTarget.onerror = null;
+                                                                        e.currentTarget.src = '/images/placeholder.svg';
+                                                                    }}
+                                                                />
                                                             </div>
-                                                            <div className="flex-1 min-w-0 pr-2">
-                                                                <span className="block text-xs font-semibold truncate underline underline-offset-2">
-                                                                    {msg.attachment_path.split('/').pop()}
-                                                                </span>
-                                                                <span className="text-[10px] opacity-75">Click to download</span>
-                                                            </div>
-                                                        </a>
-                                                    )}
-                                                    {msg.text && (
-                                                        <p className="leading-relaxed whitespace-pre-wrap word-break-words text-sm sm:text-sm">
-                                                            <OrderMentionChip text={msg.text} userOrders={userOrders} isMe={msg.sender === 'me'} />
-                                                        </p>
-                                                    )}
-                                                </div>
+                                                        )}
+                                                        {msg.attachment_path && msg.attachment_type === 'document' && (
+                                                            <a 
+                                                                href={msg.attachment_url || (msg.attachment_path.startsWith('blob:') || msg.attachment_path.startsWith('data:') || msg.attachment_path.startsWith('http') || msg.attachment_path.startsWith('/storage') ? msg.attachment_path : `/storage/${msg.attachment_path}`)} 
+                                                                target="_blank" 
+                                                                rel="noreferrer"
+                                                                className={`flex items-center gap-2.5 p-2.5 rounded-xl mb-1.5 transition-colors ${
+                                                                    msg.sender === 'me' 
+                                                                    ? 'bg-clay-500/30 hover:bg-clay-500/40' 
+                                                                    : 'bg-stone-50 hover:bg-stone-100'
+                                                                }`}
+                                                            >
+                                                                <div className={`p-2 rounded-lg ${msg.sender === 'me' ? 'bg-clay-500 text-white' : 'bg-white text-stone-500 shadow-2xs'}`}>
+                                                                    <FileIcon size={16} />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0 pr-2">
+                                                                    <span className="block text-xs font-semibold truncate underline underline-offset-2">
+                                                                        {msg.attachment_path.split('/').pop()}
+                                                                    </span>
+                                                                    <span className="text-[10px] opacity-75">Click to download</span>
+                                                                </div>
+                                                            </a>
+                                                        )}
+                                                        {msg.text && (
+                                                            <p className="leading-relaxed whitespace-pre-wrap word-break-words text-sm sm:text-sm">
+                                                                <OrderMentionChip text={msg.text} userOrders={userOrders} isMe={msg.sender === 'me'} />
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )}
                                                 <div className={`flex items-center gap-1.5 mt-1 text-[11px] ${
                                                     msg.sender === 'me' ? 'justify-end text-gray-400' : 'text-gray-400'
                                                 }`}>
