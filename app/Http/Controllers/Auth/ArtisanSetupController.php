@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 
 use App\Support\StructuredAddress;
+use App\Support\CaviteAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -88,8 +89,24 @@ class ArtisanSetupController extends Controller
             'city' => 'required|string',
             'zip_code' => 'required|string|max:10',
             'barangay' => 'required|string',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
+            'latitude' => [
+                'nullable',
+                'numeric',
+                'between:-90,90',
+                'required_with:longitude',
+                function ($attribute, $value, $fail) use ($request) {
+                    $longitude = $request->input('longitude');
+
+                    if ($value === null || $value === '' || $longitude === null || $longitude === '') {
+                        return;
+                    }
+
+                    if (!CaviteAddress::isWithinCaviteBounds((float) $value, (float) $longitude)) {
+                        $fail('Your workshop doorstep must be inside Cavite. Drag the pin within the province and try again.');
+                    }
+                },
+            ],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitude'],
         ]);
 
         $user->update([

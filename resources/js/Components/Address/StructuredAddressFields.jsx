@@ -11,6 +11,7 @@ const AddressLocationPicker = lazy(() => import('@/Components/Address/AddressLoc
 import {
     CAVITE_CITY_OPTIONS,
     CAVITE_REGION,
+    CAVITE_BOUNDS,
     getCaviteBarangaysForCity,
     normalizeCaviteAddressText,
     resolveCanonicalCaviteCity,
@@ -424,9 +425,12 @@ export default function StructuredAddressFields({
                     city={matchedCity || rawValue('city')}
                     onLocationSelect={handleLocationSelect}
                     readOnly={readOnly}
-                    maxBounds={maxBounds}
+                    maxBounds={maxBounds ?? (allowRegional ? null : CAVITE_BOUNDS)}
+                    enforceCavite={!allowRegional}
                 />
             </Suspense>
+
+            <InputError className="mt-2" message={errors[field('latitude')]} />
 
             {locationNotice && (
                 <div className="flex items-start gap-2.5 rounded-xl bg-amber-50 border border-amber-200/80 p-3 text-xs text-amber-800">

@@ -5,27 +5,68 @@ import SupplierLayout from '@/Layouts/SupplierLayout';
 import WorkspaceEmptyState from '@/Components/WorkspaceEmptyState';
 import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
+import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
-import { 
-    ClipboardList, Package, X, Phone, MapPin, Building2
+import {
+    ClipboardList, Package, X, Phone, MapPin, Building2, Search, Clock, CreditCard, Truck
 } from 'lucide-react';
 
-export default function SupplierOrdersIndex({ orders, currentFilter = 'all' }) {
+const STATUS_STYLES = {
+    Pending: 'bg-amber-50 text-amber-800 border-amber-200',
+    Accepted: 'bg-blue-50 text-blue-800 border-blue-200',
+    Processing: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+    Shipped: 'bg-sky-50 text-sky-800 border-sky-200',
+    'Ready for Pickup': 'bg-sky-50 text-sky-800 border-sky-200',
+    Delivered: 'bg-teal-50 text-teal-800 border-teal-200',
+    Completed: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    Cancelled: 'bg-stone-100 text-stone-500 border-stone-200',
+};
+
+const STATUS_TABS = [
+    { id: 'all', label: 'All Orders' },
+    { id: 'Pending', label: 'Pending' },
+    { id: 'Accepted', label: 'Accepted' },
+    { id: 'Processing', label: 'Processing' },
+    { id: 'Shipped', label: 'Shipped' },
+    { id: 'Ready for Pickup', label: 'Ready for Pickup' },
+    { id: 'Delivered', label: 'Delivered' },
+    { id: 'Cancelled', label: 'Cancelled' },
+];
+
+const formatPeso = (value) =>
+    `₱${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+export default function SupplierOrdersIndex({ orders, currentFilter = 'all', filters = {} }) {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [statusModalOpen, setStatusModalOpen] = useState(false);
+    const [search, setSearch] = useState(filters.search || '');
 
-    const { data, setData, post, processing, reset } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm({
         status: '',
         notes: '',
     });
 
-    const statusOptions = [
-        'all', 'Pending', 'Accepted', 'Processing', 'Shipped', 'Ready for Pickup', 'Delivered', 'Cancelled'
-    ];
+    const orderList = orders?.data || [];
 
     const filterByStatus = (status) => {
-        router.get(route('supplier.orders.index'), { status }, {
+        router.get(route('supplier.orders.index'), { status, search }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const submitSearch = (e) => {
+        e.preventDefault();
+        router.get(route('supplier.orders.index'), { status: currentFilter, search }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const clearSearch = () => {
+        setSearch('');
+        router.get(route('supplier.orders.index'), { status: currentFilter }, {
             preserveState: true,
             preserveScroll: true,
         });
@@ -56,140 +97,214 @@ export default function SupplierOrdersIndex({ orders, currentFilter = 'all' }) {
         });
     };
 
+    const emptyDescription = (() => {
+        if (filters.search) {
+            return `No wholesale orders match "${filters.search}".`;
+        }
+        if (currentFilter !== 'all') {
+            return `No wholesale orders are currently "${currentFilter}".`;
+        }
+        return 'When Cavite artisan studios order your raw materials, their procurement orders appear here for packing and dispatch.';
+    })();
+
     return (
-        <SupplierLayout active="orders" title="Artisan Workshop Orders" subtitle="Manage incoming B2B wholesale material procurement orders">
+        <SupplierLayout active="orders">
             <Head title="Artisan Workshop Orders" />
 
-            {/* Segmented Status Tabs Track */}
-            <div className="overflow-x-auto scrollbar-none pb-1">
-                <div className="p-1 bg-stone-100/70 rounded-2xl inline-flex items-center gap-1 shrink-0 w-max min-w-max border border-stone-200/40">
-                    {statusOptions.map((st) => {
-                        const isActive = currentFilter === st;
-                        return (
+            {/* Filter Toolbar: Status Pills + Search */}
+            <div className="rounded-2xl border border-stone-200/80 bg-white p-3 sm:p-4 shadow-2xs">
+                <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto lg:flex-wrap lg:overflow-visible scrollbar-none p-1 bg-stone-100/70 rounded-2xl text-xs font-bold touch-pan-y overscroll-contain">
+                        {STATUS_TABS.map((tab) => {
+                            const isActive = currentFilter === tab.id;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    type="button"
+                                    onClick={() => filterByStatus(tab.id)}
+                                    className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 shrink-0 cursor-pointer min-h-[44px] sm:min-h-0 ${
+                                        isActive
+                                            ? 'bg-white text-stone-900 shadow-xs font-extrabold'
+                                            : 'text-stone-600 hover:text-stone-900 font-semibold'
+                                    }`}
+                                >
+                                    <span>{tab.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <form onSubmit={submitSearch} className="relative w-full lg:w-64 shrink-0">
+                        <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Order no. or studio"
+                            className="w-full rounded-xl border border-stone-200 bg-stone-50/50 py-1.5 pl-9 pr-8 text-xs font-medium text-stone-800 placeholder-stone-400 focus:bg-white focus:border-clay-500 focus:ring-1 focus:ring-clay-500"
+                        />
+                        {search && (
                             <button
-                                key={st}
                                 type="button"
-                                onClick={() => filterByStatus(st)}
-                                className={`px-3 py-2 sm:px-3.5 sm:py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap min-h-[44px] sm:min-h-0 select-none cursor-pointer ${
-                                    isActive
-                                        ? 'bg-white text-clay-800 shadow-xs font-black'
-                                        : 'text-stone-500 hover:text-stone-800 hover:bg-stone-200/50 font-semibold'
-                                }`}
+                                onClick={clearSearch}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-0.5 cursor-pointer"
+                                title="Clear search"
                             >
-                                <span>{st === 'all' ? 'All Orders' : st}</span>
+                                <X size={13} />
                             </button>
-                        );
-                    })}
+                        )}
+                    </form>
                 </div>
             </div>
 
             {/* Orders Feed */}
-            <div className="mt-6 space-y-4">
-                {orders.data.length === 0 ? (
-                    <div className="rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
-                        <WorkspaceEmptyState
-                            compact
-                            icon={ClipboardList}
-                            title="No wholesale orders found"
-                            description={`There are currently no wholesale orders in the "${currentFilter === 'all' ? 'All' : currentFilter}" status.`}
-                        />
-                    </div>
-                ) : (
-                    orders.data.map((order) => (
-                        <div key={order.id} className="rounded-2xl border border-stone-200/80 bg-white p-5 sm:p-6 shadow-2xs space-y-4">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
-                                <div>
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-sm font-extrabold text-stone-900 font-mono">
-                                            #{order.order_number}
+            {orderList.length === 0 ? (
+                <div className="py-10">
+                    <WorkspaceEmptyState
+                        compact
+                        icon={ClipboardList}
+                        title="No wholesale orders found"
+                        description={emptyDescription}
+                    />
+                </div>
+            ) : (
+                <div className="space-y-3.5">
+                    {orderList.map((order) => (
+                        <div
+                            key={order.id}
+                            className="rounded-2xl border border-stone-200/80 bg-white p-3.5 sm:p-5 shadow-2xs transition-all hover:shadow-xs hover:border-stone-300 space-y-3.5"
+                        >
+                            {/* Header: Order No., Status, Placed On, Action */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 pb-2.5">
+                                <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                    <div>
+                                        <span className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block">
+                                            Order
                                         </span>
-                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                                            order.status === 'Delivered'
-                                                ? 'bg-emerald-100 text-emerald-800'
-                                                : order.status === 'Cancelled'
-                                                ? 'bg-red-100 text-red-800'
-                                                : 'bg-amber-100 text-amber-900'
-                                        }`}>
-                                            {order.status}
+                                        <h3 className="font-bold text-stone-900 text-xs sm:text-sm leading-none font-mono mt-0.5">
+                                            #{order.order_number}
+                                        </h3>
+                                    </div>
+
+                                    <div className="hidden sm:block h-4 w-px bg-stone-200" />
+
+                                    <div className="flex items-center gap-1.5 text-stone-400">
+                                        <Clock size={11} />
+                                        <span className="text-[11px] font-medium text-stone-600">
+                                            {order.created_at}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-stone-400 mt-0.5">Placed on {order.created_at}</p>
                                 </div>
 
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-tight whitespace-nowrap ${STATUS_STYLES[order.status] || STATUS_STYLES.Pending}`}>
+                                        {order.status}
+                                    </span>
                                     <button
                                         type="button"
                                         onClick={() => openStatusModal(order)}
-                                        className="min-h-[44px] sm:min-h-[36px] px-4 py-2 sm:py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-bold text-stone-800 transition-colors active:scale-95 inline-flex items-center gap-1.5"
+                                        className="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-bold text-stone-700 hover:bg-stone-50 hover:border-stone-300 shadow-2xs transition min-h-[44px] sm:min-h-[36px] cursor-pointer"
                                     >
                                         Update Status
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Workshop Client & Delivery Info */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs bg-stone-50/75 p-4 rounded-xl border border-stone-100">
+                            {/* Client Workshop & Fulfillment */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs bg-stone-50/60 p-3.5 rounded-xl border border-stone-100">
                                 <div>
                                     <span className="font-bold uppercase tracking-wider text-stone-400 text-[10px] block mb-1">
                                         Client Workshop
                                     </span>
                                     <p className="font-bold text-stone-900 flex items-center gap-1.5">
-                                        <Building2 size={13} className="text-clay-600" />
+                                        <Building2 size={13} className="text-clay-600 shrink-0" />
                                         {order.buyer?.shop_name || order.buyer?.name}
                                     </p>
-                                    <p className="text-stone-600 mt-0.5">{order.buyer?.name} • {order.buyer?.email}</p>
+                                    <p className="text-stone-600 mt-0.5">
+                                        {order.buyer?.name}
+                                        {order.buyer?.city ? ` • ${order.buyer.city}` : ''}
+                                    </p>
                                     {order.buyer?.phone && (
                                         <p className="text-stone-500 flex items-center gap-1 mt-0.5">
-                                            <Phone size={12} /> {order.buyer.phone}
+                                            <Phone size={11} /> {order.buyer.phone}
                                         </p>
                                     )}
                                 </div>
 
                                 <div>
                                     <span className="font-bold uppercase tracking-wider text-stone-400 text-[10px] block mb-1">
-                                        Fulfillment &amp; Destination
+                                        Fulfillment
                                     </span>
-                                    <p className="font-bold text-stone-800">
-                                        Method: {order.shipping_method || 'Courier Hub'} • Payment: {order.payment_method} ({order.payment_status})
+                                    <p className="font-bold text-stone-800 flex items-center gap-1.5">
+                                        <Truck size={13} className="text-stone-400 shrink-0" />
+                                        {order.shipping_method || 'Courier Hub'}
+                                    </p>
+                                    <p className="text-stone-600 flex items-center gap-1 mt-0.5">
+                                        <CreditCard size={11} className="text-stone-400 shrink-0" />
+                                        {order.payment_method} ({order.payment_status})
                                     </p>
                                     {order.shipping_address && (
                                         <p className="text-stone-600 flex items-start gap-1 mt-0.5">
-                                            <MapPin size={13} className="mt-0.5 text-stone-400 shrink-0" />
+                                            <MapPin size={11} className="mt-0.5 text-stone-400 shrink-0" />
                                             <span>{order.shipping_address}</span>
                                         </p>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Order Items Table */}
+                            {/* Order Items */}
                             <div className="divide-y divide-stone-100">
                                 {order.items.map((item) => (
-                                    <div key={item.id} className="py-2.5 flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-2">
-                                            <Package size={14} className="text-stone-400" />
-                                            <span className="font-semibold text-stone-900">{item.product_name}</span>
-                                            <span className="text-stone-500">
+                                    <div key={item.id} className="py-2 flex items-center justify-between gap-3 text-xs">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <Package size={13} className="text-stone-400 shrink-0" />
+                                            <span className="font-semibold text-stone-900 truncate">{item.product_name}</span>
+                                            <span className="text-stone-500 shrink-0">
                                                 × {item.quantity} {item.supply_unit}
                                             </span>
                                         </div>
-                                        <span className="font-bold text-stone-900 font-sans tabular-nums">
-                                            ₱{(item.price * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                        <span className="font-bold text-stone-900 tabular-nums shrink-0">
+                                            {formatPeso(item.price * item.quantity)}
                                         </span>
                                     </div>
                                 ))}
                             </div>
 
-                            {/* Total Footer */}
-                            <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-xs">
-                                <span className="font-bold text-stone-600 uppercase tracking-wider">Wholesale Total</span>
-                                <span className="text-base font-extrabold text-stone-900 font-sans tabular-nums">
-                                    ₱{order.total_amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            {/* Total */}
+                            <div className="pt-2.5 border-t border-stone-100 flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">
+                                    Wholesale Total
+                                </span>
+                                <span className="text-sm font-extrabold text-stone-900 tabular-nums">
+                                    {formatPeso(order.total_amount)}
                                 </span>
                             </div>
                         </div>
-                    ))
-                )}
-            </div>
+                    ))}
+
+                    {/* Pagination */}
+                    {orders.links && orders.links.length > 3 && (
+                        <div className="flex items-center justify-center gap-1 pt-2">
+                            {orders.links.map((link, i) => (
+                                <button
+                                    key={i}
+                                    type="button"
+                                    disabled={!link.url || link.active}
+                                    onClick={() => router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
+                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                                        link.active
+                                            ? 'bg-stone-900 text-white shadow-xs'
+                                            : link.url
+                                            ? 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 cursor-pointer'
+                                            : 'text-stone-300 cursor-not-allowed'
+                                    }`}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Modal: Update Order Status */}
             <Modal show={statusModalOpen} onClose={closeStatusModal} maxWidth="md">
@@ -198,7 +313,12 @@ export default function SupplierOrdersIndex({ orders, currentFilter = 'all' }) {
                         <h2 className="text-base font-bold text-stone-900">
                             Update Order #{selectedOrder?.order_number}
                         </h2>
-                        <button type="button" onClick={closeStatusModal} className="text-stone-400 hover:text-stone-600">
+                        <button
+                            type="button"
+                            onClick={closeStatusModal}
+                            className="text-stone-400 hover:text-stone-600 cursor-pointer"
+                            title="Close"
+                        >
                             <X size={18} />
                         </button>
                     </div>
@@ -219,6 +339,7 @@ export default function SupplierOrdersIndex({ orders, currentFilter = 'all' }) {
                             <option value="Delivered">Delivered (Handed over)</option>
                             <option value="Cancelled">Cancelled</option>
                         </select>
+                        <InputError message={errors.status} className="mt-1" />
                     </div>
 
                     <div>
@@ -231,10 +352,13 @@ export default function SupplierOrdersIndex({ orders, currentFilter = 'all' }) {
                             placeholder="Add tracking number or courier driver notes..."
                             className="mt-1 block w-full rounded-xl border-stone-300 shadow-sm focus:border-clay-500 focus:ring-clay-500 text-xs p-3"
                         />
+                        <InputError message={errors.notes} className="mt-1" />
                     </div>
 
                     <div className="flex items-center justify-end gap-3 pt-3 border-t border-stone-100">
-                        <SecondaryButton onClick={closeStatusModal} type="button" className="min-h-[44px]">Cancel</SecondaryButton>
+                        <SecondaryButton onClick={closeStatusModal} type="button" className="min-h-[44px]">
+                            Cancel
+                        </SecondaryButton>
                         <PrimaryButton disabled={processing} className="min-h-[44px]">
                             {processing ? 'Updating...' : 'Save Status'}
                         </PrimaryButton>

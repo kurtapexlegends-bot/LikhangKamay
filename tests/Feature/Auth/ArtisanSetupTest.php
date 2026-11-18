@@ -167,6 +167,64 @@ class ArtisanSetupTest extends TestCase
         ]);
     }
 
+    public function test_artisan_setup_step_1_rejects_a_doorstep_pin_outside_cavite(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create([
+            'role' => 'artisan',
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->post(route('artisan.setup.store'), [
+            'current_step' => 1,
+            'shop_name' => 'Albay Pottery Studio',
+            'phone_number' => '09171234567',
+            'street_address' => 'Blk 12 Lot 3',
+            'region' => 'Cavite',
+            'city' => 'Dasmarinas City',
+            'barangay' => 'Sampaloc I',
+            'zip_code' => '4114',
+            'latitude' => 13.261534,
+            'longitude' => 123.508240,
+        ]);
+
+        $response->assertSessionHasErrors([
+            'latitude' => 'Your workshop doorstep must be inside Cavite. Drag the pin within the province and try again.',
+        ]);
+        $this->assertDatabaseMissing('user_addresses', ['user_id' => $user->id]);
+        $this->assertNull($user->fresh()->shop_name);
+    }
+
+    public function test_artisan_setup_step_1_accepts_a_doorstep_pin_inside_cavite(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create([
+            'role' => 'artisan',
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->post(route('artisan.setup.store'), [
+            'current_step' => 1,
+            'shop_name' => 'Dasmariñas Pottery Studio',
+            'phone_number' => '09171234567',
+            'street_address' => 'Blk 12 Lot 3',
+            'region' => 'Cavite',
+            'city' => 'Dasmarinas City',
+            'barangay' => 'Sampaloc I',
+            'zip_code' => '4114',
+            'latitude' => 14.3294,
+            'longitude' => 120.9367,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasNoErrors();
+
+        $address = $user->addresses()->firstOrFail();
+        $this->assertSame('Shop', $address->label);
+        $this->assertEqualsWithDelta(14.3294, (float) $address->latitude, 0.0001);
+        $this->assertEqualsWithDelta(120.9367, (float) $address->longitude, 0.0001);
+    }
+
     public function test_artisan_setup_step_2_uploads_legal_documents(): void
     {
         Storage::fake('public');

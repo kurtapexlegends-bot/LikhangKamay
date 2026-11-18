@@ -39,6 +39,13 @@ export const normalizeCaviteAddressText = (value = '') =>
 
 export const CAVITE_REGION = 'Cavite';
 
+// Mirrors App\Support\CaviteAddress::BOUNDS so the client and server agree.
+// Leaflet order: [[min_lat, min_lng], [max_lat, max_lng]].
+export const CAVITE_BOUNDS = [
+    [14.05, 120.55],
+    [14.53, 121.15],
+];
+
 export const CAVITE_BARANGAYS = Object.fromEntries(
     Object.entries(RAW_CAVITE_BARANGAYS).map(([city, barangays]) => [
         normalizeCaviteAddressText(city),

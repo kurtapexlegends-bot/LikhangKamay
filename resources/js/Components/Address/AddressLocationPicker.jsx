@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, Crosshair, Loader2, Maximize2, Check, X, Compass, Info } from 'lucide-react';
+import { MapPin, Crosshair, Loader2, Maximize2, Check, X, Compass, Info, AlertTriangle } from 'lucide-react';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -11,6 +11,7 @@ import {
     getCaviteCoordinatesForCity,
     CAVITE_COMPONENT_CITIES,
     CAVITE_MUNICIPALITIES,
+    CAVITE_BOUNDS,
     normalizeCaviteAddressText
 } from '@/lib/caviteAddresses';
 
@@ -35,6 +36,15 @@ export const PHILIPPINES_BOUNDS = [
     [21.5, 127.0], // North-East (Batanes / Philippine Sea)
 ];
 
+// Mirrors App\Support\CaviteAddress::BOUNDS so the client and server agree
+const isWithinCaviteBounds = (lat, lng) => {
+    const numLat = Number(lat);
+    const numLng = Number(lng);
+    if (Number.isNaN(numLat) || Number.isNaN(numLng)) return false;
+    return numLat >= CAVITE_BOUNDS[0][0] && numLat <= CAVITE_BOUNDS[1][0]
+        && numLng >= CAVITE_BOUNDS[0][1] && numLng <= CAVITE_BOUNDS[1][1];
+};
+
 const isValidCoordinate = (lat, lng) => {
     if (lat === null || lat === undefined || lat === '' || lng === null || lng === undefined || lng === '') {
         return false;
@@ -53,6 +63,7 @@ export default function AddressLocationPicker({
     height = '240px',
     className = '',
     maxBounds = PHILIPPINES_BOUNDS,
+    enforceCavite = false,
 }) {
     const effectiveBounds = maxBounds || PHILIPPINES_BOUNDS;
     const mapContainerRef = useRef(null);
@@ -66,6 +77,9 @@ export default function AddressLocationPicker({
     const [isLocating, setIsLocating] = useState(false);
     const [isResolvingAddress, setIsResolvingAddress] = useState(false);
     const [isPrecisionOpen, setIsPrecisionOpen] = useState(false);
+    // null = not resolved yet, true/false = last reverse-geocode verdict
+    const [geocodeOutsideCavite, setGeocodeOutsideCavite] = useState(null);
+    const [detectedProvince, setDetectedProvince] = useState('');
 
     const onLocationSelectRef = useRef(onLocationSelect);
     useEffect(() => {
@@ -76,6 +90,14 @@ export default function AddressLocationPicker({
 
     const hasCoordinates = isValidCoordinate(latitude, longitude);
 
+    // Blocked only when the pin is known to be outside Cavite: either by the
+    // local bounding box or by the reverse-geocode province. Unknown (failed
+    // geocode) fails open so a flaky network never traps the user.
+    const outsideCavite = hasCoordinates
+        && (!isWithinCaviteBounds(latitude, longitude) || geocodeOutsideCavite === true);
+    const pinBlocked = enforceCavite && outsideCavite;
+    const canConfirmPin = hasCoordinates && !pinBlocked;
+
     const performReverseGeocode = useCallback(async (lat, lng) => {
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
@@ -84,6 +106,8 @@ export default function AddressLocationPicker({
         abortControllerRef.current = controller;
 
         setIsResolvingAddress(true);
+        setGeocodeOutsideCavite(null);
+        setDetectedProvince('');
 
         try {
             const url = typeof route === 'function' ? route('api.geocode.reverse') : '/api/geocode/reverse';
@@ -97,6 +121,11 @@ export default function AddressLocationPicker({
 
             setIsResolvingAddress(false);
 
+            if (response?.data && typeof response.data.is_within_cavite === 'boolean') {
+                setGeocodeOutsideCavite(!response.data.is_within_cavite);
+                setDetectedProvince(response.data.province || response.data.region || '');
+            }
+
             if (response?.data && onLocationSelectRef.current) {
                 onLocationSelectRef.current({
                     latitude: lat,
@@ -109,6 +138,8 @@ export default function AddressLocationPicker({
                 return;
             }
             setIsResolvingAddress(false);
+            setGeocodeOutsideCavite(null);
+            setDetectedProvince('');
             if (err?.response?.status === 429 && typeof window !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('app-toast', {
                     detail: {
@@ -267,6 +298,8 @@ export default function AddressLocationPicker({
                 markerRef.current.setLatLng([newLat, newLng]);
                 mapInstanceRef.current.setView([newLat, newLng], 16, { animate: true });
                 lastValidCoordRef.current = [newLat, newLng];
+                setGeocodeOutsideCavite(null);
+                setDetectedProvince('');
             }
         }
     }, [latitude, longitude, hasCoordinates]);
@@ -592,7 +625,14 @@ export default function AddressLocationPicker({
                 {isPrecisionOpen ? (
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-stone-100 mt-auto">
                         <div className="text-xs text-stone-600">
-                            {hasCoordinates ? (
+                            {pinBlocked ? (
+                                <div className="flex items-start gap-2 text-red-700">
+                                    <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                                    <span>
+                                        This pin is outside Cavite{detectedProvince ? ` (detected: ${detectedProvince})` : ''}. Drag it inside the province to confirm your doorstep.
+                                    </span>
+                                </div>
+                            ) : hasCoordinates ? (
                                 <div className="flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                                     <span>
@@ -609,7 +649,8 @@ export default function AddressLocationPicker({
                         <button
                             type="button"
                             onClick={() => setIsPrecisionOpen(false)}
-                            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-clay-600 hover:bg-clay-700 text-white text-xs font-bold transition shadow-xs active:scale-95"
+                            disabled={!canConfirmPin}
+                            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-clay-600 hover:bg-clay-700 text-white text-xs font-bold transition shadow-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:active:scale-100"
                         >
                             <Check size={14} strokeWidth={2.5} />
                             <span>Confirm Doorstep Pin</span>

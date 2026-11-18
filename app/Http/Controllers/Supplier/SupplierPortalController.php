@@ -361,6 +361,10 @@ class SupplierPortalController extends Controller
         return Inertia::render('Supplier/Orders/Index', [
             'orders' => $orders,
             'currentFilter' => $statusFilter,
+            'filters' => [
+                'status' => $statusFilter,
+                'search' => (string) $request->input('search', ''),
+            ],
         ]);
     }
 
