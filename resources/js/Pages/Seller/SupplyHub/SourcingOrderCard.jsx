@@ -319,7 +319,7 @@ export default function SourcingOrderCard({
 
                     {/* Order Action Buttons */}
                     <div className="pt-1">
-                        {order.payment_status === 'pending' && order.payment_method !== 'COD' && order.status !== 'Cancelled' && (
+                        {['Accepted', 'Processing', 'Ready for Pickup'].includes(order.status) && order.payment_status === 'pending' && order.payment_method !== 'COD' && (
                             <a
                                 href={route('payment.pay', order.order_number || order.id)}
                                 className="mb-2 w-full flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 py-2.5 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition active:scale-95 cursor-pointer"
@@ -327,6 +327,13 @@ export default function SourcingOrderCard({
                                 <CreditCard size={14} />
                                 <span>Pay Now</span>
                             </a>
+                        )}
+
+                        {order.status === 'Pending' && order.payment_status === 'pending' && order.payment_method !== 'COD' && (
+                            <div className="mb-2 w-full flex items-center justify-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-semibold text-amber-800 shadow-2xs">
+                                <Clock size={14} className="text-amber-600" />
+                                <span>Awaiting Supplier Acceptance</span>
+                            </div>
                         )}
 
                         {isDelivered && (

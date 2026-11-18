@@ -49,6 +49,10 @@ This document maps all Artisan Console Commands (`app/Console/Commands/`) and cr
     *   Command Class: [PruneSoftDeletedItems.php](file:///c:/laragon/www/LikhangKamay/app/Console/Commands/PruneSoftDeletedItems.php)
     *   Signature: `db:prune-soft-deleted`
     *   Logic: Purges soft-deleted rows older than the retention threshold from the database.
+*   **Clean Production Catalog**:
+    *   Command Class: [CleanProductionCatalog.php](file:///c:/laragon/www/LikhangKamay/app/Console/Commands/CleanProductionCatalog.php)
+    *   Signature: `catalog:clean-test-data`
+    *   Logic: Safely archives test SKUs, synthetic/informal test products, and test accounts from the production catalog and clears all merchandising and catalog caches.
 
 ---
 

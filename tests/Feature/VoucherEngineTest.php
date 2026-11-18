@@ -663,7 +663,7 @@ class VoucherEngineTest extends TestCase
             'shipping_fee_amount' => 0.00,
             'seller_net_amount' => 100.00,
             'total_amount' => 115.00,
-            'status' => 'Pending',
+            'status' => 'Accepted',
             'payment_method' => 'GCash',
             'payment_status' => 'pending',
             'shipping_address' => '123 Pay Street, Cavite',
@@ -690,7 +690,7 @@ class VoucherEngineTest extends TestCase
             'shipping_fee_amount' => 50.00,
             'seller_net_amount' => 0.00,
             'total_amount' => 65.00,
-            'status' => 'Pending',
+            'status' => 'Accepted',
             'payment_method' => 'Maya',
             'payment_status' => 'pending',
             'shipping_address' => '123 Pay Street, Cavite',
@@ -763,6 +763,7 @@ class VoucherEngineTest extends TestCase
             ]);
 
         $sub20Order = Order::where('user_id', $buyer->id)->where('voucher_code', 'DROPBELOW20')->firstOrFail();
+        $sub20Order->update(['status' => 'Accepted']);
         $this->assertEquals(10.00, (float) $sub20Order->total_amount);
 
         $this->actingAs($buyer)

@@ -20,7 +20,11 @@ export default function OrderCardActions({
     const [isAcceptingReplacement, setIsAcceptingReplacement] = React.useState(false);
     const [isVerifyingPayment, setIsVerifyingPayment] = React.useState(false);
 
-    const isPayableOnline = ['Pending', 'Accepted', 'Processing', 'Ready for Pickup'].includes(order.status)
+    const isPayableOnline = ['Accepted', 'Processing', 'Ready for Pickup'].includes(order.status)
+        && order.payment_status === 'pending'
+        && order.payment_method !== 'COD';
+
+    const isAwaitingAcceptance = order.status === 'Pending'
         && order.payment_status === 'pending'
         && order.payment_method !== 'COD';
 
@@ -172,6 +176,16 @@ export default function OrderCardActions({
                     </button>
                 )}
 
+                {/* AWAITING SELLER ACCEPTANCE NOTICE FOR ONLINE PAYMENT */}
+                {isAwaitingAcceptance && (
+                    <div 
+                        className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-3.5 rounded-lg border border-amber-200 bg-amber-50 text-[11px] font-semibold text-amber-800 shadow-2xs min-h-[36px]"
+                        title="Payment will be available once the artisan shop accepts your order."
+                    >
+                        <Clock size={13} className="text-amber-600" /> Awaiting Acceptance
+                    </div>
+                )}
+
                 {/* ONLINE PAYMENT: Pay Now & Check Status */}
                 {isPayableOnline && (
                     <div className="inline-flex items-center gap-1.5">
@@ -303,7 +317,16 @@ export default function OrderCardActions({
             {/* --- MOBILE FOOTER ACTIONS WITH DROPDOWN (Sticky Bottom Bar Pattern on Mobile) --- */}
             <div className="sticky bottom-0 sm:relative bg-white z-10 border-t border-stone-100 sm:border-t-0 py-2.5 px-4 sm:p-0 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] sm:shadow-none flex sm:hidden w-full flex-row items-center gap-2 justify-end">
                 {/* Primary Actions Promoted directly on Mobile */}
-                {/* 1. Pay Now & Check Status */}
+                {/* 1. Pay Now & Check Status OR Awaiting Acceptance */}
+                {isAwaitingAcceptance && (
+                    <div 
+                        className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-3 rounded-lg border border-amber-200 bg-amber-50 text-xs font-semibold text-amber-800 min-h-[44px]"
+                        title="Payment will be available once the artisan shop accepts your order."
+                    >
+                        <Clock size={14} className="text-amber-600" /> Awaiting Acceptance
+                    </div>
+                )}
+
                 {isPayableOnline && (
                     <div className="flex-1 flex items-center gap-1.5">
                         <a 

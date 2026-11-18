@@ -18,7 +18,7 @@ class PaymentController extends Controller
 {
     protected PayMongoService $payMongoService;
     protected OrderPaymentReconciliationService $reconciliationService;
-    private const PAYABLE_ONLINE_STATUSES = ['Pending', 'Accepted', 'Processing', 'Ready for Pickup'];
+    private const PAYABLE_ONLINE_STATUSES = ['Accepted', 'Processing', 'Ready for Pickup'];
 
     public function __construct(
         PayMongoService $payMongoService,
@@ -54,6 +54,14 @@ class PaymentController extends Controller
         }
 
         if (!$this->canInitiateOnlinePayment($order)) {
+            if (!in_array($order->payment_method, ['GCash', 'Maya'], true)) {
+                return redirect()->route($targetRoute)->with('error', 'This order is not eligible for online payment.');
+            }
+
+            if ($order->status === 'Pending') {
+                return redirect()->route($targetRoute)->with('error', 'Please wait for the seller to accept your order before making payment.');
+            }
+
             return redirect()->route($targetRoute)->with('error', 'This order is not eligible for online payment.');
         }
 

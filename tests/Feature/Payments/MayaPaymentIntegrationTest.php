@@ -161,6 +161,15 @@ class MayaPaymentIntegrationTest extends TestCase
 
         $this->app->instance(PayMongoService::class, $paymongoMock);
 
+        // 1. Guard check: Buyer cannot pay yet if order is still Pending (awaiting seller acceptance)
+        $blockedResponse = $this->actingAs($this->buyer)->get(route('payment.pay', $order->order_number));
+        $blockedResponse->assertRedirect(route('my-orders.index', absolute: false))
+            ->assertSessionHas('error', 'Please wait for the seller to accept your order before making payment.');
+
+        // 2. Seller accepts order
+        $order->update(['status' => 'Accepted', 'accepted_at' => now()]);
+
+        // 3. Buyer can now initiate online payment
         $response = $this->actingAs($this->buyer)->get(route('payment.pay', $order->order_number));
 
         $response->assertRedirect('https://checkout.paymongo.com/cs_test_session_maya_789');

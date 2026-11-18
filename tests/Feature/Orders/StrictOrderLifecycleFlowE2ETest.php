@@ -394,15 +394,21 @@ class StrictOrderLifecycleFlowE2ETest extends TestCase
             ]);
         $this->app->instance(PayMongoService::class, $paymongoMock);
 
-        // 3. Initiate payment (Inertia external location redirect)
-        $payResponse = $this->actingAs($this->buyer)->get(route('payment.pay', $order->order_number));
-        $payResponse->assertRedirect('https://checkout.paymongo.com/cs_test_session_abc123');
-        $this->assertSame('cs_test_session_abc123', $order->fresh()->paymongo_session_id);
+        // 3. GUARD CHECK: Buyer cannot pay before seller accepts
+        $blockedPayResponse = $this->actingAs($this->buyer)->get(route('payment.pay', $order->order_number));
+        $blockedPayResponse->assertRedirect(route('my-orders.index', absolute: false))
+            ->assertSessionHas('error', 'Please wait for the seller to accept your order before making payment.');
 
         // 4. Seller accepts order
         $this->actingAs($this->sellerA)->post(route('orders.update', $order->order_number), [
             'status' => 'Accepted',
         ]);
+
+        // 5. Buyer initiates payment (Inertia external location redirect)
+        $payResponse = $this->actingAs($this->buyer)->get(route('payment.pay', $order->order_number));
+        $payResponse->assertRedirect('https://checkout.paymongo.com/cs_test_session_abc123');
+        $this->assertSame('cs_test_session_abc123', $order->fresh()->paymongo_session_id);
+
         $this->actingAs($this->sellerA)->post(route('orders.update', $order->order_number), [
             'status' => 'Processing',
         ]);
@@ -764,6 +770,7 @@ class StrictOrderLifecycleFlowE2ETest extends TestCase
         ]);
 
         $order = Order::where('user_id', $this->buyer->id)->first();
+        $order->update(['status' => 'Accepted']);
 
         // Attempting to initiate PayMongo payment for < 20 PHP should be blocked
         $payResponse = $this->actingAs($this->buyer)->get(route('payment.pay', $order->order_number));

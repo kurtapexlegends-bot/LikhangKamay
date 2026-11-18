@@ -175,6 +175,16 @@ export const buyerDeliverySummary = (order) => {
     }
 
     if (order.status === 'Accepted') {
+        const isPaid = String(order.payment_status || '').toLowerCase() === 'paid';
+        if (!isPaid && order.payment_method !== 'COD') {
+            return {
+                tone: 'border-blue-100 bg-blue-50',
+                title: 'Order accepted • Ready for payment',
+                detail: 'The seller accepted your order! Please complete your payment so they can prepare and pack your items.',
+                latestEvent,
+                latestEventTime,
+            };
+        }
         return {
             tone: 'border-blue-100 bg-blue-50',
             title: 'Preparing for shipment',
@@ -216,11 +226,20 @@ export const buyerDeliverySummary = (order) => {
 
     if (order.status === 'Pending') {
         const isPaid = String(order.payment_status || '').toLowerCase() === 'paid';
+        if (order.payment_method === 'COD') {
+            return {
+                tone: 'border-amber-100 bg-amber-50',
+                title: 'Order placed • Cash on Delivery',
+                detail: 'Your order is placed. The seller will confirm and prepare your items.',
+                latestEvent,
+                latestEventTime,
+            };
+        }
         if (!isPaid) {
             return {
                 tone: 'border-amber-100 bg-amber-50',
-                title: 'Awaiting payment',
-                detail: 'Please complete your payment so the artisan shop can confirm and prepare your order.',
+                title: 'Awaiting seller acceptance',
+                detail: 'The artisan shop is reviewing your order. You can pay once they accept it.',
                 latestEvent,
                 latestEventTime,
             };
