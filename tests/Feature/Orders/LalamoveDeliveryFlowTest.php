@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Orders;
 
+use App\Jobs\SyncOrderDeliveryJob;
 use App\Mail\ShipmentReminder;
 use App\Models\Order;
 use App\Models\OrderDelivery;
@@ -14,6 +15,7 @@ use App\Support\StructuredAddress;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Tests\TestCase;
@@ -472,7 +474,7 @@ class LalamoveDeliveryFlowTest extends TestCase
         $this->assertNull($order->delivery);
     }
 
-    public function test_lalamove_completed_webhook_is_idempotent_and_marks_order_delivered(): void
+    public function test_signed_lalamove_completed_webhook_is_idempotent_and_marks_order_delivered(): void
     {
         Mail::fake();
         Notification::fake();
@@ -489,23 +491,41 @@ class LalamoveDeliveryFlowTest extends TestCase
             'provider' => OrderDelivery::PROVIDER_LALAMOVE,
             'status' => OrderDelivery::STATUS_ASSIGNING_DRIVER,
             'service_type' => 'MOTORCYCLE',
-            'external_order_id' => 'llm_order_987',
+            'external_order_id' => '3631394308957630000',
             'quotation_id' => 'qt_987',
         ]);
 
+        config([
+            'services.lalamove.api_key' => 'fixture-api-key',
+            'services.lalamove.api_secret' => 'fixture-signing-key',
+        ]);
+
         $payload = [
-            'meta' => ['requestId' => 'webhook-1'],
+            'apiKey' => 'fixture-api-key',
+            'timestamp' => 1795011786,
+            'eventId' => 'webhook-1',
             'eventType' => 'ORDER_STATUS_CHANGED',
             'data' => [
-                'orderId' => 'llm_order_987',
-                'status' => 'COMPLETED',
-                'shareLink' => 'https://track.lalamove.test/llm_order_987',
-                'priceBreakdown' => ['currency' => 'PHP', 'total' => 160.00],
+                'order' => [
+                    'id' => '3631394308957630000',
+                    'status' => 'COMPLETED',
+                    'shareLink' => 'https://track.lalamove.test/order',
+                ],
             ],
         ];
+        $payload['signature'] = hash_hmac(
+            'sha256',
+            "1795011786\nPOST\n/webhooks/lalamove\n\n" . json_encode($payload['data'], JSON_UNESCAPED_SLASHES),
+            'fixture-signing-key',
+        );
 
-        $this->postJson(route('webhooks.lalamove', ['token' => 'test-webhook-secret']), $payload)->assertOk();
-        $this->postJson(route('webhooks.lalamove', ['token' => 'test-webhook-secret']), $payload)->assertOk();
+        $tampered = $payload;
+        $tampered['data']['order']['status'] = 'CANCELED';
+        $this->postJson('/webhooks/lalamove', $tampered)->assertUnauthorized();
+        $this->assertDatabaseCount('order_delivery_events', 0);
+
+        $this->postJson('/webhooks/lalamove', $payload)->assertOk();
+        $this->postJson('/webhooks/lalamove', $payload)->assertOk();
 
         $order->refresh();
         $delivery->refresh();
@@ -517,6 +537,27 @@ class LalamoveDeliveryFlowTest extends TestCase
 
         Notification::assertSentTo($buyer, OrderDeliveryUpdateNotification::class);
         Notification::assertCount(1);
+    }
+
+    public function test_scheduled_lalamove_reconciliation_does_not_duplicate_pending_work(): void
+    {
+        Queue::fake();
+
+        $seller = $this->createSeller();
+        $buyer = User::factory()->createOne();
+        $product = $this->createProduct($seller);
+        $order = $this->createAcceptedDeliveryOrder($seller, $buyer, $product);
+        $order->delivery()->create([
+            'provider' => OrderDelivery::PROVIDER_LALAMOVE,
+            'status' => OrderDelivery::STATUS_ASSIGNING_DRIVER,
+            'service_type' => 'MOTORCYCLE',
+            'external_order_id' => 'pending-reconciliation',
+        ]);
+
+        $this->artisan('orders:sync-lalamove')->assertSuccessful();
+        $this->artisan('orders:sync-lalamove')->assertSuccessful();
+
+        Queue::assertPushed(SyncOrderDeliveryJob::class, 1);
     }
 
     public function test_driver_assigned_webhook_promotes_delivery_to_on_going_even_without_status(): void

@@ -52,7 +52,7 @@ class LalamoveWebhookService
                     ->first();
             }
 
-            OrderDeliveryEvent::firstOrCreate([
+            $event = OrderDeliveryEvent::firstOrCreate([
                 'event_key' => $eventKey,
             ], [
                 'order_delivery_id' => $delivery?->id,
@@ -64,6 +64,14 @@ class LalamoveWebhookService
 
             if (!$delivery) {
                 return null;
+            }
+
+            if (!$event->wasRecentlyCreated && $event->order_delivery_id !== null) {
+                return $delivery;
+            }
+
+            if ($event->order_delivery_id === null) {
+                $event->update(['order_delivery_id' => $delivery->id]);
             }
 
             $this->applyOrderSnapshot($delivery, $snapshot, $eventType);
@@ -151,7 +159,8 @@ class LalamoveWebhookService
 
     private function resolveEventKey(array $payload, string $rawBody): string
     {
-        $metaRequestId = data_get($payload, 'meta.requestId')
+        $metaRequestId = data_get($payload, 'eventId')
+            ?? data_get($payload, 'meta.requestId')
             ?? data_get($payload, 'meta.request_id')
             ?? data_get($payload, 'requestId')
             ?? null;
@@ -180,7 +189,10 @@ class LalamoveWebhookService
             }
 
             if (isset($data['order']) && is_array($data['order'])) {
-                return $data['order'];
+                $order = $data['order'];
+                $order['orderId'] ??= $order['id'] ?? null;
+
+                return $order;
             }
         }
 
@@ -253,6 +265,10 @@ class LalamoveWebhookService
     private function applyOrderSnapshot(OrderDelivery $delivery, array $snapshot, ?string $eventType = null): void
     {
         $status = strtoupper((string) ($snapshot['status'] ?? $delivery->status ?? ''));
+        if ($delivery->status === OrderDelivery::STATUS_COMPLETED && $status !== OrderDelivery::STATUS_COMPLETED) {
+            return;
+        }
+
         $priceBreakdown = $snapshot['priceBreakdown'] ?? $delivery->price_breakdown;
         $isReplacementExchange = $this->deliveryFlowType($delivery) === 'replacement_exchange';
 

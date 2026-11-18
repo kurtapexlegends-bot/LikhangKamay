@@ -8,7 +8,7 @@ Welcome to the LikhangKamay Second Brain vault. This documentation map is design
 *   **[[finance-vat-taxation|Finance, BIR VAT & E-Wallet Payout Architecture]]**: Philippine 12% inclusive VAT math, BIR sales invoices, tax classification profiles, and GCash/Maya disbursement architecture.
 *   **[[marketing-discounts|Marketing, Discount & Shop Voucher Engine]]**: Product markdown campaigns, shop promo code vouchers, targeting rules, tier quotas, and countdown badging.
 *   **[[routing-topography|Routing & Access Control]]**: Route layouts, middleware topology, and role-based permissions.
-*   **[[integrations-webhooks|External Integrations & Webhooks]]**: Operational flows and webhooks for PayMongo and Lalamove.
+*   **[[integrations-webhooks|External Integrations & Webhooks]]** covers PayMongo and Lalamove, including v3 registration and delivery retries.
 *   **[[ui-design-tokens|UI/UX & Design Tokens]]**: Artisan theme standards, color palettes, spacing, and guidelines to avoid automated design elements.
 *   **[[erp-procurement|ERP: Procurement & Inventory]]**: Stock restocks, raw supplies, recipes, and maker-checker rules.
 *   **[[erp-hr-attendance|ERP: HR & Attendance]]**: Shifts, clock-in states, idle timeouts, and payroll calculations.

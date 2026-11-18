@@ -88,14 +88,11 @@ sequenceDiagram
 *   **Endpoint Route**: Post route defined in [web.php](file:///c:/laragon/www/LikhangKamay/routes/web.php) (exempt from CSRF verification in [app.php](file:///c:/laragon/www/LikhangKamay/bootstrap/app.php)).
 
 ### Security Validation
-*   Validates the incoming query string parameter `token` against the application's configured secret:
-    `config('services.lalamove.webhook_secret')`
-*   Rejects requests with a `419` / `401 Unauthorized` response if the token is missing or incorrect.
+*   Register `https://www.likhangkamay.app/webhooks/lalamove` as a Version 3 URL in the Partner Portal environment whose API credentials the storefront uses. The receiver acknowledges the empty registration probe without processing an event.
+*   For native v3 events, the receiver checks the payload API key and verifies the HMAC over the timestamp, method, request path, and JSON `data` using the configured Lalamove API secret. Existing integrations can authenticate with the configured webhook token via Bearer auth, `X-Webhook-Token`, or `?token=`. Events that fail authentication receive HTTP 401.
 
 ### Fault Tolerance
-If the webhook processing throws a server-side exception (e.g., database lock or temporary service failure), the controller catches the error, logs it, and returns a standard `200 OK` response.
-> [!NOTE]
-> Returning `200 OK` on processing failure is intentional. It prevents the Lalamove server from initiating infinite webhook payload retries, which would flood the system logs.
+The receiver returns HTTP 503 on processing failures so Lalamove can retry. The [webhook service](file:///c:/laragon/www/LikhangKamay/app/Services/Logistics/LalamoveWebhookService.php) deduplicates applied events and keeps a completed delivery from regressing on a later stale update. After registration, use **Webhooks → Webhook attempts** to verify that a delivery status event received HTTP 200.
 
 ---
 

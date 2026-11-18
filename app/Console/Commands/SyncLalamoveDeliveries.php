@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\SyncOrderDeliveryJob;
 use App\Models\OrderDelivery;
-use App\Services\OrderLogisticsService;
 use Illuminate\Console\Command;
 
 class SyncLalamoveDeliveries extends Command
@@ -11,7 +11,7 @@ class SyncLalamoveDeliveries extends Command
     protected $signature = 'orders:sync-lalamove';
     protected $description = 'Poll Lalamove deliveries in case webhooks were missed.';
 
-    public function handle(OrderLogisticsService $orderLogisticsService): int
+    public function handle(): int
     {
         $count = 0;
 
@@ -19,19 +19,15 @@ class SyncLalamoveDeliveries extends Command
             ->where('provider', OrderDelivery::PROVIDER_LALAMOVE)
             ->whereNull('auto_cancelled_at')
             ->whereNotNull('external_order_id')
-            ->whereNotIn('status', [OrderDelivery::STATUS_COMPLETED])
-            ->get()
-            ->each(function (OrderDelivery $delivery) use ($orderLogisticsService, &$count) {
-                try {
-                    $orderLogisticsService->syncDelivery($delivery);
+            ->where('status', '!=', OrderDelivery::STATUS_COMPLETED)
+            ->chunkById(25, function ($deliveries) use (&$count) {
+                foreach ($deliveries as $delivery) {
+                    SyncOrderDeliveryJob::dispatch($delivery);
                     $count++;
-                } catch (\Throwable $e) {
-                    report($e);
-                    $this->error("Failed to sync delivery {$delivery->id}: {$e->getMessage()}");
                 }
             });
 
-        $this->info("Synced {$count} Lalamove delivery record(s).");
+        $this->info("Requested reconciliation for {$count} Lalamove delivery record(s).");
 
         return self::SUCCESS;
     }

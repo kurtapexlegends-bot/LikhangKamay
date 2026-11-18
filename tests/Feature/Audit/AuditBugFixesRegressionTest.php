@@ -3,6 +3,7 @@
 namespace Tests\Feature\Audit;
 
 use App\Actions\Consumer\CancelOrder;
+use App\Mail\ReviewReminder;
 use App\Models\Discount;
 use App\Models\Order;
 use App\Models\Product;
@@ -13,6 +14,7 @@ use App\Services\HR\PayrollCalculatorService;
 use App\Services\StorageUrl;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class AuditBugFixesRegressionTest extends TestCase
@@ -437,6 +439,36 @@ class AuditBugFixesRegressionTest extends TestCase
         $this->assertIsBool($fresh->shipment_reminder_sent);
         $this->assertFalse($fresh->review_reminder_sent);
         $this->assertFalse($fresh->shipment_reminder_sent);
+    }
+
+    public function test_review_reminders_process_multiple_batches_without_resending(): void
+    {
+        Mail::fake();
+        $buyer = User::factory()->create(['role' => 'buyer']);
+        $seller = User::factory()->artisanApproved()->create();
+        $attributes = [
+            'user_id' => $buyer->id,
+            'artisan_id' => $seller->id,
+            'customer_name' => $buyer->name,
+            'total_amount' => 500,
+            'status' => Order::STATUS_COMPLETED,
+            'payment_method' => 'COD',
+            'payment_status' => 'paid',
+            'shipping_method' => 'Delivery',
+            'shipping_address' => '123 Main St, Dasmarinas City, Cavite, 4114',
+        ];
+
+        for ($index = 1; $index <= 26; $index++) {
+            $order = Order::create($attributes + ['order_number' => "ORD-REVIEW-BATCH-{$index}"]);
+            $order->forceFill(['updated_at' => now()->subDays(4)])->save();
+        }
+        $recentOrder = Order::create($attributes + ['order_number' => 'ORD-REVIEW-RECENT']);
+
+        $this->artisan('reviews:remind')->assertSuccessful();
+        $this->artisan('reviews:remind')->assertSuccessful();
+
+        Mail::assertSent(ReviewReminder::class, 26);
+        $this->assertFalse($recentOrder->refresh()->review_reminder_sent);
     }
 
     public function test_admin_analytics_service_properly_excludes_cancelled_and_refunded_orders(): void

@@ -9,21 +9,27 @@ jobs:
   ping-cron:
     name: Ping Scheduled Webhooks
     runs-on: ubuntu-latest
+    env:
+      APP_URL: ${{ secrets.APP_URL || 'https://www.likhangkamay.app' }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET || secrets.VERCEL_CRON_SECRET }}
     steps:
-      - name: Trigger Queue Worker Webhook
-        env:
-          APP_URL: ${{ secrets.APP_URL || 'https://www.likhangkamay.app' }}
-          CRON_SECRET: ${{ secrets.VERCEL_CRON_SECRET || secrets.CRON_SECRET }}
+      - name: Verify cron credential is configured
         run: |
-          curl -sS -f --max-time 15 \
+          if [ -z "$CRON_SECRET" ]; then
+            echo '::error::Set the GitHub CRON_SECRET to match the Vercel production CRON_SECRET.'
+            exit 1
+          fi
+
+      - name: Trigger Queue Worker Webhook
+        id: queue
+        run: |
+          curl --silent --show-error --fail --max-time 15 --output /dev/null \
             -H "X-Vercel-Cron-Secret: $CRON_SECRET" \
-            "$APP_URL/webhooks/cron/queue" || echo "Queue ping failed or timed out"
+            "${APP_URL%/}/webhooks/cron/queue"
 
       - name: Trigger Schedule Runner Webhook
-        env:
-          APP_URL: ${{ secrets.APP_URL || 'https://www.likhangkamay.app' }}
-          CRON_SECRET: ${{ secrets.VERCEL_CRON_SECRET || secrets.CRON_SECRET }}
+        if: ${{ !cancelled() && steps.queue.outcome != 'skipped' }}
         run: |
-          curl -sS -f --max-time 15 \
+          curl --silent --show-error --fail --max-time 15 --output /dev/null \
             -H "X-Vercel-Cron-Secret: $CRON_SECRET" \
-            "$APP_URL/webhooks/cron" || echo "Schedule ping failed or timed out"
+            "${APP_URL%/}/webhooks/cron"

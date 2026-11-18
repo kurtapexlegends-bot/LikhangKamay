@@ -12,8 +12,8 @@ This document maps all Artisan Console Commands (`app/Console/Commands/`) and cr
     *   Logic: Queries `OrderDelivery` records where `provider` is `lalamove`, `auto_cancelled_at` is null, and `terminal_failed_at` is older than 24 hours (`<= now()->subDay()`). Triggers the cancellation workflow to restore stock and issue refunds.
 *   **Sync Lalamove Deliveries**:
     *   Command Class: [SyncLalamoveDeliveries.php](file:///c:/laragon/www/LikhangKamay/app/Console/Commands/SyncLalamoveDeliveries.php)
-    *   Signature: `logistics:sync-lalamove`
-    *   Logic: Polls active Lalamove deliveries that are in non-terminal states and synchronizes their statuses with the remote API.
+    *   Signature `orders:sync-lalamove`.
+    *   Reads eligible deliveries in batches of 25 and requests background reconciliation. [SyncOrderDeliveryJob.php](file:///c:/laragon/www/LikhangKamay/app/Jobs/SyncOrderDeliveryJob.php) keeps one pending job per delivery and skips orders that were completed or auto-cancelled while the job was waiting.
 
 ---
 
@@ -97,7 +97,7 @@ The background execution intervals are consolidated within the console router: [
 | `sponsorships:expire` | `daily()` | Product feature listing checks |
 | `system:prune-trash` | `daily()` | Soft-delete rows pruning checks |
 | `orders:remind-shipping` | `dailyAt('09:00')` | Shipment emails checks |
-| `reviews:remind` | `dailyAt('10:00')` | Buyer review email reminders checks |
+| `reviews:remind` | `dailyAt('10:00')` | [Review reminders](file:///c:/laragon/www/LikhangKamay/app/Console/Commands/SendReviewReminders.php) read 25 orders at a time and stop starting more sends after eight seconds. |
 
 ---
 
@@ -106,8 +106,8 @@ The background execution intervals are consolidated within the console router: [
 In serverless production environments (Vercel / AWS Lambda), daemon workers (`queue:work` without flags) cannot run indefinitely. The platform offloads queue execution to atomic, short-lived HTTP webhook runners:
 
 *   **GitHub Actions High-Frequency Cron Scheduler**: [.github/workflows/cron-scheduler.yml](file:///c:/laragon/www/LikhangKamay/.github/workflows/cron-scheduler.yml)
-    *   Triggers every 5 minutes (`*/5 * * * *`) and via `workflow_dispatch`.
-    *   Executes automated 15-second bounded `curl` pings targeting `$APP_URL/webhooks/cron/queue` and `$APP_URL/webhooks/cron` passing `X-Vercel-Cron-Secret` header to maintain continuous sub-daily serverless job processing without depending on paid third-party cron providers.
+    *   Requests a run every five minutes (`*/5 * * * *`) and supports `workflow_dispatch`.
+    *   Set the repository Actions `CRON_SECRET` to the same value as the Vercel production `CRON_SECRET`. The workflow sends it in `X-Vercel-Cron-Secret` to both cron endpoints, with a 15-second timeout per request. A missing credential or failed request marks the workflow run as failed.
 
 *   **Queue Worker Webhook**: `GET /webhooks/cron/queue`
     *   **Execution**: Invokes `php artisan queue:work --stop-when-empty --max-time=10`.

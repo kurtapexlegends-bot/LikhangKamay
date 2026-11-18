@@ -5,13 +5,14 @@ namespace App\Jobs;
 use App\Models\OrderDelivery;
 use App\Services\Logistics\LalamoveWebhookService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class SyncOrderDeliveryJob implements ShouldQueue
+class SyncOrderDeliveryJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -36,6 +37,8 @@ class SyncOrderDeliveryJob implements ShouldQueue
      */
     public int $backoff = 10;
 
+    public int $uniqueFor = 86400;
+
     protected $delivery;
 
     public function __construct(OrderDelivery $delivery)
@@ -43,8 +46,17 @@ class SyncOrderDeliveryJob implements ShouldQueue
         $this->delivery = $delivery;
     }
 
+    public function uniqueId(): string
+    {
+        return (string) $this->delivery->id;
+    }
+
     public function handle(LalamoveWebhookService $lalamoveWebhookService): void
     {
+        if ($this->delivery->auto_cancelled_at !== null || $this->delivery->status === OrderDelivery::STATUS_COMPLETED) {
+            return;
+        }
+
         try {
             $lalamoveWebhookService->syncDelivery($this->delivery);
         } catch (\Throwable $e) {

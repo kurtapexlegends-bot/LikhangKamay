@@ -140,4 +140,12 @@ class WebhookSecurityTest extends TestCase
             'Authorization' => 'Bearer secure_lalamove_token_7788',
         ])->assertStatus(200);
     }
+
+    public function test_lalamove_registration_probe_is_acknowledged_without_processing_an_event(): void
+    {
+        $this->post('/webhooks/lalamove')->assertOk();
+        $this->call('POST', '/webhooks/lalamove', server: ['CONTENT_TYPE' => 'application/json'], content: '{}')
+            ->assertOk();
+        $this->assertDatabaseCount('order_delivery_events', 0);
+    }
 }

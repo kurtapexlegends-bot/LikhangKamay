@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Webhooks;
 
 use App\Http\Controllers\Controller;
+use App\Services\OrderLogisticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-
-use App\Services\OrderLogisticsService;
+use stdClass;
 
 class LalamoveWebhookController extends Controller
 {
@@ -15,29 +15,53 @@ class LalamoveWebhookController extends Controller
      */
     public function __invoke(Request $request, OrderLogisticsService $logisticsService)
     {
-        Log::info('Lalamove Webhook received', $request->all());
+        $rawBody = $request->getContent();
+        $body = json_decode($rawBody);
+
+        // Lalamove checks the endpoint with an empty request before registering it.
+        if (trim($rawBody) === '' || ($body instanceof stdClass && get_object_vars($body) === [])) {
+            return response()->json(['status' => 'received']);
+        }
 
         $token = $request->bearerToken() ?: $request->header('X-Webhook-Token', $request->query('token'));
-        $expectedToken = config('services.lalamove.webhook_secret');
+        $expectedToken = (string) config('services.lalamove.webhook_secret');
+        $hasValidToken = $expectedToken !== '' && is_string($token) && hash_equals($expectedToken, $token);
 
-        if (empty($expectedToken) || empty($token) || !hash_equals((string) $expectedToken, (string) $token)) {
-            Log::warning('Lalamove Webhook: Unauthorized access attempt', [
-                'ip' => $request->ip(),
-                'has_token' => !empty($token),
-            ]);
+        if (!$body instanceof stdClass || (!$hasValidToken && !$this->hasValidSignature($body, $request->getPathInfo()))) {
+            Log::warning('Lalamove Webhook: Unauthorized access attempt');
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         try {
-            $logisticsService->handleWebhook($request->all(), $request->getContent());
+            $logisticsService->handleWebhook(json_decode($rawBody, true), $rawBody);
             return response()->json(['status' => 'received']);
         } catch (\Throwable $e) {
-            Log::error('Lalamove Webhook Processing Error', [
-                'error' => $e->getMessage(),
-                'payload' => $request->all()
-            ]);
-            // Return 200 to acknowledge receipt even if processing fails, to prevent retries of bad payloads
-            return response()->json(['status' => 'error', 'message' => 'Processing failed'], 200);
+            Log::error('Lalamove Webhook Processing Error', ['exception_type' => $e::class]);
+            return response()->json(['status' => 'error', 'message' => 'Processing failed'], 503);
         }
+    }
+
+    private function hasValidSignature(stdClass $body, string $path): bool
+    {
+        $apiKey = (string) config('services.lalamove.api_key');
+        $apiSecret = (string) config('services.lalamove.api_secret');
+        $timestamp = $body->timestamp ?? null;
+
+        if ($apiKey === '' || $apiSecret === '' || !is_string($body->apiKey ?? null)
+            || !hash_equals($apiKey, $body->apiKey) || !is_string($body->signature ?? null)
+            || (!is_int($timestamp) && !is_string($timestamp)) || !ctype_digit((string) $timestamp)
+            || !(($body->data ?? null) instanceof stdClass)) {
+            return false;
+        }
+
+        $signedData = json_encode($body->data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_LINE_TERMINATORS);
+        if ($signedData === false) {
+            return false;
+        }
+
+        // The webhook specification signs the nested data with LF separators.
+        $signature = hash_hmac('sha256', "{$timestamp}\nPOST\n{$path}\n\n{$signedData}", $apiSecret);
+
+        return hash_equals($signature, $body->signature);
     }
 }
