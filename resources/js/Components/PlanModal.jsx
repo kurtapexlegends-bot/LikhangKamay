@@ -201,13 +201,12 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                 const isCurrent = currentTier === plan.id;
                                 const isUpgrade = index > currentIndex;
                                 const isDowngrade = index < currentIndex;
-                                const limits = sellerSubscription?.tierLimits || { free: 3, premium: 10, super_premium: 50 };
-                                const prices = sellerSubscription?.tierPrices || { free: 0, premium: 199, super_premium: 399 };
+                                const limits = sellerSubscription?.tierLimits || { free: 8, premium: 25, super_premium: 75 };
+                                const prices = sellerSubscription?.tierPrices || { free: 349, premium: 699, super_premium: 1299 };
                                 
                                 const planLimit = limits[plan.id] ?? plan.limit;
-                                const planPrice = plan.id === 'free' 
-                                    ? 'Free' 
-                                    : `₱${prices[plan.id] ?? plan.price.replace('₱', '')}`;
+                                const rawPrice = prices[plan.id] ?? (plan.price ? String(plan.price).replace('₱', '') : 349);
+                                const planPrice = `₱${Math.round(rawPrice)}`;
 
                                 return (
                                     <PlanPricingCard

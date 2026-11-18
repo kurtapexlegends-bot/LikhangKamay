@@ -12,13 +12,14 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
         }
     }, [currentPlan]);
     const comparisonGroups = useMemo(() => {
-        const freeLimit = planSettings?.free_limit ?? 3;
+        const freePrice = planSettings?.free_price ?? 349;
+        const freeLimit = planSettings?.free_limit ?? 8;
         const freeStaffLimit = planSettings?.free_staff_limit ?? 0;
-        const premiumPrice = planSettings?.premium_price ?? 199;
-        const premiumLimit = planSettings?.premium_limit ?? 10;
+        const premiumPrice = planSettings?.premium_price ?? 699;
+        const premiumLimit = planSettings?.premium_limit ?? 25;
         const premiumStaffLimit = planSettings?.premium_staff_limit ?? 3;
-        const superPremiumPrice = planSettings?.super_premium_price ?? 399;
-        const superPremiumLimit = planSettings?.super_premium_limit ?? 50;
+        const superPremiumPrice = planSettings?.super_premium_price ?? 1299;
+        const superPremiumLimit = planSettings?.super_premium_limit ?? 75;
         const superPremiumStaffLimit = planSettings?.super_premium_staff_limit ?? 15;
 
         const isModuleEnabled = (tier, moduleId, fallback = false) => {
@@ -55,7 +56,7 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
                     {
                         name: 'Monthly Subscription',
                         subtext: 'Monthly shop plan fee',
-                        free: '₱0 (Free)',
+                        free: `₱${freePrice} / month`,
                         premium: `₱${premiumPrice} / month`,
                         super_premium: `₱${superPremiumPrice} / month`,
                     },
@@ -467,7 +468,7 @@ export default function SubscriptionComparisonModal({ isOpen, onClose, currentPl
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h4 className="font-extrabold text-stone-900 text-base">
-                                        {mobileTier === 'super_premium' ? 'Elite Artisan' : mobileTier === 'premium' ? 'Premium Artisan' : 'Standard (Free)'}
+                                        {mobileTier === 'super_premium' ? 'Elite Artisan' : mobileTier === 'premium' ? 'Premium Artisan' : 'Basic Artisan'}
                                     </h4>
                                     <p className="text-xs text-stone-500 font-medium">
                                         {mobileTier === 'super_premium' ? 'Full operational ERP suite' : mobileTier === 'premium' ? 'Growing workshop setup' : 'Starter handcrafted shop'}
