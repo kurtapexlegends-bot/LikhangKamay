@@ -1,0 +1,75 @@
+[
+  {
+    "name": "Synthetic product detail",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "productId": 19,
+    "fixture": "test-bamboo-01-synthetic-cup",
+    "stock": 987
+  },
+  {
+    "name": "Buy Now to checkout and shipping quote",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "checkout": "Checkout - LikhangKamay",
+    "address": true,
+    "placeOrder": true,
+    "online": true,
+    "error": false,
+    "labels": [
+      "Place Order"
+    ],
+    "flags": [],
+    "elapsedMs": 1433,
+    "requests": [
+      {
+        "path": "/checkout",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::6crw2-1795034851835-2839f0026f08"
+      },
+      {
+        "path": "/checkout/shipping-quote",
+        "status": 200,
+        "method": "POST",
+        "id": "sin1::hnd1::khkbs-1795034852756-0933a3b5d968"
+      }
+    ]
+  },
+  {
+    "name": "Fresh online payment order submission",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "observed": "/my-orders",
+    "order": "ORD-6AFE0EE6567DA",
+    "requests": [
+      {
+        "path": "/checkout",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::fm2kk-1795034853457-ef8d1b47a3eb"
+      },
+      {
+        "path": "/my-orders",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::6crw2-1795034854771-4a6bf16d7add"
+      },
+      {
+        "path": "/buyer/signals",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::4pg4f-1795034855736-9130a94c2feb"
+      }
+    ],
+    "marker": "desktop-2026-11-18T20-24-34-144Z"
+  },
+  {
+    "name": "Fresh order independent read",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "order": "ORD-6AFE0EE6567DA",
+    "persisted": true,
+    "cleanup": "Retained synthetic test order"
+  }
+]

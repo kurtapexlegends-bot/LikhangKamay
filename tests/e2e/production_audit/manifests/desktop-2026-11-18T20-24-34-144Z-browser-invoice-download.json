@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Synthetic order invoice download",
+    "persona": "buyer",
+    "verdict": "BLOCKED",
+    "order": "ORD-6AFE0B19D2A59",
+    "observedPath": null,
+    "sha256": null
+  }
+]

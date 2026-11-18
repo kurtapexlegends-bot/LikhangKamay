@@ -1,0 +1,99 @@
+[
+  {
+    "name": "Synthetic product detail",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "productId": 19,
+    "fixture": "test-bamboo-01-synthetic-cup",
+    "stock": 987
+  },
+  {
+    "name": "Buy Now to checkout and shipping quote",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "checkout": "Checkout - LikhangKamay",
+    "address": true,
+    "placeOrder": true,
+    "online": true,
+    "error": false,
+    "labels": [
+      "Place Order"
+    ],
+    "flags": [],
+    "elapsedMs": 2341,
+    "requests": [
+      {
+        "path": "/product/test-bamboo-01-synthetic-cup",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::6crw2-1795035161210-ff6bdde3eb9b"
+      },
+      {
+        "path": "/checkout",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::r4sg6-1795035161217-5e3e61469e22"
+      },
+      {
+        "path": "/checkout/shipping-quote",
+        "status": 200,
+        "method": "POST",
+        "id": "sin1::hnd1::ppcpf-1795035162618-74c98d6c0905"
+      }
+    ]
+  },
+  {
+    "name": "Fresh COD order submission",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "observed": "/my-orders",
+    "order": "ORD-6AFE102788D34",
+    "requests": [
+      {
+        "path": "/checkout",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::rrpfq-1795035175134-107bee6b7855"
+      },
+      {
+        "path": "/my-orders",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::8h7g8-1795035176107-09c502c1c5b8"
+      },
+      {
+        "path": "/buyer/signals",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::xph9b-1795035177085-ebead5af1b07"
+      }
+    ],
+    "marker": "desktop-2026-11-18T20-24-34-144Z"
+  },
+  {
+    "name": "Seller receives fresh COD order with WebSockets blocked",
+    "persona": "seller",
+    "verdict": "BLOCKED",
+    "order": "ORD-6AFE102788D34",
+    "seen": true,
+    "elapsedMs": 3879,
+    "poll": [
+      {
+        "status": 200,
+        "id": "sin1::hnd1::gfpdz-1795035178237-35a518a6c4c4"
+      }
+    ],
+    "websocketHandshakes": [
+      101,
+      101
+    ]
+  },
+  {
+    "name": "Fresh order independent read",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "order": "ORD-6AFE102788D34",
+    "persisted": true,
+    "cleanup": "Retained synthetic test order"
+  }
+]

@@ -1,0 +1,9 @@
+[
+  {
+    "name": "Synthetic order invoice download",
+    "persona": "buyer",
+    "verdict": "BLOCKED",
+    "order": "ORD-6AFE0B19D2A59",
+    "reason": "Invoice opened in a separate browser target; response could not be verified"
+  }
+]

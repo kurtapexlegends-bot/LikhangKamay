@@ -1,0 +1,152 @@
+[
+  {
+    "name": "Time Card",
+    "persona": "staff",
+    "verdict": "PASS",
+    "requested": "/staff/dashboard",
+    "observed": "/staff/dashboard",
+    "title": "Custom CRM Hub - LikhangKamay",
+    "status": 200,
+    "requestId": "sin1::hnd1::62mjl-1795034665104-3443a887e5da",
+    "ms": 1537
+  },
+  {
+    "name": "Staff Workspace",
+    "persona": "staff",
+    "verdict": "PASS",
+    "requested": "/staff",
+    "observed": "/staff",
+    "title": "Workspace access needs routing - LikhangKamay",
+    "status": 200,
+    "requestId": "sin1::hnd1::ssqg6-1795034666628-56a6dab017ff",
+    "ms": 1460
+  },
+  {
+    "name": "Driver Logistics",
+    "persona": "driver",
+    "verdict": "PASS",
+    "requested": "/staff/deliveries",
+    "observed": "/staff/deliveries",
+    "title": "Driver Delivery Console - LikhangKamay",
+    "status": 200,
+    "requestId": "sin1::hnd1::mdcqr-1795034752384-2704a8ade721",
+    "ms": 1722
+  },
+  {
+    "name": "Procurement",
+    "persona": "seller",
+    "verdict": "PASS",
+    "requested": "/procurement",
+    "observed": "/procurement",
+    "title": "Inventory - LikhangKamay",
+    "status": 200,
+    "requestId": "sin1::hnd1::rrpfq-1795034762412-1245a368b6e7",
+    "ms": 1641
+  },
+  {
+    "name": "Supply Hub",
+    "persona": "seller",
+    "verdict": "PASS",
+    "requested": "/supply-hub",
+    "observed": "/supply-hub",
+    "title": "Supply Hub | LikhangKamay",
+    "status": 200,
+    "requestId": "sin1::hnd1::nwmqg-1795034764234-71b11a13ca7a",
+    "ms": 1566
+  },
+  {
+    "name": "Accounting",
+    "persona": "seller",
+    "verdict": "PASS",
+    "requested": "/accounting",
+    "observed": "/accounting",
+    "title": "Finance & Approvals - LikhangKamay",
+    "status": 200,
+    "requestId": "sin1::hnd1::drmrf-1795034765617-3203cf06201a",
+    "ms": 1243
+  },
+  {
+    "name": "Employees and Payroll",
+    "persona": "seller",
+    "verdict": "PASS",
+    "requested": "/hr",
+    "observed": "/hr",
+    "title": "Employees & Payroll - LikhangKamay",
+    "status": 200,
+    "requestId": "sin1::hnd1::drmrf-1795034766894-142b2cf0e3e1",
+    "ms": 1600
+  },
+  {
+    "name": "Subscription",
+    "persona": "seller",
+    "verdict": "PASS",
+    "requested": "/subscription",
+    "observed": "/subscription",
+    "title": "Subscription Plan - LikhangKamay",
+    "status": 200,
+    "requestId": "sin1::hnd1::r24xx-1795034768463-74b623fad139",
+    "ms": 1845
+  },
+  {
+    "name": "Walk-In POS",
+    "persona": "seller",
+    "verdict": "PASS",
+    "requested": "/seller/pos",
+    "observed": "/seller/pos",
+    "title": "Walk-In POS - LikhangKamay",
+    "status": 200,
+    "requestId": "sin1::hnd1::h7jqj-1795034770423-bcca002f2043",
+    "ms": 1830
+  },
+  {
+    "name": "Team Approvals",
+    "persona": "seller",
+    "verdict": "BLOCKED",
+    "requested": "/seller/approvals",
+    "reason": "TimeoutError"
+  },
+  {
+    "name": "Operations and Activity",
+    "persona": "admin",
+    "verdict": "PASS",
+    "requested": "/admin/operations",
+    "observed": "/admin/operations",
+    "title": "Activity History - LikhangKamay",
+    "status": 200,
+    "requestId": "sin1::hnd1::ppcpf-1795034789454-12f5020fb49c",
+    "ms": 1327
+  },
+  {
+    "name": "Platform Activity",
+    "persona": "admin",
+    "verdict": "PASS",
+    "requested": "/admin/activity-log",
+    "observed": "/admin/operations",
+    "title": "Activity History - LikhangKamay",
+    "status": 200,
+    "requestId": "sin1::hnd1::khkbs-1795034791285-b51e6bb8dc2e",
+    "ms": 2213
+  },
+  {
+    "name": "Transactional Email Studio",
+    "persona": "admin",
+    "verdict": "PASS",
+    "requested": "/admin/settings/email-templates",
+    "observed": "/admin/settings",
+    "title": "System Configuration - LikhangKamay",
+    "status": 200,
+    "requestId": "sin1::hnd1::ppcpf-1795034793433-4241cc545055",
+    "ms": 1792
+  },
+  {
+    "name": "Admin Help Center",
+    "persona": "admin",
+    "verdict": "PASS",
+    "requested": "/help",
+    "observed": "/help",
+    "title": "Help Center & FAQ - LikhangKamay",
+    "status": 200,
+    "requestId": "sin1::hnd1::p2x75-1795034794790-e9c26ac7935c",
+    "ms": 1207
+  }
+]

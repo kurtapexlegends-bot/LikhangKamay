@@ -1,0 +1,99 @@
+[
+  {
+    "name": "Synthetic product detail",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "productId": 19,
+    "fixture": "test-bamboo-01-synthetic-cup",
+    "stock": 987
+  },
+  {
+    "name": "Wishlist persistence and cleanup",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "added": true,
+    "persisted": true,
+    "cleaned": true,
+    "savedList": {
+      "title": "Saved | LikhangKamay",
+      "includesFixture": true
+    },
+    "requests": [
+      {
+        "path": "/buyer/wishlist/toggle",
+        "status": 200,
+        "method": "POST",
+        "id": "sin1::hnd1::wfpf9-1795033616283-2d58197e2e55"
+      },
+      {
+        "path": "/products/validate-active",
+        "status": 200,
+        "method": "POST",
+        "id": "sin1::hnd1::xph9b-1795033618052-f75fe1dc0dc2"
+      },
+      {
+        "path": "/buyer/wishlist/toggle",
+        "status": 200,
+        "method": "POST",
+        "id": "sin1::hnd1::9jplh-1795033620478-bdc238aa46fe"
+      }
+    ]
+  },
+  {
+    "name": "Synthetic buyer flow",
+    "persona": "buyer",
+    "verdict": "BLOCKED",
+    "reason": "shipping_method is not defined",
+    "observed": "/checkout",
+    "requests": [
+      {
+        "path": "/saved",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::nd5jh-1795033617417-acf8a04abd95"
+      },
+      {
+        "path": "/buyer/signals",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::trl8j-1795033618052-b5b53838a728"
+      },
+      {
+        "path": "/products/validate-active",
+        "status": 200,
+        "method": "POST",
+        "id": "sin1::hnd1::xph9b-1795033618052-f75fe1dc0dc2"
+      },
+      {
+        "path": "/buyer/signals",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::xph9b-1795033618376-cc12f8b74edd"
+      },
+      {
+        "path": "/product/test-bamboo-01-synthetic-cup",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::xph9b-1795033618663-6ae6477c433e"
+      },
+      {
+        "path": "/buyer/signals",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::gkn6l-1795033619482-7076ca37ff57"
+      },
+      {
+        "path": "/buyer/wishlist/toggle",
+        "status": 200,
+        "method": "POST",
+        "id": "sin1::hnd1::9jplh-1795033620478-bdc238aa46fe"
+      },
+      {
+        "path": "/checkout",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::j2mzg-1795033621261-1ef3a1ecb888"
+      }
+    ]
+  }
+]

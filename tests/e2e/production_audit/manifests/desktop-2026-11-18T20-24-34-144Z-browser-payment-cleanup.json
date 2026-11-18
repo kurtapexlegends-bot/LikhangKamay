@@ -1,0 +1,39 @@
+[
+  {
+    "name": "Retained payment fixture cancelled",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "order": "ORD-6AFE0EE6567DA",
+    "status": "Cancelled",
+    "requests": [
+      {
+        "path": "/my-orders/115/cancel",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::zxwlj-1795035072066-d4d70cfbf7c0"
+      }
+    ]
+  },
+  {
+    "name": "Retained payment fixture cancelled",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "order": "ORD-6AFE0EFBF376C",
+    "status": "Cancelled",
+    "requests": [
+      {
+        "path": "/my-orders/116/cancel",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::mdcqr-1795035076692-e80df59f56d0"
+      }
+    ]
+  },
+  {
+    "name": "Payment fixture stock restored",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "stock": 987,
+    "initial": 987
+  }
+]

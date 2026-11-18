@@ -1,0 +1,9 @@
+[
+  {
+    "name": "Wholesale MOQ guard",
+    "persona": "wholesale-buyer",
+    "verdict": "PASS",
+    "downDisabled": true,
+    "minimum": null
+  }
+]

@@ -1,0 +1,63 @@
+[
+  {
+    "name": "Synthetic product detail",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "productId": 19,
+    "fixture": "test-bamboo-01-synthetic-cup",
+    "stock": 987
+  },
+  {
+    "name": "Wishlist persistence and cleanup",
+    "persona": "buyer",
+    "verdict": "FAIL",
+    "added": true,
+    "persisted": false,
+    "cleaned": true,
+    "requests": [
+      {
+        "path": "/buyer/wishlist/toggle",
+        "status": 200,
+        "method": "POST",
+        "id": "sin1::hnd1::b2ngx-1795033553575-78edcc11c7c8"
+      },
+      {
+        "path": "/products/validate-active",
+        "status": 200,
+        "method": "POST",
+        "id": "sin1::hnd1::5rdr6-1795033555458-a1762ce05ab4"
+      },
+      {
+        "path": "/buyer/wishlist/toggle",
+        "status": 200,
+        "method": "POST",
+        "id": "sin1::hnd1::4ljc4-1795033557362-92a608e7f521"
+      }
+    ]
+  },
+  {
+    "name": "Buy Now to checkout and shipping quote",
+    "persona": "buyer",
+    "verdict": "FAIL",
+    "checkout": "Checkout - LikhangKamay",
+    "address": true,
+    "placeOrder": false,
+    "online": true,
+    "error": false,
+    "elapsedMs": 1314,
+    "requests": [
+      {
+        "path": "/checkout",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::b4ntx-1795033558668-c6cc8ecd0676"
+      }
+    ]
+  },
+  {
+    "name": "Fresh order submission",
+    "persona": "buyer",
+    "verdict": "BLOCKED",
+    "reason": "Checkout submit unavailable"
+  }
+]

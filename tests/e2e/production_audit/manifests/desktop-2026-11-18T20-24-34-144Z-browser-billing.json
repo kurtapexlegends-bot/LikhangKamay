@@ -1,0 +1,36 @@
+[
+  {
+    "name": "Subscription period toggle",
+    "persona": "seller",
+    "verdict": "PASS",
+    "before": {
+      "tierNames": [
+        "Basic",
+        "Premium",
+        "Elite"
+      ],
+      "prices": [
+        "₱349",
+        "₱699",
+        "₱1,299"
+      ],
+      "annual": true
+    },
+    "after": {
+      "tierNames": [
+        "Basic",
+        "Premium",
+        "Elite"
+      ],
+      "prices": [
+        "₱3,350",
+        "₱279",
+        "₱6,710",
+        "₱559",
+        "₱12,470",
+        "₱1039"
+      ],
+      "annual": true
+    }
+  }
+]

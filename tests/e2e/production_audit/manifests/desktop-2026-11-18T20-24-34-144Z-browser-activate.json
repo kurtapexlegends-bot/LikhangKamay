@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Bulk activate exact synthetic listing",
+    "persona": "seller",
+    "verdict": "FAIL",
+    "id": 19,
+    "status": "pending_review",
+    "stock": 987,
+    "requests": [
+      {
+        "path": "/products/bulk-status",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::jhczf-1795034726122-1a884a6ca1d3"
+      }
+    ]
+  }
+]

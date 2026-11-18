@@ -1,0 +1,44 @@
+[
+  {
+    "name": "3D upload invalid extension guard",
+    "persona": "seller",
+    "verdict": "PASS",
+    "requests": []
+  },
+  {
+    "name": "3D direct storage upload over 4.5 MB",
+    "persona": "seller",
+    "verdict": "PASS",
+    "productId": 19,
+    "bytes": 5243264,
+    "stages": [
+      {
+        "kind": "POST",
+        "sameOrigin": true,
+        "status": 200,
+        "path": "/3d-manager/presign",
+        "id": "sin1::hnd1::4kw6c-1795034667732-28f6df84360d"
+      },
+      {
+        "kind": "PUT",
+        "sameOrigin": false,
+        "status": 200
+      },
+      {
+        "kind": "POST",
+        "sameOrigin": true,
+        "status": 302,
+        "path": "/3d-manager/upload",
+        "id": "sin1::hnd1::gkn6l-1795034670563-25b380d4b5b3"
+      }
+    ],
+    "persistedAssetFields": [
+      "model_3d_path",
+      "model_3d_url",
+      "model_url"
+    ],
+    "error": false,
+    "stock": 987,
+    "status": "Draft"
+  }
+]

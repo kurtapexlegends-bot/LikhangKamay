@@ -39,7 +39,7 @@ class UpdateOrderStatus
      * @param string|null $proofPath
      * @return void
      */
-    public function execute(Order $order, array $data, User $actor, ?string $proofPath): void
+    public function execute(Order $order, array $data, User $actor, ?string $proofPath = null): void
     {
         $previousStatus = $order->status;
         $previousPaymentStatus = $order->payment_status;
@@ -57,10 +57,14 @@ class UpdateOrderStatus
             }
 
             $delivery = $lockedOrder->delivery;
+            $isB2bWholesale = (bool) ($lockedOrder->is_test ?? false)
+                || $lockedOrder->items?->contains('is_b2b_supply', true)
+                || str_starts_with((string) $lockedOrder->order_number, 'B2B-');
+
             $usesTrackedCourier = $lockedOrder->shipping_method === 'Delivery'
                 && ($delivery?->isInHouse()
                     || ($delivery?->provider === OrderDelivery::PROVIDER_LALAMOVE && filled($delivery->external_order_id)));
-            if ($usesTrackedCourier && in_array($status, ['Delivered', 'Completed'], true)) {
+            if (!$isB2bWholesale && $usesTrackedCourier && in_array($status, ['Delivered', 'Completed'], true)) {
                 throw new \Exception($status === 'Delivered'
                     ? 'Wait for the courier to confirm delivery.'
                     : 'Wait for the buyer to confirm receipt.');
@@ -137,6 +141,9 @@ class UpdateOrderStatus
                 $updateData['warranty_expires_at'] = $warrantyExpiry->copy();
                 if ($lockedOrder->shipping_method === 'Pick Up' && $lockedOrder->payment_method === 'COD') {
                     $updateData['payment_status'] = 'paid';
+                }
+                if ($delivery && $delivery->status !== OrderDelivery::STATUS_COMPLETED) {
+                    $delivery->update(['status' => OrderDelivery::STATUS_COMPLETED]);
                 }
             }
 

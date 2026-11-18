@@ -18,9 +18,11 @@ This document outlines the operational flows, validation rules, and webhook beha
 1.  **Minimum Limit Constraint**: 
     > [!IMPORTANT]
     > The storefront payment action rejects online totals below **₱20.00** (2,000 centavos).
-2.  **Defensive Programming Wrappers**:
+2.  **Absolute Line Item Image URLs**:
+    PayMongo API strictly enforces valid fully-qualified HTTPS URLs for checkout session line item images. [PaymentController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/PaymentController.php#L583) uses `resolvePayMongoLineItemImages()` to normalize all relative product paths and fallback placeholders to absolute HTTPS URLs, preventing HTTP 400 parameter rejections.
+3.  **Defensive Programming Wrappers**:
     All payment creation flows must be wrapped inside `try-catch` blocks to capture API execution errors cleanly without crashing the user session.
-3.  **Db-Backed Status Verification**:
+4.  **Db-Backed Status Verification**:
     Never trust raw frontend triggers or simple session identifiers. Always run a backend lookup against checkout records to verify paid states before updating order statuses to `Accepted`.
 
 ### Supported Online Payment Methods & Multi-Wallet Channels

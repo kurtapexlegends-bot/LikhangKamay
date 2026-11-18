@@ -1,0 +1,25 @@
+[
+  {
+    "name": "Buyer order status after rider proof",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "order": "ORD-6AFE102788D34",
+    "status": "Delivered",
+    "resultCount": 72
+  },
+  {
+    "name": "Buyer confirms synthetic delivery receipt",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "order": "ORD-6AFE102788D34",
+    "status": "Completed",
+    "requests": [
+      {
+        "path": "/my-orders/117/receive",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::n72nv-1795035637514-c1179c2cdffb"
+      }
+    ]
+  }
+]

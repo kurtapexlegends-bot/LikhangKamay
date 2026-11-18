@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Printable synthetic order invoice HTML",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "order": "ORD-6AFE0B19D2A59",
+    "status": 200,
+    "type": "text/html; charset=utf-8",
+    "exact": true,
+    "printable": true,
+    "sha256": "8578269156e786c9233c4baee6978fd04c0c754be8e5952693f36755964afc9f",
+    "priorButtonRequestLogged": true
+  }
+]

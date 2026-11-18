@@ -1,0 +1,68 @@
+[
+  {
+    "name": "Rider submits proof of delivery",
+    "persona": "rider",
+    "verdict": "PASS",
+    "order": "ORD-6AFE102788D34",
+    "fileRequired": true,
+    "requests": [
+      {
+        "path": "/staff/deliveries/39/complete",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::ssqg6-1795035577017-aa1f9d9b37b4"
+      }
+    ]
+  },
+  {
+    "name": "Synthetic delivery proof workflow",
+    "persona": "buyer",
+    "verdict": "BLOCKED",
+    "order": "ORD-6AFE102788D34",
+    "reason": "Waiting failed: 9000ms exceeded",
+    "requests": [
+      {
+        "path": "/staff/dashboard",
+        "status": 302,
+        "method": "GET",
+        "id": "sin1::hnd1::ssqg6-1795035570924-21c0e6f887eb"
+      },
+      {
+        "path": "/staff/deliveries",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::tv64t-1795035571486-de22b084343e"
+      },
+      {
+        "path": "/staff/attendance/heartbeat",
+        "status": 200,
+        "method": "POST",
+        "id": "sin1::hnd1::p2x75-1795035572665-1b59e41a82c6"
+      },
+      {
+        "path": "/staff/deliveries",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::vk7cr-1795035574614-3c51e540b768"
+      },
+      {
+        "path": "/staff/attendance/heartbeat",
+        "status": 200,
+        "method": "POST",
+        "id": "sin1::hnd1::wfpf9-1795035576178-d35f81d23794"
+      },
+      {
+        "path": "/staff/deliveries",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::dr8vw-1795035576608-779eaaa6a738"
+      },
+      {
+        "path": "/staff/deliveries/39/complete",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::ssqg6-1795035577017-aa1f9d9b37b4"
+      }
+    ]
+  }
+]

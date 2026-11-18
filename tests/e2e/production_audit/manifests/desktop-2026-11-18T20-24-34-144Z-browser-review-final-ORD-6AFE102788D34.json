@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Synthetic review creation and independent read",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "order": "ORD-6AFE102788D34",
+    "visible": true,
+    "requests": [
+      {
+        "path": "/reviews",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::g74vw-1795035773735-f28fbb0bcef9"
+      }
+    ],
+    "marker": "Synthetic desktop audit desktop-2026-11-18T20-24-34-144Z review"
+  },
+  {
+    "name": "Synthetic review cleanup availability",
+    "persona": "buyer",
+    "verdict": "BLOCKED",
+    "order": "ORD-6AFE102788D34",
+    "retained": true,
+    "reason": "Review record kept tagged with run identifier for evidence; no other review was modified."
+  }
+]

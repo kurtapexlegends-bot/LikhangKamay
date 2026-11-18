@@ -1,0 +1,31 @@
+[
+  {
+    "name": "Seller accepts online order",
+    "persona": "seller",
+    "verdict": "PASS",
+    "order": "ORD-6AFE0EE6567DA",
+    "requests": [
+      {
+        "path": "/orders/ORD-6AFE0EE6567DA/update",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::nd5jh-1795034911586-17a906abcc75"
+      }
+    ]
+  },
+  {
+    "name": "Buyer payment action opens hosted checkout",
+    "persona": "buyer",
+    "verdict": "FAIL",
+    "order": "ORD-6AFE0EE6567DA",
+    "host": "www.likhangkamay.app",
+    "testPath": false,
+    "requests": [
+      {
+        "path": "/payment/ORD-6AFE0EE6567DA/pay",
+        "status": 302,
+        "id": "sin1::hnd1::n72nv-1795034921742-ad38d2bf3cfe"
+      }
+    ]
+  }
+]

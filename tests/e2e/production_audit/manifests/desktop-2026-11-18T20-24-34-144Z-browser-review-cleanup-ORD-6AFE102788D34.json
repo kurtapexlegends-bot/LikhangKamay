@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Synthetic review removed and read back",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "order": "ORD-6AFE102788D34",
+    "remaining": false,
+    "requests": [
+      {
+        "path": "/reviews/2",
+        "status": 200,
+        "method": "DELETE",
+        "id": "sin1::hnd1::qhqqv-1795035831149-862856461306"
+      }
+    ]
+  }
+]

@@ -1,0 +1,29 @@
+[
+  {
+    "name": "Synthetic product owner readback",
+    "persona": "seller",
+    "verdict": "PASS",
+    "id": 19,
+    "stock": 987,
+    "status": "Draft",
+    "sold": 26,
+    "catalogStatus": "Draft",
+    "observed": {
+      "rejection_reason": null,
+      "activation_readiness": {
+        "canBeActive": false,
+        "missing": [
+          "a 3D model"
+        ]
+      }
+    },
+    "requests": [
+      {
+        "path": "/product/test-bamboo-01-synthetic-cup",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::pzh97-1795034567264-a56a6c81f205"
+      }
+    ]
+  }
+]

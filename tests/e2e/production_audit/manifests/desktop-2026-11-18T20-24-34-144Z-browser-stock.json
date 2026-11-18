@@ -1,0 +1,29 @@
+[
+  {
+    "name": "Inline quick restock",
+    "persona": "seller",
+    "verdict": "PASS",
+    "fixture": "test-bamboo-01-synthetic-cup",
+    "productId": 19,
+    "baseline": 987,
+    "after": 988,
+    "requests": [
+      {
+        "path": "/products/19/restock",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::s2kpc-1795034388224-eb2953a8b417"
+      }
+    ]
+  },
+  {
+    "name": "Inline quick deduction and cleanup",
+    "persona": "seller",
+    "verdict": "FAIL",
+    "fixture": "test-bamboo-01-synthetic-cup",
+    "productId": 19,
+    "baseline": 987,
+    "restored": 988,
+    "requests": []
+  }
+]

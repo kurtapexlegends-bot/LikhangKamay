@@ -1,0 +1,54 @@
+[
+  {
+    "name": "Production synthetic payment order details",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "order": "ORD-6AFE0EFBF376C",
+    "fields": {
+      "total": "56.03",
+      "status": "Accepted",
+      "payment_status": "pending",
+      "payment_method": "Maya",
+      "merchandise_subtotal": "1.00",
+      "voucher_discount_amount": "0.00",
+      "convenience_fee_amount": "0.03",
+      "shipping_fee_amount": "55.00",
+      "platform_commission_amount": "0.00",
+      "seller_net_amount": "1.00",
+      "vat_amount": 0.11
+    },
+    "items": [
+      {
+        "price": "1.00",
+        "img": "/images/demo/products/espresso-cup-cover.jpg",
+        "productName": "E2E Synthetic ₱1 Bamboo Cup"
+      }
+    ]
+  },
+  {
+    "name": "Production synthetic payment order details",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "order": "ORD-6AFE0EE6567DA",
+    "fields": {
+      "total": "56.03",
+      "status": "Accepted",
+      "payment_status": "pending",
+      "payment_method": "GCash",
+      "merchandise_subtotal": "1.00",
+      "voucher_discount_amount": "0.00",
+      "convenience_fee_amount": "0.03",
+      "shipping_fee_amount": "55.00",
+      "platform_commission_amount": "0.00",
+      "seller_net_amount": "1.00",
+      "vat_amount": 0.11
+    },
+    "items": [
+      {
+        "price": "1.00",
+        "img": "/images/demo/products/espresso-cup-cover.jpg",
+        "productName": "E2E Synthetic ₱1 Bamboo Cup"
+      }
+    ]
+  }
+]

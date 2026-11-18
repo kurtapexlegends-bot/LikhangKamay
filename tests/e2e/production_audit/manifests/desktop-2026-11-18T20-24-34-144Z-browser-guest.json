@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Help Center search",
+    "persona": "guest",
+    "verdict": "PASS",
+    "refund": true,
+    "title": "Help Center & FAQ - LikhangKamay",
+    "requests": []
+  },
+  {
+    "name": "Help Center expand and collapse",
+    "persona": "guest",
+    "verdict": "PASS",
+    "collapse": true
+  },
+  {
+    "name": "Empty registration validation",
+    "persona": "guest",
+    "verdict": "PASS",
+    "nativeInvalid": true,
+    "inlineError": false,
+    "path": "/register",
+    "requests": []
+  },
+  {
+    "name": "Guest admin access guard",
+    "persona": "guest",
+    "verdict": "PASS",
+    "observed": "/login",
+    "status": 200
+  }
+]

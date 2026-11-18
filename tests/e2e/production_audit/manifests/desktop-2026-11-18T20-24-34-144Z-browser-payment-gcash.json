@@ -1,0 +1,45 @@
+[
+  {
+    "name": "Synthetic product detail",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "productId": 19,
+    "fixture": "test-bamboo-01-synthetic-cup",
+    "stock": 987
+  },
+  {
+    "name": "Buy Now to checkout and shipping quote",
+    "persona": "buyer",
+    "verdict": "FAIL",
+    "checkout": "Checkout - LikhangKamay",
+    "address": true,
+    "placeOrder": false,
+    "online": true,
+    "error": false,
+    "labels": [
+      "Place Order"
+    ],
+    "flags": [],
+    "elapsedMs": 2029,
+    "requests": [
+      {
+        "path": "/buyer/signals",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::s2kpc-1795034824360-356662e3c0a3"
+      },
+      {
+        "path": "/checkout",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::4xm74-1795034824768-7359d4160daf"
+      }
+    ]
+  },
+  {
+    "name": "Fresh order submission",
+    "persona": "buyer",
+    "verdict": "BLOCKED",
+    "reason": "Checkout submit unavailable"
+  }
+]

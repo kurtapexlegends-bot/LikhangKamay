@@ -1,0 +1,41 @@
+[
+  {
+    "name": "Stock workflow stopped",
+    "persona": "seller",
+    "verdict": "BLOCKED",
+    "reason": "Stock changed since the last observed adjustment",
+    "path": "/product/test-bamboo-01-synthetic-cup",
+    "requests": [
+      {
+        "path": "/login",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::9jplh-1795034456706-86389564ae43"
+      },
+      {
+        "path": "/login",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::wfpf9-1795034463610-60511620bdaf"
+      },
+      {
+        "path": "/dashboard",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::r5cnp-1795034464226-a7aadef65d34"
+      },
+      {
+        "path": "/product/test-bamboo-01-synthetic-cup",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::dr8vw-1795034466998-f5db497cb13e"
+      },
+      {
+        "path": "/buyer/signals",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::r5cnp-1795034468274-c55455acf5a9"
+      }
+    ]
+  }
+]

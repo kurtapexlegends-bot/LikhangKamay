@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Production seller realtime transport identification",
+    "persona": "seller",
+    "verdict": "FAIL",
+    "signals": [
+      "[Supabase] Publishable or non-JWT key detected. Realtime WebSocket disabled; automatic Inertia HTTP polling active."
+    ],
+    "hosts": [
+      "ws-ap1.pusher.com"
+    ],
+    "note": "HTTP polling outcome is independently recorded."
+  }
+]

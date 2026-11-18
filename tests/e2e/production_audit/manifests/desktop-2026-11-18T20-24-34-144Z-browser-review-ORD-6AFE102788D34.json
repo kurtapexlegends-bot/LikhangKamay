@@ -1,0 +1,41 @@
+[
+  {
+    "name": "Synthetic review workflow",
+    "persona": "buyer",
+    "verdict": "BLOCKED",
+    "order": "ORD-6AFE102788D34",
+    "reason": "Waiting for selector `[role=\"dialog\"] textarea` failed",
+    "requests": [
+      {
+        "path": "/buyer/signals",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::pfsnx-1795035726227-e2c335477e99"
+      },
+      {
+        "path": "/my-orders",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::pfsnx-1795035728196-e432e42fa1bd"
+      },
+      {
+        "path": "/buyer/signals",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::4ljc4-1795035729635-5714e1583960"
+      },
+      {
+        "path": "/my-orders",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::j2mzg-1795035734869-5f893a3cbf48"
+      },
+      {
+        "path": "/my-orders",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::g74vw-1795035735268-6e374c66215e"
+      }
+    ]
+  }
+]

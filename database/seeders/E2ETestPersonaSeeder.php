@@ -123,11 +123,11 @@ class E2ETestPersonaSeeder extends Seeder
                 'is_b2b_supply' => false,
                 'lead_time' => 1,
                 'description' => 'Synthetic test product for automated E2E lifecycle and verification.',
-                'cover_photo_path' => 'products/cover/synthetic_bamboo.jpg',
+                'cover_photo_path' => '/images/demo/products/espresso-cup-cover.jpg',
                 'gallery_paths' => [
-                    'products/gallery/synthetic_bamboo_1.jpg',
-                    'products/gallery/synthetic_bamboo_2.jpg',
-                    'products/gallery/synthetic_bamboo_3.jpg',
+                    '/images/demo/products/mug-1.png',
+                    '/images/demo/products/mug-2.png',
+                    '/images/demo/products/mug-3.png',
                 ],
                 'deleted_at' => null,
             ]

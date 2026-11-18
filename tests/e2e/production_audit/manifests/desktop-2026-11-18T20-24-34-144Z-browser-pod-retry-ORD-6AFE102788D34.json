@@ -1,0 +1,61 @@
+[
+  {
+    "name": "Rider submits proof of delivery",
+    "persona": "rider",
+    "verdict": "FAIL",
+    "order": "ORD-6AFE102788D34",
+    "fileRequired": true,
+    "requests": []
+  },
+  {
+    "name": "Synthetic delivery proof workflow",
+    "persona": "buyer",
+    "verdict": "BLOCKED",
+    "order": "ORD-6AFE102788D34",
+    "reason": "Rider completion POST was not observed",
+    "requests": [
+      {
+        "path": "/login",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::smpsz-1795035509822-a3569bf248d9"
+      },
+      {
+        "path": "/login",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::qhqqv-1795035517727-a2b4a2c3f15d"
+      },
+      {
+        "path": "/staff/dashboard",
+        "status": 302,
+        "method": "GET",
+        "id": "sin1::hnd1::khkbs-1795035518443-3f02fcf3a2ca"
+      },
+      {
+        "path": "/staff/deliveries",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::fj9df-1795035519061-1795105290bc"
+      },
+      {
+        "path": "/staff/attendance/heartbeat",
+        "status": 200,
+        "method": "POST",
+        "id": "sin1::hnd1::fm2kk-1795035520830-9e7cb333f61f"
+      },
+      {
+        "path": "/staff/deliveries",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::fm2kk-1795035522768-3661c5290e5c"
+      },
+      {
+        "path": "/staff/attendance/heartbeat",
+        "status": 200,
+        "method": "POST",
+        "id": "sin1::hnd1::n72nv-1795035524097-8a3fc867779b"
+      }
+    ]
+  }
+]

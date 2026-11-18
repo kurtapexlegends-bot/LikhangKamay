@@ -204,7 +204,7 @@ export async function runPhase3(page, collector) {
             if (tempDiscountId) {
                 await page.evaluate(async (url, did) => {
                     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                    await fetch(`${url}/vouchers/${did}`, {
+                    await fetch(`${url}/seller/vouchers/${did}`, {
                         method: 'DELETE',
                         headers: { 'X-CSRF-TOKEN': csrfToken || '', 'Accept': 'application/json' }
                     }).catch(() => null);
@@ -648,30 +648,32 @@ export async function runPhase3(page, collector) {
                 });
             } finally {
                 // Teardown: Delete seller reply, then delete review to leave database in pristine state
-                await page.evaluate(async (url, rid) => {
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                    await fetch(`${url}/reviews/${rid}/reply`, {
-                        method: 'DELETE',
-                        headers: { 'X-CSRF-TOKEN': csrfToken || '', 'Accept': 'application/json' }
-                    }).catch(() => null);
-                }, PROD_URL, targetReviewId);
-
-                // Buyer context / API deletion of the review
-                const buyerDeleteContext = await page.browser().createBrowserContext();
-                const buyerDeletePage = await buyerDeleteContext.newPage();
-                try {
-                    await loginAs(buyerDeletePage, ACCOUNTS.buyer.email, ACCOUNTS.buyer.password);
-                    await buyerDeletePage.goto(`${PROD_URL}/my-reviews`, { waitUntil: 'networkidle2', timeout: 30000 });
-                    await buyerDeletePage.evaluate(async (url, rid) => {
+                if (targetReviewId) {
+                    await page.evaluate(async (url, rid) => {
                         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                        await fetch(`${url}/reviews/${rid}`, {
+                        await fetch(`${url}/reviews/${rid}/reply`, {
                             method: 'DELETE',
                             headers: { 'X-CSRF-TOKEN': csrfToken || '', 'Accept': 'application/json' }
                         }).catch(() => null);
                     }, PROD_URL, targetReviewId);
-                    SHARED_AUDIT_STATE.createdReviewId = null;
-                } catch {} finally {
-                    await buyerDeleteContext.close();
+
+                    // Buyer context / API deletion of the review
+                    const buyerDeleteContext = await page.browser().createBrowserContext();
+                    const buyerDeletePage = await buyerDeleteContext.newPage();
+                    try {
+                        await loginAs(buyerDeletePage, ACCOUNTS.buyer.email, ACCOUNTS.buyer.password);
+                        await buyerDeletePage.goto(`${PROD_URL}/my-reviews`, { waitUntil: 'networkidle2', timeout: 30000 });
+                        await buyerDeletePage.evaluate(async (url, rid) => {
+                            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                            await fetch(`${url}/reviews/${rid}`, {
+                                method: 'DELETE',
+                                headers: { 'X-CSRF-TOKEN': csrfToken || '', 'Accept': 'application/json' }
+                            }).catch(() => null);
+                        }, PROD_URL, targetReviewId);
+                        SHARED_AUDIT_STATE.createdReviewId = null;
+                    } catch {} finally {
+                        await buyerDeleteContext.close();
+                    }
                 }
 
                 collector.recordResult('Phase 3', '3.12b Customer Review Lifecycle Clean Teardown', 'PASS', {

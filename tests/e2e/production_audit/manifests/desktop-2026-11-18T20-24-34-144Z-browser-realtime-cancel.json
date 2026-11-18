@@ -1,0 +1,71 @@
+[
+  {
+    "name": "COD order reached seller queue",
+    "persona": "seller",
+    "verdict": "PASS",
+    "order": "ORD-6AFE106888494",
+    "observed": "/orders"
+  },
+  {
+    "name": "Buyer cancels exact fresh COD order",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "order": "ORD-6AFE106888494",
+    "requests": [
+      {
+        "path": "/my-orders/118/cancel",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::dd8mw-1795035346037-055525f58520"
+      }
+    ]
+  },
+  {
+    "name": "Seller HTTP polling with observed WebSocket host blocked",
+    "persona": "seller",
+    "verdict": "PASS",
+    "order": "ORD-6AFE106888494",
+    "observed": true,
+    "elapsedMs": 7128,
+    "websocketHandshakeCodes": [],
+    "attempted": [
+      "ws-ap1.pusher.com",
+      "ws-ap1.pusher.com"
+    ],
+    "refreshed": [
+      {
+        "status": 200,
+        "orderStatus": "Pending",
+        "id": "sin1::hnd1::vk7cr-1795035340050-18f48d76b806"
+      },
+      {
+        "status": 200,
+        "orderStatus": "Pending",
+        "id": "sin1::hnd1::mhslb-1795035345785-08ac2112eb32"
+      },
+      {
+        "status": 200,
+        "orderStatus": "Cancelled",
+        "id": "sin1::hnd1::vk7cr-1795035349637-ac857f402fb5"
+      },
+      {
+        "status": 200,
+        "orderStatus": "Cancelled",
+        "id": "sin1::hnd1::ppcpf-1795035350318-e9139351e610"
+      },
+      {
+        "status": 200,
+        "orderStatus": "Cancelled",
+        "id": "sin1::hnd1::ppcpf-1795035352149-0d37a89f268b"
+      }
+    ]
+  },
+  {
+    "name": "Synthetic stock after cancellation",
+    "persona": "buyer",
+    "verdict": "BLOCKED",
+    "order": "ORD-6AFE106888494",
+    "before": 987,
+    "after": 986
+  }
+]

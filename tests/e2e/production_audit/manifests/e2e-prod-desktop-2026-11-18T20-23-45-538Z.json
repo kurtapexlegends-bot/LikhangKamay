@@ -1,0 +1,69 @@
+{
+  "runId": "desktop-2026-11-18T20-23-45-538Z",
+  "target": "https://www.likhangkamay.app",
+  "revision": "9a72d8efc05b80d24974d7b5853cdd197fcbd6b4",
+  "startedAt": "2026-11-18T20:23:45.538Z",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "scenarios": [
+    {
+      "persona": "buyer",
+      "name": "Fixture login",
+      "verdict": "FAIL",
+      "observed": "/",
+      "fixture": null
+    },
+    {
+      "persona": "seller",
+      "name": "Fixture login",
+      "verdict": "FAIL",
+      "observed": "/dashboard",
+      "fixture": null
+    },
+    {
+      "persona": "staff",
+      "name": "Fixture login",
+      "verdict": "FAIL",
+      "observed": "/staff/dashboard",
+      "fixture": null
+    },
+    {
+      "persona": "driver",
+      "name": "Fixture login",
+      "verdict": "FAIL",
+      "observed": "/staff/deliveries",
+      "fixture": null
+    },
+    {
+      "persona": "admin",
+      "name": "Fixture login",
+      "verdict": "FAIL",
+      "observed": "/admin/dashboard",
+      "fixture": null
+    }
+  ],
+  "diagnostics": [
+    {
+      "persona": "guest",
+      "visited": [
+        "/"
+      ],
+      "desktop": {
+        "width": 1440,
+        "height": 900
+      },
+      "unvisited": [
+        "/shop",
+        "/categories",
+        "/help",
+        "/login",
+        "/register"
+      ],
+      "httpErrors": [],
+      "browserErrors": []
+    }
+  ],
+  "finishedAt": "2026-11-18T20:24:57.382Z"
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "name": "COD order reached seller queue",
+    "persona": "seller",
+    "verdict": "PASS",
+    "order": "ORD-6AFE0B19D2A59",
+    "observed": "/orders"
+  },
+  {
+    "name": "Buyer cancels exact fresh COD order",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "order": "ORD-6AFE0B19D2A59",
+    "requests": [
+      {
+        "path": "/my-orders/114/cancel",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::nwmqg-1795033996853-60a853a339f0"
+      }
+    ]
+  },
+  {
+    "name": "Seller cancellation update without reload",
+    "persona": "seller",
+    "verdict": "BLOCKED",
+    "order": "ORD-6AFE0B19D2A59",
+    "observed": false,
+    "elapsedMs": 23374,
+    "websocketHandshakeCodes": [
+      101,
+      101
+    ],
+    "reason": "No matching cancellation was confirmed without reload inside the observation window; exact card filter or transport cause unverified."
+  },
+  {
+    "name": "Synthetic stock after cancellation",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "order": "ORD-6AFE0B19D2A59",
+    "before": 987,
+    "after": 987
+  }
+]

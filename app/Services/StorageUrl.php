@@ -35,11 +35,8 @@ class StorageUrl
         $cleanPath = preg_replace('#^/?storage/#', '', $path);
         $disk = self::disk();
 
-        // Synthetic test fixtures fallback safeguard for cloud/stateless runtimes
-        if (str_contains($cleanPath, 'synthetic_bamboo')) {
-            if ($disk === 'local' || $disk === 'public') {
-                return asset('storage/' . ltrim($cleanPath, '/'));
-            }
+        // Synthetic test fixtures & orphaned legacy demo fallback safeguard
+        if (str_contains($cleanPath, 'synthetic_bamboo') || str_contains($cleanPath, 'bTidkz3NCqLS0e1m3bAP8wjljgo6RiwCOIfCU8sV')) {
             return '/images/demo/products/espresso-cup-cover.jpg';
         }
 

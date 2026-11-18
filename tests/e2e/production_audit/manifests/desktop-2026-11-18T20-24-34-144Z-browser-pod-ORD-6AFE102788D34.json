@@ -1,0 +1,47 @@
+[
+  {
+    "name": "Synthetic delivery proof workflow",
+    "persona": "buyer",
+    "verdict": "BLOCKED",
+    "order": "ORD-6AFE102788D34",
+    "reason": "Complete Delivery button unavailable for assigned synthetic order",
+    "requests": [
+      {
+        "path": "/login",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::s8dlw-1795035374115-0c7bd13e17c4"
+      },
+      {
+        "path": "/login",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::mbsdg-1795035388913-e08526d1ec7b"
+      },
+      {
+        "path": "/staff/dashboard",
+        "status": 302,
+        "method": "GET",
+        "id": "sin1::hnd1::4xm74-1795035389813-30329e74ad75"
+      },
+      {
+        "path": "/staff/deliveries",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::mbsdg-1795035390134-db01903d1b90"
+      },
+      {
+        "path": "/staff/attendance/heartbeat",
+        "status": 200,
+        "method": "POST",
+        "id": "sin1::hnd1::xph9b-1795035391499-55a6dcf2b7da"
+      },
+      {
+        "path": "/staff/deliveries",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::xph9b-1795035393443-db6ccb555808"
+      }
+    ]
+  }
+]

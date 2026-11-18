@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Seller independently reads cancelled order",
+    "persona": "seller",
+    "verdict": "PASS",
+    "order": "ORD-6AFE0B19D2A59",
+    "status": "Cancelled",
+    "id": "ORD-6AFE0B19D2A59",
+    "requests": [
+      {
+        "path": "/orders",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::pfsnx-1795034068501-849d917341a9"
+      }
+    ]
+  },
+  {
+    "name": "Buyer cannot open admin dashboard",
+    "persona": "buyer",
+    "verdict": "PASS",
+    "observed": "/admin/dashboard",
+    "status": 403,
+    "redirects": []
+  }
+]

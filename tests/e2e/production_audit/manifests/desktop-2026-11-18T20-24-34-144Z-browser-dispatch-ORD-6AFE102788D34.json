@@ -1,0 +1,55 @@
+[
+  {
+    "name": "Synthetic seller Accepted",
+    "persona": "seller",
+    "verdict": "PASS",
+    "order": "ORD-6AFE102788D34",
+    "status": "Accepted",
+    "requests": [
+      {
+        "path": "/orders/ORD-6AFE102788D34/update",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::h7jqj-1795035303392-c5df2d0a4613"
+      }
+    ]
+  },
+  {
+    "name": "Synthetic seller Processing",
+    "persona": "seller",
+    "verdict": "PASS",
+    "order": "ORD-6AFE102788D34",
+    "status": "Processing",
+    "requests": [
+      {
+        "path": "/orders/ORD-6AFE102788D34/update",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::fr5kh-1795035306542-93d2c713754d"
+      }
+    ]
+  },
+  {
+    "name": "In-house dispatch to synthetic rider",
+    "persona": "seller",
+    "verdict": "PASS",
+    "order": "ORD-6AFE102788D34",
+    "status": "Shipped",
+    "requests": [
+      {
+        "path": "/orders/ORD-6AFE102788D34/dispatch-in-house",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::h7jqj-1795035310644-23256a4ac511"
+      }
+    ]
+  },
+  {
+    "name": "Exact order reaches rider console",
+    "persona": "rider",
+    "verdict": "PASS",
+    "order": "ORD-6AFE102788D34",
+    "visible": true,
+    "clockIn": false
+  }
+]

@@ -531,7 +531,7 @@ class PaymentController extends Controller
                     'description' => $itemDesc,
                     'name' => $itemName,
                     'quantity' => 1,
-                    'images' => [\App\Services\StorageUrl::url($firstItem?->product_img, asset('images/placeholder.svg'))],
+                    'images' => $this->resolvePayMongoLineItemImages($firstItem?->product_img),
                 ];
 
                 $calculatedTotal += round($netMerchandiseCents / 100, 2);
@@ -544,7 +544,7 @@ class PaymentController extends Controller
                     'description' => $item->product_name,
                     'name' => $item->product_name,
                     'quantity' => $item->quantity,
-                    'images' => [\App\Services\StorageUrl::url($item->product_img, asset('images/placeholder.svg'))],
+                    'images' => $this->resolvePayMongoLineItemImages($item->product_img),
                 ];
 
                 $calculatedTotal += $item->price * $item->quantity;
@@ -578,5 +578,30 @@ class PaymentController extends Controller
         }
 
         return [$lineItems, round($calculatedTotal, 2)];
+    }
+
+    /**
+     * Ensure line item images are fully-qualified HTTPS URLs for PayMongo API acceptance.
+     *
+     * @return array<int, string>
+     */
+    private function resolvePayMongoLineItemImages(?string $imagePath): array
+    {
+        $resolved = \App\Services\StorageUrl::url($imagePath, asset('images/placeholder.svg'));
+        if (blank($resolved)) {
+            $resolved = asset('images/placeholder.svg');
+        }
+
+        if (str_starts_with($resolved, '//')) {
+            $resolved = 'https:' . $resolved;
+        } elseif (str_starts_with($resolved, '/')) {
+            $resolved = url($resolved);
+        }
+
+        if (!filter_var($resolved, FILTER_VALIDATE_URL)) {
+            $resolved = asset('images/placeholder.svg');
+        }
+
+        return [(string) $resolved];
     }
 }

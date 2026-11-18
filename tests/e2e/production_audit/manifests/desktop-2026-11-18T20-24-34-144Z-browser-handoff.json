@@ -1,0 +1,54 @@
+[
+  {
+    "name": "COD order reached seller queue",
+    "persona": "seller",
+    "verdict": "PASS",
+    "order": "ORD-6AFE0B19D2A59",
+    "observed": "/orders"
+  },
+  {
+    "name": "Cross-persona handoff",
+    "persona": "buyer",
+    "verdict": "BLOCKED",
+    "order": "ORD-6AFE0B19D2A59",
+    "reason": "Cancel action not visible in the exact fresh order card",
+    "requests": [
+      {
+        "path": "/login",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::pfsnx-1795033941170-d0fd72aef833"
+      },
+      {
+        "path": "/login",
+        "status": 302,
+        "method": "POST",
+        "id": "sin1::hnd1::stw8x-1795033948095-c52387085b91"
+      },
+      {
+        "path": "/",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::b4ntx-1795033948738-1d055e0633a8"
+      },
+      {
+        "path": "/buyer/signals",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::nhtpm-1795033949590-0bc53d1a781b"
+      },
+      {
+        "path": "/my-orders",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::pz797-1795033951652-ca92ad019e11"
+      },
+      {
+        "path": "/buyer/signals",
+        "status": 200,
+        "method": "GET",
+        "id": "sin1::hnd1::n72nv-1795033952654-b484fa1dbbed"
+      }
+    ]
+  }
+]
