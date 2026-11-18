@@ -148,10 +148,14 @@ export default function PlanPricingCard({
                 ) : isDowngrade ? (
                     isOnTrial ? (
                         <button
-                            disabled
-                            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-stone-100 border border-stone-200 px-4 py-2 text-[11px] font-bold text-stone-500 cursor-default"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleUpgrade(plan.id);
+                            }}
+                            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-stone-300 bg-white px-4 py-2 text-[11px] font-bold text-stone-700 transition-all duration-200 hover:border-stone-400 hover:bg-stone-50 active:scale-[0.98]"
                         >
-                            Default After Trial
+                            Choose {plan.name}
+                            <ArrowRight size={13} className="ml-0.5" />
                         </button>
                     ) : pendingDowngradeTier === plan.id ? (
                         <button

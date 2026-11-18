@@ -345,10 +345,12 @@ export default function SubscriptionPlans({
                                         isOnTrial ? (
                                             <button
                                                 type="button"
-                                                disabled
-                                                className="inline-flex w-full items-center justify-center rounded-[1rem] bg-stone-100 border border-stone-200 px-4 py-2.5 text-[13px] font-bold text-stone-500 cursor-default"
+                                                onClick={() => handleUpgrade(plan.id, billingCycle)}
+                                                disabled={isProcessing}
+                                                className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${upgradeButtonClass}`}
                                             >
-                                                <span>Default Plan After Trial</span>
+                                                <span>Choose {plan.name} ({isYearly ? 'Annual' : 'Monthly'})</span>
+                                                <ArrowRight className="h-4 w-4" />
                                             </button>
                                         ) : isExpired ? (
                                             <button
