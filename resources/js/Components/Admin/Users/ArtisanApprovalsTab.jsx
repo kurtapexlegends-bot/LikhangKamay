@@ -390,12 +390,22 @@ export default function ArtisanApprovalsTab({ artisans, addToast }) {
         router.post(route('admin.artisan.approve', artisanToApprove.id), {}, {
             preserveScroll: true,
             preserveState: true,
-            onSuccess: () => {
+            onSuccess: (page) => {
+                const queue = page?.props?.artisans;
+                const stillPending = Array.isArray(queue)
+                    && queue.some(a => a.id === artisanToApprove.id);
+
+                if (stillPending) {
+                    setLocalArtisans(originalArtisans);
+                    addToast('Approval did not save — the application is still pending. Please retry.', 'error');
+                    return;
+                }
+
                 addToast(`${artisanToApprove.shop_name} has been approved.`, 'success');
             },
             onError: (errors) => {
                 setLocalArtisans(originalArtisans);
-                addToast(errors.documents ?? 'Approval failed. Reverting changes...', 'error');
+                addToast(errors.approval ?? errors.documents ?? 'Approval failed. Reverting changes...', 'error');
             }
         });
     };

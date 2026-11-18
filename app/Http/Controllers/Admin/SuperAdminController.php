@@ -119,7 +119,15 @@ class SuperAdminController extends Controller
     {
         Gate::authorize('admin-action');
 
-        $approveArtisan->execute($id, Auth::id());
+        try {
+            $approveArtisan->execute($id, Auth::id());
+        } catch (\RuntimeException $e) {
+            report($e);
+
+            return back()->withErrors([
+                'approval' => 'The approval did not save. The application is still pending — please retry.',
+            ]);
+        }
 
         return back()->with('success', 'Artisan approved successfully!');
     }

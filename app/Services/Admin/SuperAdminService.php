@@ -8,13 +8,13 @@ use App\Mail\CustomDynamicMail;
 use App\Models\PlatformActivity;
 use App\Models\User;
 use App\Notifications\ArtisanReengagementNotification;
+use App\Support\ArtisanDocumentReviews;
 use App\Support\StructuredAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -179,13 +179,9 @@ class SuperAdminService
      */
     public function markArtisanDocumentViewed(int|string $id, string $documentKey): array
     {
-        $viewed = $this->getViewedArtisanDocumentKeys($id);
-        if (!in_array($documentKey, $viewed, true)) {
-            $viewed[] = $documentKey;
-            Session::put($this->artisanDocumentReviewSessionKey($id), $viewed);
-        }
+        $reviewerId = auth()->id();
 
-        return $viewed;
+        return ArtisanDocumentReviews::mark($id, $documentKey, $reviewerId === null ? null : (int) $reviewerId);
     }
 
     /**
@@ -461,12 +457,12 @@ class SuperAdminService
 
     public function artisanDocumentReviewSessionKey(int|string $id): string
     {
-        return "artisan_review_docs_{$id}";
+        return ArtisanDocumentReviews::sessionKey($id);
     }
 
     public function getViewedArtisanDocumentKeys(int|string $id): array
     {
-        return Session::get($this->artisanDocumentReviewSessionKey($id), []);
+        return ArtisanDocumentReviews::keysFor($id);
     }
 
     public function buildUserQuery(

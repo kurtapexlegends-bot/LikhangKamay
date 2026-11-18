@@ -5,6 +5,7 @@ namespace App\Actions\Admin\Users;
 use App\Models\User;
 use App\Models\ArtisanStatusLog;
 use App\Models\PlatformActivity;
+use App\Support\ArtisanDocumentReviews;
 use App\Mail\ArtisanApproved;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,7 @@ class ApproveArtisan
      * @param int $adminId
      * @return void
      * @throws ValidationException
+     * @throws \RuntimeException when the approval write cannot be verified
      */
     public function execute(int|string $id, int $adminId): void
     {
@@ -36,7 +38,7 @@ class ApproveArtisan
             }
         }
 
-        $viewedKeys = session()->get("artisan_review_docs_{$artisan->id}", []);
+        $viewedKeys = ArtisanDocumentReviews::keysFor($artisan->id);
         $missingKeys = array_diff($requiredKeys, $viewedKeys);
 
         if (!empty($missingKeys)) {
@@ -71,10 +73,16 @@ class ApproveArtisan
 
             $artisan->update($approvalData);
 
+            // Never report success on a write that did not land. Reading the row
+            // back inside the transaction rolls everything back if it did not.
+            if ($artisan->refresh()->artisan_status !== 'approved') {
+                throw new \RuntimeException('Artisan approval did not persist to the database.');
+            }
+
             $artisan->resolveActiveRevisions();
         });
 
-        session()->forget("artisan_review_docs_{$id}");
+        ArtisanDocumentReviews::forgetSession($id);
 
         // Log Standardized Audit Activity
         app(\App\Actions\Audit\RecordAuditActivity::class)->execute(
