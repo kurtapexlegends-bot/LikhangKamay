@@ -168,12 +168,13 @@ export default function MonetizationDashboard({ metrics, recentSubscribers, rece
                             <KPICard
                                 title="Transaction Fees"
                                 value={metrics.platform_fees?.value || 0}
-                                growth={metrics.platform_fees?.growth}
-                                growthSuffix=" vs last 30 days"
+                                growth={metrics.platform_fees?.growth ?? undefined}
+                                growthSuffix=" vs prior 30 days"
                                 icon={CircleDollarSign}
                                 bg="bg-clay-50"
                                 color="text-clay-600"
-                                formatter={(v) => `₱${Math.round(v).toLocaleString()}`}
+                                formatter={(v) => `₱${v.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                                subtitle={metrics.platform_fees?.basis}
                             />
                         </div>
                         <div className="w-[85vw] max-w-[280px] shrink-0 snap-center lg:w-auto print:w-full print:max-w-none print:shrink print:snap-none">

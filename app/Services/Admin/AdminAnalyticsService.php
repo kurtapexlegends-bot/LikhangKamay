@@ -2,6 +2,7 @@
 
 namespace App\Services\Admin;
 
+use App\Casts\PostgresCompatibleBoolean;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 
@@ -32,7 +33,7 @@ class AdminAnalyticsService
         $startPeriod = now()->subYears(3)->startOfYear();
         $orders = \App\Models\Order::where('created_at', '>=', $startPeriod)
             ->where(function ($q) {
-                $q->where('is_test', false)->orWhereNull('is_test');
+                $q->where('is_test', PostgresCompatibleBoolean::dbVal(false))->orWhereNull('is_test');
             })
             ->select('id', 'status', 'total_amount', 'created_at')
             ->get();
@@ -128,7 +129,7 @@ class AdminAnalyticsService
 
         $artisanQuery = User::where('role', 'artisan')
             ->where(function ($q) {
-                $q->where('is_test', false)->orWhereNull('is_test');
+                $q->where('is_test', PostgresCompatibleBoolean::dbVal(false))->orWhereNull('is_test');
             });
 
         $activeCount = (clone $artisanQuery)->where('last_seen_at', '>=', $activeThreshold)->count();
@@ -180,7 +181,7 @@ class AdminAnalyticsService
                     ->join('orders', 'order_items.order_id', '=', 'orders.id')
                     ->whereColumn('products.category', 'categories.name')
                     ->where(function ($q) {
-                        $q->where('orders.is_test', false)->orWhereNull('orders.is_test');
+                        $q->where('orders.is_test', PostgresCompatibleBoolean::dbVal(false))->orWhereNull('orders.is_test');
                     })
                     ->whereNotIn('orders.status', ['Cancelled', 'Refunded', 'Rejected']);
             }, 'gmv')
@@ -199,7 +200,7 @@ class AdminAnalyticsService
     {
         $baseOrders = \App\Models\Order::query()
             ->where(function ($q) {
-                $q->where('is_test', false)->orWhereNull('is_test');
+                $q->where('is_test', PostgresCompatibleBoolean::dbVal(false))->orWhereNull('is_test');
             });
 
         $totalOrders = (clone $baseOrders)->count();
@@ -209,7 +210,7 @@ class AdminAnalyticsService
         $aov = (clone $baseOrders)->whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])->avg('total_amount') ?? 0;
 
         $totalReviews = \App\Models\Review::whereHas('user', function ($q) {
-            $q->where('is_test', false)->orWhereNull('is_test');
+            $q->where('is_test', PostgresCompatibleBoolean::dbVal(false))->orWhereNull('is_test');
         })->count();
         $reviewRate = $totalOrders > 0 ? round(($totalReviews / $totalOrders) * 100, 1) : 0;
 
@@ -229,7 +230,7 @@ class AdminAnalyticsService
         return User::where('role', 'artisan')
             ->where('artisan_status', 'approved')
             ->where(function ($q) {
-                $q->where('users.is_test', false)->orWhereNull('users.is_test');
+                $q->where('users.is_test', PostgresCompatibleBoolean::dbVal(false))->orWhereNull('users.is_test');
             })
             ->select('users.id', 'users.name', 'users.shop_name', 'users.avatar', 'users.premium_tier', 'users.shop_slug')
             ->selectSub(function ($query) {
@@ -237,7 +238,7 @@ class AdminAnalyticsService
                     ->from('orders')
                     ->whereColumn('orders.artisan_id', 'users.id')
                     ->where(function ($q) {
-                        $q->where('orders.is_test', false)->orWhereNull('orders.is_test');
+                        $q->where('orders.is_test', PostgresCompatibleBoolean::dbVal(false))->orWhereNull('orders.is_test');
                     })
                     ->whereNotIn('orders.status', ['Cancelled', 'Refunded', 'Rejected']);
             }, 'total_gmv')
@@ -246,7 +247,7 @@ class AdminAnalyticsService
                     ->from('orders')
                     ->whereColumn('orders.artisan_id', 'users.id')
                     ->where(function ($q) {
-                        $q->where('orders.is_test', false)->orWhereNull('orders.is_test');
+                        $q->where('orders.is_test', PostgresCompatibleBoolean::dbVal(false))->orWhereNull('orders.is_test');
                     })
                     ->whereNotIn('orders.status', ['Cancelled', 'Refunded', 'Rejected']);
             }, 'orders_count')

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\Order;
 use App\Models\User;
 use App\Models\UserTierLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -105,6 +106,55 @@ class MonetizationTest extends TestCase
         $response->assertHeader('Content-Type', 'text/csv; charset=utf-8');
         $response->assertHeader('Content-Disposition', 'attachment; filename="insights_report.csv"');
         $this->assertStringContainsString('PLATFORM OVERVIEW METRICS', $response->streamedContent());
+    }
+
+    public function test_transaction_fees_report_only_paid_orders_on_dashboard_and_csv(): void
+    {
+        $this->freezeTime();
+        $admin = User::factory()->superAdmin()->create();
+        $buyer = User::factory()->create();
+        $artisan = User::factory()->artisanApproved()->create();
+
+        foreach ([
+            [1, 'paid', Order::STATUS_ACCEPTED, 20.50, false],
+            [31, 'paid', Order::STATUS_COMPLETED, 10.25, false],
+            [75, 'paid', Order::STATUS_COMPLETED, 5.00, false],
+            [2, 'pending', Order::STATUS_ACCEPTED, 80.00, false],
+            [35, 'pending', Order::STATUS_ACCEPTED, 80.00, false],
+            [3, 'paid', Order::STATUS_CANCELLED, 80.00, false],
+            [4, 'refunded', Order::STATUS_REFUNDED, 80.00, false],
+            [5, 'partially_refunded', Order::STATUS_COMPLETED, 80.00, false],
+            [6, 'paid', Order::STATUS_COMPLETED, 80.00, true],
+        ] as $index => [$age, $paymentStatus, $status, $fee, $isTest]) {
+            $order = Order::create([
+                'order_number' => 'ORD-REPORT-' . $index,
+                'user_id' => $buyer->id,
+                'artisan_id' => $artisan->id,
+                'customer_name' => $buyer->name,
+                'status' => $status,
+                'payment_status' => $paymentStatus,
+                'payment_method' => 'GCash',
+                'merchandise_subtotal' => 500,
+                'seller_net_amount' => 500,
+                'total_amount' => 500 + $fee,
+                'convenience_fee_amount' => $fee,
+                'shipping_method' => 'Delivery',
+                'shipping_address' => 'Cavite',
+                'is_test' => $isTest,
+            ]);
+            $order->created_at = now()->subDays($age);
+            $order->save();
+        }
+
+        $this->actingAs($admin)->get(route('admin.monetization'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('metrics.platform_fees.value', 35.75)
+                ->where('metrics.platform_fees.growth', 100)
+            );
+
+        $csv = $this->get(route('admin.settings.monetization.export'))->assertOk()->streamedContent();
+        $this->assertStringContainsString('"Transaction Fees Collected","PHP 35.75"', $csv);
     }
 
     public function test_admin_can_export_monetization_csv(): void

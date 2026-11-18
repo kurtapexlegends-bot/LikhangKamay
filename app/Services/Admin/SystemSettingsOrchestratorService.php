@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Admin;
 
+use App\Casts\PostgresCompatibleBoolean;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\PlatformActivity;
@@ -523,30 +524,29 @@ class SystemSettingsOrchestratorService
             'trend' => $sponsorshipGrowth > 0 ? 'up' : ($sponsorshipGrowth < 0 ? 'down' : 'neutral'),
         ];
 
-        $totalCommission = Order::whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])->sum('platform_commission_amount');
-        $totalConvenience = Order::whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])->sum('convenience_fee_amount');
-        $totalPlatformFees = (float) $totalCommission + (float) $totalConvenience;
+        $asOf = now()->toImmutable();
+        $recentStart = $asOf->subDays(30);
+        $feeAmount = 'COALESCE(platform_commission_amount, 0) + COALESCE(convenience_fee_amount, 0)';
+        $paidFees = Order::query()
+            ->where('payment_status', 'paid')
+            ->whereNotIn('status', [Order::STATUS_CANCELLED, Order::STATUS_REFUNDED, Order::STATUS_REJECTED])
+            ->where(fn ($query) => $query->where('is_test', PostgresCompatibleBoolean::dbVal(false))->orWhereNull('is_test'))
+            ->selectRaw("COALESCE(SUM($feeAmount), 0) AS lifetime_total")
+            ->selectRaw("COALESCE(SUM(CASE WHEN created_at >= ? THEN $feeAmount ELSE 0 END), 0) AS recent_total", [$recentStart])
+            ->selectRaw("COALESCE(SUM(CASE WHEN created_at >= ? AND created_at < ? THEN $feeAmount ELSE 0 END), 0) AS previous_total", [$asOf->subDays(60), $recentStart])
+            ->toBase()
+            ->first();
 
-        $previousCommission = Order::whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])
-            ->where('created_at', '<', now()->subDays(30))
-            ->sum('platform_commission_amount');
-        $previousConvenience = Order::whereNotIn('status', ['Cancelled', 'Refunded', 'Rejected'])
-            ->where('created_at', '<', now()->subDays(30))
-            ->sum('convenience_fee_amount');
-        $previousPlatformFees = (float) $previousCommission + (float) $previousConvenience;
-
-        $feesGrowth = 0;
-        if ($previousPlatformFees > 0) {
-            $feesGrowth = (($totalPlatformFees - $previousPlatformFees) / $previousPlatformFees) * 100;
-        } elseif ($totalPlatformFees > 0) {
-            $feesGrowth = 100;
-        }
+        $previousPlatformFees = (float) $paidFees->previous_total;
+        $feesGrowth = $previousPlatformFees > 0
+            ? round((((float) $paidFees->recent_total - $previousPlatformFees) / $previousPlatformFees) * 100, 1)
+            : null;
 
         $platformFeesMetric = [
-            'value' => $totalPlatformFees,
-            'growth' => round($feesGrowth, 1),
+            'value' => (float) $paidFees->lifetime_total,
+            'growth' => $feesGrowth,
             'trend' => $feesGrowth > 0 ? 'up' : ($feesGrowth < 0 ? 'down' : 'neutral'),
-            'basis' => 'Cumulative commission and service fees collected from successful orders.',
+            'basis' => 'All-time fees on paid orders.',
         ];
 
         return [
