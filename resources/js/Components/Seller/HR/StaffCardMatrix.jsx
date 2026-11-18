@@ -159,7 +159,7 @@ export default function StaffCardMatrix({
                 );
             })}
 
-            {/* Add Artisan Dotted Card */}
+            {/* Add Staff Dotted Card */}
             {canEditHrRecords && onAddClick && (
                 <div
                     onClick={onAddClick}
@@ -168,7 +168,7 @@ export default function StaffCardMatrix({
                     <div className="w-12 h-12 rounded-2xl bg-stone-100 text-stone-400 group-hover:text-clay-700 group-hover:bg-[#FCF7F2] transition flex items-center justify-center mb-2 border border-stone-200">
                         <UserPlus size={20} />
                     </div>
-                    <span className="text-sm font-bold text-stone-800 group-hover:text-clay-800">Add New Artisan</span>
+                    <span className="text-sm font-bold text-stone-800 group-hover:text-clay-800">Add New Staff</span>
                     <span className="text-xs text-stone-400 mt-1 max-w-[180px]">
                         Assign workstation, schedule, and salary
                     </span>

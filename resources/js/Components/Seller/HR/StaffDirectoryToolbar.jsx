@@ -91,7 +91,7 @@ export default function StaffDirectoryToolbar({
                             </button>
                         </div>
 
-                        {/* Add Artisan Button */}
+                        {/* Add Staff Button */}
                         {canEditHrRecords && onAddClick && (
                             <button
                                 type="button"
@@ -99,7 +99,7 @@ export default function StaffDirectoryToolbar({
                                 className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 h-[38px] min-h-[38px] text-xs font-bold text-white shadow-2xs transition hover:bg-clay-700 active:scale-95 shrink-0 cursor-pointer"
                             >
                                 <UserPlus size={14} />
-                                <span className="hidden sm:inline">Add Artisan</span>
+                                <span className="hidden sm:inline">Add Staff</span>
                                 <span className="sm:hidden">Add</span>
                             </button>
                         )}
