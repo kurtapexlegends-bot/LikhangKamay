@@ -146,7 +146,14 @@ export default function PlanPricingCard({
                         <ArrowRight size={13} className="ml-0.5" />
                     </button>
                 ) : isDowngrade ? (
-                    pendingDowngradeTier === plan.id ? (
+                    isOnTrial ? (
+                        <button
+                            disabled
+                            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-stone-100 border border-stone-200 px-4 py-2 text-[11px] font-bold text-stone-500 cursor-default"
+                        >
+                            Default After Trial
+                        </button>
+                    ) : pendingDowngradeTier === plan.id ? (
                         <button
                             disabled
                             className="flex w-full items-center justify-center gap-1 rounded-xl bg-amber-50 border border-amber-200/80 px-3 py-2 text-[10.5px] font-bold text-amber-800 cursor-default"

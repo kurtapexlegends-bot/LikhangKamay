@@ -67,7 +67,7 @@ class SubscriptionController extends Controller
         };
 
         $resolvedCurrentPlan = $user->hasActiveSubscription()
-            ? ($isOnTrial ? 'free' : $user->getEffectivePremiumTier())
+            ? $user->getEffectivePremiumTier()
             : $previousPlanKey;
 
         return Inertia::render('Seller/Settings/Subscription', [

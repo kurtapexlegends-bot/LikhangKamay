@@ -359,7 +359,7 @@ export default function Subscription({
                                 {isOnTrial ? (
                                     <span className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50/90 px-3.5 py-1 text-xs font-bold text-amber-950 shadow-2xs">
                                         <Sparkles className="h-4 w-4 shrink-0 text-amber-600 animate-pulse" />
-                                        <span>Your Current Plan: <strong className="font-black text-amber-950">Basic (14-Day Trial Active)</strong></span>
+                                        <span>Your Current Plan: <strong className="font-black text-amber-950">Premium (14-Day Trial Active)</strong></span>
                                     </span>
                                 ) : (
                                     <span className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-bold shadow-2xs ${

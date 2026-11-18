@@ -169,12 +169,12 @@ export default function SubscriptionPlans({
                     className="flex overflow-x-auto snap-x snap-mandatory pb-4 gap-4 md:grid md:grid-cols-3 md:gap-6 no-scrollbar"
                 >
                     {plans.map((plan) => {
-                        const isTrialFree = isOnTrial && plan.id === 'free';
-                        const current = isTrialFree || (!isOnTrial && currentPlan === plan.id);
+                        const isTrialPremium = isOnTrial && plan.id === 'premium';
+                        const current = isTrialPremium || (!isOnTrial && currentPlan === plan.id);
                         const tierIndex = plans.findIndex((item) => item.id === plan.id);
-                        const currentTierIndex = plans.findIndex((item) => item.id === (isOnTrial ? 'free' : currentPlan));
-                        const isUpgrade = isOnTrial ? (plan.id === 'premium' || plan.id === 'super_premium') : (tierIndex > currentTierIndex);
-                        const isDowngrade = isOnTrial ? false : (tierIndex < currentTierIndex);
+                        const currentTierIndex = plans.findIndex((item) => item.id === (isOnTrial ? 'premium' : currentPlan));
+                        const isUpgrade = isOnTrial ? (plan.id === 'super_premium') : (tierIndex > currentTierIndex);
+                        const isDowngrade = isOnTrial ? (plan.id === 'free') : (tierIndex < currentTierIndex);
                         const isPendingPlan = pendingUpgrade?.plan === plan.id && !!pendingUpgrade?.checkoutUrl;
                         const PlanIcon = plan.icon;
                         const isPremiumPlan = plan.id === 'premium';
@@ -185,8 +185,8 @@ export default function SubscriptionPlans({
                         const annualTotal = Math.round((baseMonthlyPrice * 12) * (1 - annualDiscount / 100));
                         const annualMonthlyEquivalent = Math.round(annualTotal / 12);
 
-                        const cardClass = isTrialFree
-                            ? 'border-emerald-300 ring-2 ring-emerald-200/80 shadow-md bg-white'
+                        const cardClass = isTrialPremium
+                            ? 'border-amber-300 ring-2 ring-amber-200/80 shadow-md bg-white'
                             : current
                                 ? isElitePlan
                                     ? 'border-violet-300 ring-2 ring-violet-200 shadow-md bg-white'
@@ -201,11 +201,9 @@ export default function SubscriptionPlans({
 
                         const iconClass = isElitePlan
                             ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-sm'
-                            : isPremiumPlan
+                            : isPremiumPlan || isTrialPremium
                                 ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-sm'
-                                : isTrialFree
-                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                    : 'bg-stone-100 text-stone-700 border border-stone-200';
+                                : 'bg-stone-100 text-stone-700 border border-stone-200';
 
                         const upgradeButtonClass = isElitePlan
                             ? 'bg-violet-600 text-white hover:bg-violet-700 shadow-sm'
@@ -230,9 +228,9 @@ export default function SubscriptionPlans({
                                                     <Sparkles className="h-2.5 w-2.5 text-amber-600" />
                                                     Your Previous Plan
                                                 </span>
-                                            ) : isTrialFree ? (
-                                                <span className="rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap border bg-emerald-50 text-emerald-800 border-emerald-300 animate-pulse flex items-center gap-1">
-                                                    <Sparkles className="h-2.5 w-2.5 text-emerald-600" />
+                                            ) : isTrialPremium ? (
+                                                <span className="rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap border bg-amber-50 text-amber-800 border-amber-300 animate-pulse flex items-center gap-1">
+                                                    <Sparkles className="h-2.5 w-2.5 text-amber-600" />
                                                     14-Day Free Trial
                                                 </span>
                                             ) : plan.eyebrow ? (
@@ -261,15 +259,15 @@ export default function SubscriptionPlans({
                                                 <p className="pb-1 text-[0.92rem] font-semibold text-stone-400">
                                                     {isYearly ? '/ year' : '/ mo'}
                                                 </p>
-                                                {isOnTrial && plan.id === 'free' && (
-                                                    <span className="mb-2 ml-1 text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 animate-pulse">
+                                                {isTrialPremium && (
+                                                    <span className="mb-2 ml-1 text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 animate-pulse">
                                                         Active Trial
                                                     </span>
                                                 )}
                                             </div>
                                             <p className="text-xs font-semibold text-stone-500">
-                                                {isOnTrial && plan.id === 'free'
-                                                    ? `${trialDaysRemaining ?? 14} days remaining • Reverts to Basic`
+                                                {isTrialPremium
+                                                    ? `${trialDaysRemaining ?? 14} days remaining • Full Premium Access`
                                                     : isYearly
                                                         ? `₱${annualMonthlyEquivalent}/mo equivalent (Save ${annualDiscount}%)`
                                                         : 'Billed monthly'}
@@ -281,7 +279,7 @@ export default function SubscriptionPlans({
                                 <ul className="mt-5 space-y-3">
                                     {plan.features.map((feature, index) => (
                                         <li key={index} className="flex items-start gap-3">
-                                            <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${plan.featureIconClass || (isElitePlan ? 'text-violet-600' : isPremiumPlan ? 'text-amber-600' : isTrialFree ? 'text-emerald-600' : 'text-stone-500')}`} />
+                                            <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${plan.featureIconClass || (isElitePlan ? 'text-violet-600' : isPremiumPlan || isTrialPremium ? 'text-amber-600' : 'text-stone-500')}`} />
                                             <span className="text-[13px] leading-6 text-stone-700">{feature}</span>
                                         </li>
                                     ))}
@@ -289,13 +287,13 @@ export default function SubscriptionPlans({
 
                                 <div className="mt-auto pt-5">
                                     {current ? (
-                                        isTrialFree ? (
+                                        isTrialPremium ? (
                                             <button
                                                 type="button"
                                                 disabled
-                                                className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-emerald-50 border border-emerald-300 px-4 py-2.5 text-[14px] font-extrabold text-emerald-800 cursor-default shadow-2xs"
+                                                className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-amber-50 border border-amber-300 px-4 py-2.5 text-[14px] font-extrabold text-amber-800 cursor-default shadow-2xs"
                                             >
-                                                <BadgeCheck className="h-4 w-4 text-emerald-600" />
+                                                <Sparkles className="h-4 w-4 text-amber-600" />
                                                 <span>14-Day Trial Active ({trialDaysRemaining ?? 14}d left)</span>
                                             </button>
                                         ) : isExpired ? (
@@ -344,7 +342,15 @@ export default function SubscriptionPlans({
                                             {!isProcessing && <ArrowRight className="h-[15px] w-[15px]" />}
                                         </button>
                                     ) : isDowngrade ? (
-                                        isExpired ? (
+                                        isOnTrial ? (
+                                            <button
+                                                type="button"
+                                                disabled
+                                                className="inline-flex w-full items-center justify-center rounded-[1rem] bg-stone-100 border border-stone-200 px-4 py-2.5 text-[13px] font-bold text-stone-500 cursor-default"
+                                            >
+                                                <span>Default Plan After Trial</span>
+                                            </button>
+                                        ) : isExpired ? (
                                             <button
                                                 type="button"
                                                 onClick={() => handleUpgrade(plan.id, billingCycle)}
