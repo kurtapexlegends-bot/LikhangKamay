@@ -174,7 +174,7 @@ class HelpCenterDirectory
                 'id' => 'supplier-registration-qualifications',
                 'category' => 'Warehouse Onboarding & Legal',
                 'question' => 'What are the qualifications to supply raw crafting materials on LikhangKamay?',
-                'answer' => 'Wholesale suppliers must operate a verified warehouse, depot, or supply facility within Cavite province. During onboarding, applicants upload their business permits (Cavite Mayor\'s Permit, DTI/SEC registration, BIR Form 2303, and warehouse address proof) followed by client-side face verification for swift administrative approval.',
+                'answer' => 'Wholesale suppliers must operate a verified warehouse, depot, or supply facility in ' . implode(', ', SupplierAddress::SUPPORTED_PROVINCES) . '. During onboarding, applicants upload a business permit from the local government where the warehouse is located, DTI/SEC registration, BIR Form 2303, and proof of the warehouse address, then complete a face check.',
                 'tags' => ['supplier', 'onboarding', 'warehouse', 'cavite', 'permits', 'b2b'],
                 'deep_link' => [
                     'label' => 'Warehouse Profile',
@@ -185,7 +185,7 @@ class HelpCenterDirectory
                 'id' => 'supplier-legal-documents',
                 'category' => 'Warehouse Onboarding & Legal',
                 'question' => 'What documents and verifications are required for wholesale suppliers?',
-                'answer' => 'Suppliers provide 4 compliance documents: (1) Cavite LGU Mayor\'s Business Permit, (2) DTI Business Name Registration or SEC Certificate, (3) BIR Form 2303 Certificate of Registration with Taxpayer Identification Number (TIN), and (4) Proof of Warehouse Location. In addition, account holders complete a one-time live face verification check.',
+                'answer' => 'Suppliers provide four documents: a business permit from the local government where the warehouse is located, DTI business name registration or an SEC certificate, BIR Form 2303 with the tax identification number, and proof of the warehouse location. Account holders also complete a one-time face check.',
                 'tags' => ['permits', 'bir', 'dti', 'face check', 'verification', 'compliance'],
             ],
             [

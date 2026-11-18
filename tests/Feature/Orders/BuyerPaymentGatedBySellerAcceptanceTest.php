@@ -65,7 +65,7 @@ class BuyerPaymentGatedBySellerAcceptanceTest extends TestCase
         $this->app->instance(PayMongoService::class, $paymongoMock);
 
         // 1. Guard check: Buyer cannot pay while order is Pending
-        $responsePending = $this->actingAs($buyer)->get(route('payment.pay', $order->order_number));
+        $responsePending = $this->actingAs($buyer)->post(route('payment.pay', $order->order_number));
         $responsePending->assertRedirect(route('my-orders.index', absolute: false))
             ->assertSessionHas('error', 'Please wait for the seller to accept your order before making payment.');
 
@@ -78,7 +78,7 @@ class BuyerPaymentGatedBySellerAcceptanceTest extends TestCase
         ]);
 
         // 3. Buyer can now proceed to payment
-        $responseAccepted = $this->actingAs($buyer)->get(route('payment.pay', $order->order_number));
+        $responseAccepted = $this->actingAs($buyer)->post(route('payment.pay', $order->order_number));
         $responseAccepted->assertRedirect('https://checkout.paymongo.com/cs_gate_test_123');
         $this->assertSame('cs_gate_test_123', $order->fresh()->paymongo_session_id);
     }

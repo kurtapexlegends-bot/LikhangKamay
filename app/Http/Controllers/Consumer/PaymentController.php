@@ -10,6 +10,7 @@ use App\Services\OrderPaymentReconciliationService;
 use App\Services\PayMongoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
@@ -65,6 +66,75 @@ class PaymentController extends Controller
             return redirect()->route($targetRoute)->with('error', 'This order is not eligible for online payment.');
         }
 
+        $lock = Cache::lock("order-payment:{$order->id}", 30);
+        if (!$lock->get()) {
+            return redirect()->route($targetRoute)->with('warning', 'A payment action is already in progress. Check its status shortly.');
+        }
+
+        try {
+            $order->refresh();
+            if (!$this->canInitiateOnlinePayment($order)) {
+                return redirect()->route($targetRoute)->with('warning', 'The order has changed. Check its current payment status.');
+            }
+
+            if ($order->paymongo_session_id) {
+                $resume = $this->resumeCheckoutSession($order, $targetRoute);
+                if ($resume !== null) {
+                    return $resume;
+                }
+            }
+
+            return $this->startCheckoutSession($order);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Could not open PayMongo checkout', [
+                'order_id' => $order->id,
+                'exception_type' => $e::class,
+            ]);
+
+            return redirect()->back()->with('error', 'Unable to open payment right now. Check the payment status before trying again.');
+        } finally {
+            rescue(fn () => $lock->release(), report: false);
+        }
+    }
+
+    private function resumeCheckoutSession(Order $order, string $targetRoute)
+    {
+        $session = $this->payMongoService->retrieveCheckoutSession($order->paymongo_session_id);
+        $attributes = $session['attributes'] ?? [];
+        $reference = $attributes['reference_number'] ?? null;
+        if (($session['id'] ?? null) !== $order->paymongo_session_id || ($reference && $reference !== $order->order_number)) {
+            return redirect()->route($targetRoute)->with('error', 'Payment could not be verified. Please contact support.');
+        }
+
+        $details = $this->extractPaymentDetailsFromSession($session, $order->order_number);
+        if ($details['isPaid'] || $details['hasPaidPayment']) {
+            $confirmed = $this->reconciliationService->reconcileOrder($order, $session, force: true);
+
+            return redirect()->route($targetRoute)->with($confirmed ? 'success' : 'warning', $confirmed
+                ? 'Payment confirmed.'
+                : 'Confirming payment. Check its status shortly.');
+        }
+
+        if (($attributes['status'] ?? null) === 'expired') {
+            return null;
+        }
+
+        $paymentInProgress = collect($attributes['payments'] ?? [])
+            ->merge(collect($session['included'] ?? [])->where('type', 'payment'))
+            ->contains(fn (array $payment) => in_array($payment['attributes']['status'] ?? $payment['status'] ?? null, ['pending', 'processing'], true));
+        if ($paymentInProgress) {
+            return redirect()->route($targetRoute)->with('warning', 'Confirming payment. Check its status shortly.');
+        }
+
+        if (($attributes['status'] ?? null) === 'active' && filled($attributes['checkout_url'] ?? null)) {
+            return Inertia::location($attributes['checkout_url']);
+        }
+
+        return redirect()->route($targetRoute)->with('error', 'The existing payment attempt could not be opened. Check its status or contact support.');
+    }
+
+    private function startCheckoutSession(Order $order)
+    {
         $order->loadMissing('items');
         [$lineItems, $calculatedTotal] = $this->buildCheckoutLineItems($order);
 
@@ -92,17 +162,10 @@ class PaymentController extends Controller
             'send_email_receipt' => true,
         ];
 
-        try {
-            $session = $this->payMongoService->createCheckoutSession($checkoutData);
+        $session = $this->payMongoService->createCheckoutSession($checkoutData);
+        $order->update(['paymongo_session_id' => $session['id']]);
 
-            $order->update(['paymongo_session_id' => $session['id']]);
-
-            return Inertia::location($session['attributes']['checkout_url']);
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('PayMongo Payment Error: ' . $e->getMessage());
-
-            return redirect()->back()->with('error', 'Payment initiation failed. Please try again later.');
-        }
+        return Inertia::location($session['attributes']['checkout_url']);
     }
 
     /**

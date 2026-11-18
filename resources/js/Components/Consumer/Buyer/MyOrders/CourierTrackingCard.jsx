@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Truck, Bike, Car, Motorbike, ExternalLink, ChevronDown, ChevronRight, Hash, Clock, AlertTriangle, Map, Phone, MessageSquare, PackageCheck, Check } from 'lucide-react';
+import { Truck, Bike, Car, Motorbike, ExternalLink, ChevronDown, ChevronRight, Hash, AlertTriangle, Map, Phone, MessageSquare, PackageCheck, Check } from 'lucide-react';
 import { buyerCourierTrackingState, humanizeAddressType, buyerProofLabel } from '@/utils/orderHelpers';
 import BuyerDeliveryTrackingMap from './BuyerDeliveryTrackingMap';
 import { copyToClipboard } from '@/utils/clipboard';
@@ -92,6 +92,11 @@ export default function CourierTrackingCard({ order, isExpanded: controlledExpan
                                 </span>
                             )}
                         </div>
+
+                        {trackingState.detail && <p className="text-[11px] text-stone-700">{trackingState.detail}</p>}
+                        {delivery.last_updated_at && (
+                            <p className="text-[10px] text-stone-500">Updated {delivery.last_updated_at}</p>
+                        )}
 
                         {/* Address and recipient line */}
                         <p className="text-[10px] text-stone-600 leading-snug truncate sm:max-w-xl">
@@ -247,21 +252,10 @@ export default function CourierTrackingCard({ order, isExpanded: controlledExpan
                         </div>
                     )}
 
-                    {/* Metadata Footer: ID & Last sync */}
-                    {(delivery.external_order_id || delivery.last_updated_at) && (
-                        <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-[9px] text-stone-400">
-                            {delivery.external_order_id && (
-                                <div className="flex items-center gap-1">
-                                    <Hash size={9} />
-                                    <span>Courier Ref: {delivery.external_order_id}</span>
-                                </div>
-                            )}
-                            {delivery.last_updated_at && (
-                                <div className="flex items-center gap-1">
-                                    <Clock size={9} />
-                                    <span>Updated {delivery.last_updated_at}</span>
-                                </div>
-                            )}
+                    {delivery.external_order_id && (
+                        <div className="flex items-center gap-1 px-1 text-[9px] text-stone-400">
+                            <Hash size={9} />
+                            <span>Courier Ref: {delivery.external_order_id}</span>
                         </div>
                     )}
 

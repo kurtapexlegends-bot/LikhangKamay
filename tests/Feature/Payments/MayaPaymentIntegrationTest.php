@@ -115,7 +115,7 @@ class MayaPaymentIntegrationTest extends TestCase
     /**
      * Test 3: Online payment initiation for Maya order targets paymaya in PayMongo session.
      */
-    public function test_buyer_can_initiate_online_payment_for_maya_order(): void
+    public function test_buyer_resumes_active_maya_checkout_and_replaces_an_expired_session(): void
     {
         $order = Order::create([
             'order_number' => 'ORD-MAYA-' . strtoupper(fake()->bothify('??###')),
@@ -147,7 +147,7 @@ class MayaPaymentIntegrationTest extends TestCase
 
         $paymongoMock = Mockery::mock(PayMongoService::class);
         $paymongoMock->shouldReceive('createCheckoutSession')
-            ->once()
+            ->twice()
             ->with(Mockery::on(function ($data) use ($order) {
                 return $data['reference_number'] === $order->order_number
                     && in_array('paymaya', $data['payment_method_types'], true);
@@ -157,12 +157,28 @@ class MayaPaymentIntegrationTest extends TestCase
                 'attributes' => [
                     'checkout_url' => 'https://checkout.paymongo.com/cs_test_session_maya_789',
                 ],
+            ], [
+                'id' => 'cs_test_session_maya_replacement',
+                'attributes' => ['checkout_url' => 'https://checkout.paymongo.com/cs_test_session_maya_replacement'],
+            ]);
+        $paymongoMock->shouldReceive('retrieveCheckoutSession')
+            ->with('cs_test_session_maya_789')
+            ->twice()
+            ->andReturn([
+                'id' => 'cs_test_session_maya_789',
+                'attributes' => [
+                    'status' => 'active',
+                    'checkout_url' => 'https://checkout.paymongo.com/cs_test_session_maya_789',
+                ],
+            ], [
+                'id' => 'cs_test_session_maya_789',
+                'attributes' => ['status' => 'expired'],
             ]);
 
         $this->app->instance(PayMongoService::class, $paymongoMock);
 
         // 1. Guard check: Buyer cannot pay yet if order is still Pending (awaiting seller acceptance)
-        $blockedResponse = $this->actingAs($this->buyer)->get(route('payment.pay', $order->order_number));
+        $blockedResponse = $this->actingAs($this->buyer)->post(route('payment.pay', $order->order_number));
         $blockedResponse->assertRedirect(route('my-orders.index', absolute: false))
             ->assertSessionHas('error', 'Please wait for the seller to accept your order before making payment.');
 
@@ -170,10 +186,19 @@ class MayaPaymentIntegrationTest extends TestCase
         $order->update(['status' => 'Accepted', 'accepted_at' => now()]);
 
         // 3. Buyer can now initiate online payment
-        $response = $this->actingAs($this->buyer)->get(route('payment.pay', $order->order_number));
+        $response = $this->actingAs($this->buyer)->post(route('payment.pay', $order->order_number));
 
         $response->assertRedirect('https://checkout.paymongo.com/cs_test_session_maya_789');
         $this->assertSame('cs_test_session_maya_789', $order->fresh()->paymongo_session_id);
+
+        $this->get(route('payment.pay', $order->order_number))->assertMethodNotAllowed();
+        $this->post(route('payment.pay', $order->order_number))
+            ->assertRedirect('https://checkout.paymongo.com/cs_test_session_maya_789');
+        $this->assertSame('cs_test_session_maya_789', $order->fresh()->paymongo_session_id);
+
+        $this->post(route('payment.pay', $order->order_number))
+            ->assertRedirect('https://checkout.paymongo.com/cs_test_session_maya_replacement');
+        $this->assertSame('cs_test_session_maya_replacement', $order->fresh()->paymongo_session_id);
     }
 
     /**

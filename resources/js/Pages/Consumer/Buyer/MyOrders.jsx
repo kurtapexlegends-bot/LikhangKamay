@@ -267,6 +267,11 @@ export default function MyOrders({ auth, orders = [], returnPolicy = null }) {
                         <span className="text-sm font-medium">{flash.error}</span>
                     </div>
                 )}
+                {flash?.warning && (
+                    <div role="status" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-900">
+                        {flash.warning}
+                    </div>
+                )}
 
                 {/* Artisan Studio Procurement Purchases Banner */}
                 {auth?.user?.role === 'artisan' && (

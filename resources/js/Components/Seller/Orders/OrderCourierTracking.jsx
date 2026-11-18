@@ -12,6 +12,7 @@ import Modal from "@/Components/Modal";
  */
 export default function OrderCourierTracking({ order, role = "seller" }) {
     const isReplacementExchange = order?.delivery?.flow_type === "replacement_exchange";
+    const [showMapModal, setShowMapModal] = useState(false);
 
     if (
         !order?.delivery ||
@@ -22,16 +23,24 @@ export default function OrderCourierTracking({ order, role = "seller" }) {
     }
 
     const trackingState = sellerCourierTrackingState(order);
-    const [showMapModal, setShowMapModal] = useState(false);
+    const nextStep = order.status === "Delivered" && !isReplacementExchange && role === "buyer"
+        ? "Confirm receipt when the order arrives."
+        : trackingState.detail;
 
     return (
         <>
             <div className="flex items-center justify-between gap-1.5 rounded-xl bg-stone-50/80 px-2 py-1.5 border border-stone-200/70 shadow-2xs">
-                <div className="flex items-center gap-1.5 shrink-0">
-                    <Truck size={13} className="text-clay-600 shrink-0" />
-                    <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 ${trackingState.tone}`}>
-                        {trackingState.label}
-                    </span>
+                <div className="min-w-0 space-y-0.5">
+                    <div className="flex items-center gap-1.5">
+                        <Truck size={13} className="text-clay-600 shrink-0" />
+                        <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold ${trackingState.tone}`}>
+                            {trackingState.label}
+                        </span>
+                    </div>
+                    {nextStep && <p className="text-[11px] text-stone-700">{nextStep}</p>}
+                    {order.delivery.last_updated_at && (
+                        <p className="text-[10px] text-stone-500">Updated {order.delivery.last_updated_at}</p>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">

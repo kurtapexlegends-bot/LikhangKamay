@@ -37,42 +37,44 @@ class VerifySandboxesCommand extends Command
 
         $hasError = false;
 
-        // 1. PayMongo Sandbox GCash Verification
-        $this->line("\n[1/2] Testing PayMongo Sandbox GCash Checkout Session...");
-        try {
-            $session = $payMongoService->createCheckoutSession([
-                'line_items' => [[
-                    'name' => 'Synthetic Test Bamboo Cup',
-                    'quantity' => 1,
-                    'amount' => 2500, // ₱25.00 (min ₱20)
-                    'currency' => 'PHP',
-                ]],
-                'payment_method_types' => ['gcash'],
-                'description' => 'Automated E2E Sandbox Verification',
-                'send_email_receipt' => false,
-            ]);
+        $this->line("\n[1/2] Testing PayMongo Sandbox GCash and Maya checkout sessions...");
+        foreach (['gcash' => 'GCash', 'paymaya' => 'Maya'] as $method => $label) {
+            try {
+                if (!str_starts_with((string) config('services.paymongo.secret_key'), 'sk_test_')) {
+                    throw new \RuntimeException('PayMongo sandbox credentials are required for this check.');
+                }
 
-            $sessionId = $session['id'] ?? null;
-            $checkoutUrl = $session['attributes']['checkout_url'] ?? null;
-            $status = $session['attributes']['status'] ?? null;
+                $session = $payMongoService->createCheckoutSession([
+                    'line_items' => [[
+                        'name' => 'Synthetic Test Bamboo Cup',
+                        'quantity' => 1,
+                        'amount' => 2500,
+                        'currency' => 'PHP',
+                    ]],
+                    'payment_method_types' => [$method],
+                    'description' => 'Automated E2E Sandbox Verification',
+                    'send_email_receipt' => false,
+                ]);
 
-            if (!$sessionId || !str_starts_with($sessionId, 'cs_')) {
-                throw new \RuntimeException("Unexpected session ID format: {$sessionId}");
+                $sessionId = $session['id'] ?? null;
+                $checkoutUrl = $session['attributes']['checkout_url'] ?? null;
+                $status = $session['attributes']['status'] ?? null;
+
+                if (!$sessionId || !str_starts_with($sessionId, 'cs_') || !$checkoutUrl) {
+                    throw new \RuntimeException('PayMongo omitted a valid checkout session ID or URL.');
+                }
+
+                $retrieved = $payMongoService->retrieveCheckoutSession($sessionId);
+                if (($retrieved['id'] ?? '') !== $sessionId
+                    || ($retrieved['attributes']['payment_method_types'] ?? []) !== [$method]) {
+                    throw new \RuntimeException('Retrieved session does not match its payment method.');
+                }
+
+                $this->info("  ✓ {$label} checkout session created and retrieved ({$status}).");
+            } catch (\Throwable $e) {
+                $this->error("  ✗ {$label} sandbox check failed: " . $e->getMessage());
+                $hasError = true;
             }
-
-            $this->info("  ✓ PayMongo Session Created: {$sessionId}");
-            $this->info("  ✓ Checkout URL Generated: {$checkoutUrl}");
-            $this->info("  ✓ Initial Status: {$status}");
-
-            // Retrieve session to verify read-back
-            $retrieved = $payMongoService->retrieveCheckoutSession($sessionId);
-            if (($retrieved['id'] ?? '') !== $sessionId) {
-                throw new \RuntimeException("Retrieved session ID mismatch");
-            }
-            $this->info("  ✓ PayMongo Read-Back Validated successfully.");
-        } catch (\Throwable $e) {
-            $this->error("  ✗ PayMongo Sandbox Failed: " . $e->getMessage());
-            $hasError = true;
         }
 
         // 2. Lalamove Sandbox Quotation, Booking & Webhook Verification

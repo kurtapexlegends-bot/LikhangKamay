@@ -217,6 +217,7 @@ class B2BSupplyHubService
                 'supplier_id' => $order->artisan_id ?: $order->seller_id ?: $order->seller?->id,
                 'status' => $order->status,
                 'payment_status' => $order->payment_status ?? 'paid',
+                'has_payment_session' => filled($order->paymongo_session_id),
                 'payment_method' => $order->payment_method ?? 'Direct Payout',
                 'total' => number_format($totalAmount, 2),
                 'total_amount' => $totalAmount,

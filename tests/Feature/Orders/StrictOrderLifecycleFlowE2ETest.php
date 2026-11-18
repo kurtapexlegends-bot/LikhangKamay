@@ -395,7 +395,7 @@ class StrictOrderLifecycleFlowE2ETest extends TestCase
         $this->app->instance(PayMongoService::class, $paymongoMock);
 
         // 3. GUARD CHECK: Buyer cannot pay before seller accepts
-        $blockedPayResponse = $this->actingAs($this->buyer)->get(route('payment.pay', $order->order_number));
+        $blockedPayResponse = $this->actingAs($this->buyer)->post(route('payment.pay', $order->order_number));
         $blockedPayResponse->assertRedirect(route('my-orders.index', absolute: false))
             ->assertSessionHas('error', 'Please wait for the seller to accept your order before making payment.');
 
@@ -405,7 +405,7 @@ class StrictOrderLifecycleFlowE2ETest extends TestCase
         ]);
 
         // 5. Buyer initiates payment (Inertia external location redirect)
-        $payResponse = $this->actingAs($this->buyer)->get(route('payment.pay', $order->order_number));
+        $payResponse = $this->actingAs($this->buyer)->post(route('payment.pay', $order->order_number));
         $payResponse->assertRedirect('https://checkout.paymongo.com/cs_test_session_abc123');
         $this->assertSame('cs_test_session_abc123', $order->fresh()->paymongo_session_id);
 
@@ -773,7 +773,7 @@ class StrictOrderLifecycleFlowE2ETest extends TestCase
         $order->update(['status' => 'Accepted']);
 
         // Attempting to initiate PayMongo payment for < 20 PHP should be blocked
-        $payResponse = $this->actingAs($this->buyer)->get(route('payment.pay', $order->order_number));
+        $payResponse = $this->actingAs($this->buyer)->post(route('payment.pay', $order->order_number));
         $payResponse->assertRedirect();
         $payResponse->assertSessionHas('error');
     }
@@ -891,13 +891,12 @@ class StrictOrderLifecycleFlowE2ETest extends TestCase
         $this->assertSame('Shipped', $order->fresh()->status);
         $this->assertSame('llm_proc_order_456', $order->fresh()->tracking_number);
 
-        // Now test manual Mark as Delivered with proof
-        $deliverResponse = $this->actingAs($this->sellerA)->post(route('orders.update', $order->order_number), [
-            'status' => 'Delivered',
-            'proof_of_delivery' => UploadedFile::fake()->image('lalamove_received_proof.jpg'),
-        ]);
-        $deliverResponse->assertRedirect();
-        $deliverResponse->assertSessionHas('success');
+        config(['services.lalamove.webhook_secret' => 'fixture-lalamove-token']);
+        $this->postJson(route('webhooks.lalamove'), [
+            'eventId' => 'processing-order-delivered',
+            'eventType' => 'ORDER_STATUS_CHANGED',
+            'data' => ['order' => ['orderId' => 'llm_proc_order_456', 'status' => 'COMPLETED']],
+        ], ['X-Webhook-Token' => 'fixture-lalamove-token'])->assertOk();
         $this->assertSame('Delivered', $order->fresh()->status);
     }
 }

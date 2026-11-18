@@ -11,12 +11,13 @@ This document outlines the operational flows, validation rules, and webhook beha
 
 ### Core Functions
 *   `createCheckoutSession(array $data)`: Initiates a new payment session on PayMongo's server and returns the checkout session payload.
-*   `retrieveCheckoutSession($sessionId)`: Resolves an active session to query payment details.
+*   `retrieveCheckoutSession($sessionId)` retrieves the checkout status and payment details.
+*   [Buyer and sourcing payment](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/PaymentController.php) starts with `POST /payment/{orderId}/pay`. The action serializes requests for the same order, resumes an active checkout, and creates a replacement after PayMongo reports expiry. In-progress payments prompt the buyer to check their status. Confirmed payments are reconciled against the existing order.
 
 ### Security & Business Constraints
 1.  **Minimum Limit Constraint**: 
     > [!IMPORTANT]
-    > PayMongo Checkout API has a strict minimum limit requirement of **₱100.00** (~10000 centavos). Attempting to check out transactions below this amount will fail.
+    > The storefront payment action rejects online totals below **₱20.00** (2,000 centavos).
 2.  **Defensive Programming Wrappers**:
     All payment creation flows must be wrapped inside `try-catch` blocks to capture API execution errors cleanly without crashing the user session.
 3.  **Db-Backed Status Verification**:
@@ -30,7 +31,7 @@ This document outlines the operational flows, validation rules, and webhook beha
     - Both [PaymentController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Consumer/PaymentController.php) and [PaymongoWebhookController.php](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Webhooks/PaymongoWebhookController.php) delegate to [OrderPaymentReconciliationService.php](file:///c:/laragon/www/LikhangKamay/app/Services/OrderPaymentReconciliationService.php) to inspect this telemetry. `handleWebhookSession()` and `handleWebhookPayment()` query `->get()` and iterate over all sibling orders sharing a multi-seller checkout session or payment reference so every order in the session is reconciled together.
     - If a user selected Maya at checkout but completed payment via GCash (or vice-versa in test/production gateway environments), `orders.payment_method` is automatically reconciled to reflect the true wallet provider (`Maya`, `GCash`, `Card`).
     - [OrderPaymentReconciliationService.php](file:///c:/laragon/www/LikhangKamay/app/Services/OrderPaymentReconciliationService.php) reconciles online payments for both `Pending` and `Processing` (manufactured/BOM deducted) orders, ensuring inventory-deducted orders whose webhook was delayed or missed are immediately marked as `Paid` upon verification.
-    - Dedicated verification endpoint: `GET /payment/{orderNumber}/verify` routed to `PaymentController::verify()` allows buyers and sellers to re-verify payment status on demand.
+    - The dedicated verification endpoint uses `POST /payment/{orderNumber}/verify` and `PaymentController::verifyOnlinePayment()` for on-demand status checks.
     - [GetBuyerOrders.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Consumer/GetBuyerOrders.php) and [ListSellerOrders.php](file:///c:/laragon/www/LikhangKamay/app/Actions/Seller/Orders/ListSellerOrders.php) also apply this reconciliation when listing orders.
     - Scheduled command [VerifyPaymongoPayments.php](file:///c:/laragon/www/LikhangKamay/app/Console/Commands/VerifyPaymongoPayments.php) polls recent unpaid online orders via bounded queries (`chunkById(25)`).
 
@@ -41,6 +42,7 @@ This document outlines the operational flows, validation rules, and webhook beha
 *   **Payment Reconciliation Service**: [OrderPaymentReconciliationService.php](file:///c:/laragon/www/LikhangKamay/app/Services/OrderPaymentReconciliationService.php)
 
 ### Integration & Regression Suites
+*   [VerifySandboxesCommand.php](file:///c:/laragon/www/LikhangKamay/app/Console/Commands/VerifySandboxesCommand.php) creates and retrieves separate GCash and Maya sandbox sessions and verifies the selected payment method on read-back.
 *   [OrderPaymentReconciliationTest.php](file:///c:/laragon/www/LikhangKamay/tests/Feature/Payments/OrderPaymentReconciliationTest.php): Tests automated reconciliation of online checkout sessions for both `Pending` and `Processing` orders with source type updates.
 *   [MayaPaymentIntegrationTest.php](file:///c:/laragon/www/LikhangKamay/tests/Feature/Payments/MayaPaymentIntegrationTest.php): Tests end-to-end Maya checkout, session generation, webhook handling, and dynamic source reconciliation.
 *   [PaymongoWebhookSignatureTest.php](file:///c:/laragon/www/LikhangKamay/tests/Feature/Payments/PaymongoWebhookSignatureTest.php): Tests HMAC signature verification and attack payload rejection.
@@ -92,7 +94,7 @@ sequenceDiagram
 *   For native v3 events, the receiver checks the payload API key and verifies the HMAC over the timestamp, method, request path, and compact JSON `data`, with CRLF separators and the configured Lalamove API secret. Existing integrations can authenticate with the configured webhook token via Bearer auth, `X-Webhook-Token`, or `?token=`. Events that fail authentication receive HTTP 401.
 
 ### Fault Tolerance
-The receiver returns HTTP 503 on processing failures so Lalamove can retry. The [webhook service](file:///c:/laragon/www/LikhangKamay/app/Services/Logistics/LalamoveWebhookService.php) deduplicates applied events and keeps a completed delivery from regressing on a later stale update. After registration, use **Webhooks → Webhook attempts** to verify that a delivery status event received HTTP 200.
+The receiver returns HTTP 503 on processing failures so Lalamove can retry. The [webhook service](file:///c:/laragon/www/LikhangKamay/app/Services/Logistics/LalamoveWebhookService.php) deduplicates events and checks provider timestamps under a delivery row lock. Older events cannot change a newer state. Pickup and completion are also protected against backwards status updates. After registration, use **Webhooks → Webhook attempts** to verify that a delivery status event received HTTP 200.
 
 ---
 

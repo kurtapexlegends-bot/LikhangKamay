@@ -24,6 +24,16 @@ export default function SourcingOrderCard({
     courierLabel = 'Studio Delivery',
 }) {
     const [showTimelineModal, setShowTimelineModal] = useState(false);
+    const [openingPayment, setOpeningPayment] = useState(false);
+
+    const handlePay = () => {
+        if (openingPayment) return;
+        setOpeningPayment(true);
+        router.post(route('payment.pay', order.order_number || order.id), {}, {
+            preserveScroll: true,
+            onFinish: () => setOpeningPayment(false),
+        });
+    };
     const isDelivered = order.status === 'Delivered';
     const isCompleted = order.status === 'Completed';
     const isShipped = order.status === 'Shipped' || order.status === 'Ready for Pickup';
@@ -320,13 +330,15 @@ export default function SourcingOrderCard({
                     {/* Order Action Buttons */}
                     <div className="pt-1">
                         {['Accepted', 'Processing', 'Ready for Pickup'].includes(order.status) && order.payment_status === 'pending' && order.payment_method !== 'COD' && (
-                            <a
-                                href={route('payment.pay', order.order_number || order.id)}
+                            <button
+                                type="button"
+                                onClick={handlePay}
+                                disabled={openingPayment}
                                 className="mb-2 w-full flex items-center justify-center gap-1.5 rounded-xl bg-clay-600 px-3.5 py-2.5 text-xs font-bold text-white shadow-2xs hover:bg-clay-700 transition active:scale-95 cursor-pointer"
                             >
                                 <CreditCard size={14} />
-                                <span>Pay Now</span>
-                            </a>
+                                <span>{openingPayment ? 'Opening payment…' : order.has_payment_session ? 'Continue payment' : 'Pay now'}</span>
+                            </button>
                         )}
 
                         {order.status === 'Pending' && order.payment_status === 'pending' && order.payment_method !== 'COD' && (

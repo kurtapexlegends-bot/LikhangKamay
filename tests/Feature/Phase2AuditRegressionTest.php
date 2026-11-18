@@ -52,7 +52,7 @@ class Phase2AuditRegressionTest extends TestCase
             'shipping_method' => 'Pick Up',
         ]);
 
-        $response = $this->actingAs($buyer)->get(route('payment.pay', $order->order_number));
+        $response = $this->actingAs($buyer)->post(route('payment.pay', $order->order_number));
 
         $response
             ->assertRedirect(route('my-orders.index', absolute: false))

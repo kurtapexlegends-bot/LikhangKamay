@@ -733,13 +733,13 @@ class VoucherEngineTest extends TestCase
         $this->app->instance(PayMongoService::class, $mock);
 
         $this->actingAs($buyer)
-            ->get(route('payment.pay', $order->order_number))
+            ->post(route('payment.pay', $order->order_number))
             ->assertRedirect('https://paymongo.test/vch-115');
 
         $this->assertEquals(115.00, (float) $order->fresh()->total_amount);
 
         $this->actingAs($buyer)
-            ->get(route('payment.pay', $freeMerchOrder->order_number))
+            ->post(route('payment.pay', $freeMerchOrder->order_number))
             ->assertRedirect('https://paymongo.test/vch-65');
 
         // 3. PaymentController::pay blocks GCash/Maya when voucher drops order total below PHP 20.00
@@ -767,7 +767,7 @@ class VoucherEngineTest extends TestCase
         $this->assertEquals(10.00, (float) $sub20Order->total_amount);
 
         $this->actingAs($buyer)
-            ->get(route('payment.pay', $sub20Order->order_number))
+            ->post(route('payment.pay', $sub20Order->order_number))
             ->assertRedirect()
             ->assertSessionHas('error');
     }

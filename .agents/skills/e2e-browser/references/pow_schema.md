@@ -1,6 +1,12 @@
-# Mandatory State-Mutation Proof-of-Work (PoW) Schema
+# Production E2E evidence schema
 
-Every Proof-of-Work report returned by `/e2e-browser` MUST include this explicit table:
+Create one results file per run, for example `tests/e2e/production_audit/manifests/e2e-prod-<run-id>.json`. Record the run ID, target, deployed revision, started and finished times, and the previous run ID when comparing runs. Flag a deployment change during execution and identify affected results.
+
+Record one entry per scenario with its stable name, persona, verdict, action, expected and observed outcomes, and evidence. For mutations, include the exact synthetic entity ID, network status or request ID, and the independent post-action assertion. For diagnostics, attach redacted runtime evidence and identify the subsystem and environment. For failures and blocked checks, give the steps, impact, and reason. Include the cleanup result and any retained test IDs.
+
+Use PASS, FAIL, BLOCKED, or NOT RUN. A negative assertion can pass with no outgoing request when that is the expected behavior. A provider or API probe can establish only the assertion it directly exercises. An older artifact can serve as a comparison baseline.
+
+The rows below illustrate evidence for common scenarios. Use the actual scenario catalog as the coverage checklist.
 
 | Action Triggered | Button / Selector | Pre-Click State | Post-Click State | Network Status | Fresh Entity ID Minted / Mutated | Evidence Screenshot Path |
 |---|---|---|---|---|---|---|
@@ -36,4 +42,4 @@ Every Proof-of-Work report returned by `/e2e-browser` MUST include this explicit
 | **Staff Shift Teardown** | `button:has-text("Confirm Clock-Out")` | Attendance Dock | Shift Closed Cleanly (Zero Timesheet Spills) | `200 OK` | Shift Attendance Terminated | `path/to/shift_teardown.png` |
 | **Staff Seat Provisioning** | `button:has-text("Add Employee")` | `/people` | Apprentice Seat Created $\rightarrow$ Verified $\rightarrow$ Deleted | `200 OK` | Employee ID Minted & Purged | `path/to/staff_seat.png` |
 
-If any row in this table is skipped, contains `None`, or references an ID from a previous run, the entire suite is marked **FAIL (INCOMPLETE MUTATION)**.
+Report the counts of passed, failed, blocked, and not-run scenarios. Use **incomplete** for a sweep with any required scenario blocked or not run, and also report any confirmed failures. For every mismatch, preserve the original evidence when recording a retry.

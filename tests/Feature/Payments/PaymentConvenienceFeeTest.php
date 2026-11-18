@@ -66,7 +66,7 @@ class PaymentConvenienceFeeTest extends TestCase
 
         $this->app->instance(PayMongoService::class, $mock);
 
-        $response = $this->actingAs($buyer)->get(route('payment.pay', $order->order_number));
+        $response = $this->actingAs($buyer)->post(route('payment.pay', $order->order_number));
 
         $response
             ->assertRedirect('https://paymongo.test/checkout');
@@ -98,7 +98,7 @@ class PaymentConvenienceFeeTest extends TestCase
             'shipping_method' => 'Pick Up',
         ]);
 
-        $response = $this->actingAs($buyer)->get(route('payment.pay', $order->order_number));
+        $response = $this->actingAs($buyer)->post(route('payment.pay', $order->order_number));
 
         $response
             ->assertRedirect(route('my-orders.index', absolute: false))

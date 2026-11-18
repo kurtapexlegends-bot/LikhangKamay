@@ -178,10 +178,10 @@ export default function ArtisanVerificationDrawer({
                         <InlineRevisionCard
                             active={revisionMode}
                             selected={isSelected('shop_address')}
-                            label={viewingArtisan.role === 'supplier' ? 'Warehouse Address & Cavite Map Pin' : 'Workshop Address & Cavite Map Pin'}
+                            label={viewingArtisan.role === 'supplier' ? 'Warehouse Address & Map Pin' : 'Workshop Address & Cavite Map Pin'}
                             note={getNote('shop_address')}
                             reviewItem={reviewItemsMap['shop_address']}
-                            onToggle={() => toggleItem('shop_address', viewingArtisan.role === 'supplier' ? 'Warehouse Address & Cavite Map Pin' : 'Workshop Address & Cavite Map Pin')}
+                            onToggle={() => toggleItem('shop_address', viewingArtisan.role === 'supplier' ? 'Warehouse Address & Map Pin' : 'Workshop Address & Cavite Map Pin')}
                             onChangeNote={(val) => updateItemNote('shop_address', val)}
                         >
                             <div className={`${revisionMode ? 'bg-white p-3.5 space-y-2' : 'rounded-xl border border-stone-200 bg-white p-3.5 space-y-2'}`}>

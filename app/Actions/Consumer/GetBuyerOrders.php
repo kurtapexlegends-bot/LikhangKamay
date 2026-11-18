@@ -116,6 +116,7 @@ class GetBuyerOrders
             'total' => number_format($order->total_amount, 2),
             'status' => $order->status,
             'payment_status' => $order->payment_status ?? 'pending',
+            'has_payment_session' => filled($order->paymongo_session_id),
             'payment_method' => $order->payment_method,
             'shipping_method' => $order->shipping_method,
             'pickup_date' => $order->pickup_date?->format('M d, Y') ?? ($order->pickup_date ? (string) $order->pickup_date : null),

@@ -539,6 +539,38 @@ class LalamoveDeliveryFlowTest extends TestCase
         Notification::assertCount(1);
     }
 
+    public function test_seller_cannot_finish_a_lalamove_delivery_and_older_events_cannot_undo_pickup(): void
+    {
+        $seller = $this->createSeller();
+        $buyer = User::factory()->createOne();
+        $product = $this->createProduct($seller);
+        $order = $this->createAcceptedDeliveryOrder($seller, $buyer, $product, ['status' => 'Shipped']);
+        $delivery = $order->delivery()->create([
+            'provider' => OrderDelivery::PROVIDER_LALAMOVE,
+            'status' => OrderDelivery::STATUS_ON_GOING,
+            'service_type' => 'MOTORCYCLE',
+            'external_order_id' => 'stale-event-test',
+        ]);
+
+        $this->actingAs($seller)->post(route('orders.update', $order->order_number), ['status' => 'Delivered'])
+            ->assertSessionHas('error', 'Wait for the courier to confirm delivery.');
+        $this->assertSame('Shipped', $order->fresh()->status);
+
+        foreach (['PICKED_UP' => '2026-11-19T00:03.00Z', 'ON_GOING' => '2026-11-19T00:02.00Z', 'CANCELED' => '2026-11-19T00:01.00Z'] as $status => $time) {
+            $this->postJson(route('webhooks.lalamove', ['token' => 'test-webhook-secret']), [
+                'eventId' => 'delivery-' . $status,
+                'eventType' => 'ORDER_STATUS_CHANGED',
+                'data' => [
+                    'order' => ['orderId' => 'stale-event-test', 'status' => $status],
+                    'updatedAt' => $time,
+                ],
+            ])->assertOk();
+        }
+
+        $this->assertSame(OrderDelivery::STATUS_PICKED_UP, $delivery->fresh()->status);
+        $this->assertSame('Shipped', $order->fresh()->status);
+    }
+
     public function test_scheduled_lalamove_reconciliation_does_not_duplicate_pending_work(): void
     {
         Queue::fake();

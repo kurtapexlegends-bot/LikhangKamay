@@ -21,7 +21,9 @@ class LalamoveWebhookService
     {
         $eventKey = $this->resolveEventKey($payload, $rawBody);
         $eventType = $this->resolveEventType($payload);
-        $snapshot = $this->normalizeOrderSnapshot($this->extractOrderSnapshot($payload), $eventType);
+        $snapshot = $this->normalizeOrderSnapshot($this->extractOrderSnapshot($payload));
+        $snapshot['provider_status_at'] = $this->providerStatusTimestamp(data_get($payload, 'data.updatedAt') ?? $snapshot['updatedAt'] ?? null)
+            ?? $this->providerStatusTimestamp($payload['timestamp'] ?? null);
         $externalOrderId = $snapshot['orderId'] ?? null;
 
         if (!$externalOrderId) {
@@ -37,6 +39,7 @@ class LalamoveWebhookService
         }
 
         $preDelivery = OrderDelivery::query()
+            ->where('provider', OrderDelivery::PROVIDER_LALAMOVE)
             ->where('external_order_id', (string) $externalOrderId)
             ->first();
 
@@ -82,10 +85,7 @@ class LalamoveWebhookService
 
     public function syncDelivery(OrderDelivery $delivery): OrderDelivery
     {
-        $snapshot = $this->normalizeOrderSnapshot(
-            $this->lalamoveService->retrieveOrder((string) $delivery->external_order_id),
-            'POLL_SYNC',
-        );
+        $snapshot = $this->normalizeOrderSnapshot($this->lalamoveService->retrieveOrder((string) $delivery->external_order_id));
 
         return DB::transaction(function () use ($delivery, $snapshot) {
             if ($delivery->order_id) {
@@ -203,7 +203,7 @@ class LalamoveWebhookService
         return $payload;
     }
 
-    private function normalizeOrderSnapshot(array $snapshot, ?string $eventType = null): array
+    private function normalizeOrderSnapshot(array $snapshot): array
     {
         $orderId = (string) (
             data_get($snapshot, 'orderId')
@@ -233,7 +233,7 @@ class LalamoveWebhookService
             ?? data_get($snapshot, 'data.priceBreakdown')
             ?? data_get($snapshot, 'order.priceBreakdown');
 
-        if ($driverId !== '' && ($status === '' || $status === OrderDelivery::STATUS_ASSIGNING_DRIVER || $eventType === 'DRIVER_ASSIGNED')) {
+        if ($driverId !== '' && ($status === '' || $status === OrderDelivery::STATUS_ASSIGNING_DRIVER)) {
             $status = OrderDelivery::STATUS_ON_GOING;
         }
 
@@ -268,6 +268,27 @@ class LalamoveWebhookService
         if ($delivery->status === OrderDelivery::STATUS_COMPLETED && $status !== OrderDelivery::STATUS_COMPLETED) {
             return;
         }
+
+        $previousTime = $delivery->latest_payload['provider_status_at'] ?? null;
+        $incomingTime = $snapshot['provider_status_at'] ?? $this->providerStatusTimestamp($snapshot['updatedAt'] ?? null);
+        if ($incomingTime !== null && $previousTime !== null && $incomingTime < $previousTime) {
+            return;
+        }
+
+        $activeProgress = [
+            OrderDelivery::STATUS_ASSIGNING_DRIVER => 0,
+            OrderDelivery::STATUS_ON_GOING => 1,
+            OrderDelivery::STATUS_PICKED_UP => 2,
+        ];
+        $currentProgress = $activeProgress[$delivery->status] ?? null;
+        $nextProgress = $activeProgress[$status] ?? null;
+        if ($currentProgress !== null && $nextProgress !== null && $nextProgress < $currentProgress
+            && ($incomingTime === null || $previousTime === null || $incomingTime === $previousTime
+                || $delivery->status === OrderDelivery::STATUS_PICKED_UP)) {
+            return;
+        }
+
+        $snapshot['provider_status_at'] = $incomingTime ?? $previousTime;
 
         $priceBreakdown = $snapshot['priceBreakdown'] ?? $delivery->price_breakdown;
         $isReplacementExchange = $this->deliveryFlowType($delivery) === 'replacement_exchange';
@@ -342,6 +363,25 @@ class LalamoveWebhookService
         $delivery->terminal_failed_at = null;
         $delivery->failure_reason = null;
         $delivery->save();
+    }
+
+    private function providerStatusTimestamp(mixed $value): ?int
+    {
+        if ((is_int($value) || is_string($value)) && ctype_digit((string) $value)) {
+            $timestamp = (int) $value;
+
+            return $timestamp >= 1_000_000_000_000 ? intdiv($timestamp, 1000) : $timestamp;
+        }
+
+        if (!is_string($value) || $value === '') {
+            return null;
+        }
+
+        // Some v3 events use a dot between minutes and seconds.
+        $value = preg_replace('/(T\d{2}:\d{2})\.(\d{2}Z)$/', '$1:$2', $value);
+        $timestamp = strtotime($value);
+
+        return $timestamp === false ? null : $timestamp;
     }
 
     private function deliveryFlowType(OrderDelivery $delivery): string

@@ -19,6 +19,7 @@ export default function OrderCardActions({
 }) {
     const [isAcceptingReplacement, setIsAcceptingReplacement] = React.useState(false);
     const [isVerifyingPayment, setIsVerifyingPayment] = React.useState(false);
+    const [isOpeningPayment, setIsOpeningPayment] = React.useState(false);
 
     const isPayableOnline = ['Accepted', 'Processing', 'Ready for Pickup'].includes(order.status)
         && order.payment_status === 'pending'
@@ -28,8 +29,18 @@ export default function OrderCardActions({
         && order.payment_status === 'pending'
         && order.payment_method !== 'COD';
 
+    const handlePay = () => {
+        if (isOpeningPayment || isVerifyingPayment) return;
+        setIsOpeningPayment(true);
+        router.post(route('payment.pay', order.order_number), {}, {
+            preserveScroll: true,
+            onFinish: () => setIsOpeningPayment(false),
+        });
+    };
+    const payLabel = order.has_payment_session ? 'Continue payment' : 'Pay now';
+
     const handleVerifyPayment = () => {
-        if (isVerifyingPayment) return;
+        if (isVerifyingPayment || isOpeningPayment) return;
         setIsVerifyingPayment(true);
         router.post(
             route('payment.verify', order.order_number),
@@ -182,24 +193,26 @@ export default function OrderCardActions({
                         className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-3.5 rounded-lg border border-amber-200 bg-amber-50 text-[11px] font-semibold text-amber-800 shadow-2xs min-h-[36px]"
                         title="Payment will be available once the artisan shop accepts your order."
                     >
-                        <Clock size={13} className="text-amber-600" /> Awaiting Acceptance
+                        <Clock size={13} className="text-amber-600" /> Waiting for seller
                     </div>
                 )}
 
                 {/* ONLINE PAYMENT: Pay Now & Check Status */}
                 {isPayableOnline && (
                     <div className="inline-flex items-center gap-1.5">
-                        <a 
-                            href={route('payment.pay', order.order_number)}
+                        <button
+                            type="button"
+                            onClick={handlePay}
+                            disabled={isOpeningPayment || isVerifyingPayment}
                             className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 px-5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-all hover:-translate-y-0.5 min-h-[38px]"
                         >
-                            <CreditCard size={15} /> Pay Now
-                        </a>
-                        {order.paymongo_session_id && (
+                            <CreditCard size={15} /> {isOpeningPayment ? 'Opening payment…' : payLabel}
+                        </button>
+                        {order.has_payment_session && (
                             <button
                                 type="button"
                                 onClick={handleVerifyPayment}
-                                disabled={isVerifyingPayment}
+                                disabled={isVerifyingPayment || isOpeningPayment}
                                 title="Check payment status with GCash/Maya"
                                 className="inline-flex h-9 shrink-0 items-center justify-center gap-1 px-3 border border-stone-200 bg-white rounded-lg text-[11px] font-bold text-stone-600 hover:bg-stone-50 hover:border-stone-300 transition shadow-2xs min-h-[38px]"
                             >
@@ -323,23 +336,25 @@ export default function OrderCardActions({
                         className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-3 rounded-lg border border-amber-200 bg-amber-50 text-xs font-semibold text-amber-800 min-h-[44px]"
                         title="Payment will be available once the artisan shop accepts your order."
                     >
-                        <Clock size={14} className="text-amber-600" /> Awaiting Acceptance
+                        <Clock size={14} className="text-amber-600" /> Waiting for seller
                     </div>
                 )}
 
                 {isPayableOnline && (
                     <div className="flex-1 flex items-center gap-1.5">
-                        <a 
-                            href={route('payment.pay', order.order_number)}
+                        <button
+                            type="button"
+                            onClick={handlePay}
+                            disabled={isOpeningPayment || isVerifyingPayment}
                             className="flex-1 inline-flex h-11 items-center justify-center gap-1.5 px-4 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-all active:scale-95 min-h-[44px]"
                         >
-                            <CreditCard size={15} /> Pay Now
-                        </a>
-                        {order.paymongo_session_id && (
+                            <CreditCard size={15} /> {isOpeningPayment ? 'Opening payment…' : payLabel}
+                        </button>
+                        {order.has_payment_session && (
                             <button
                                 type="button"
                                 onClick={handleVerifyPayment}
-                                disabled={isVerifyingPayment}
+                                disabled={isVerifyingPayment || isOpeningPayment}
                                 title="Check payment status with GCash/Maya"
                                 className="inline-flex h-11 items-center justify-center gap-1 px-3 border border-stone-200 bg-white rounded-lg text-[11px] font-bold text-stone-600 hover:bg-stone-50 hover:border-stone-300 transition shadow-xs min-h-[44px]"
                             >

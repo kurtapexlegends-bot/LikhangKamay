@@ -38,6 +38,8 @@ export default function FulfillmentActionGroup({
 }) {
     const bomWarnings = getBOMWarning(order);
     const deliverySummary = sellerDeliverySummary(order);
+    const usesTrackedCourier = order.shipping_method === "Delivery"
+        && (isLalamoveManagedOrder(order) || order.delivery?.provider === "in_house");
     const [isVerifyingPayment, setIsVerifyingPayment] = React.useState(false);
 
     const handleVerifyPayment = () => {
@@ -216,7 +218,7 @@ export default function FulfillmentActionGroup({
                 </>
             )}
 
-            {(order.status === "Shipped" || order.status === "Ready for Pickup") && renderStickyActions(
+            {(order.status === "Ready for Pickup" || (order.status === "Shipped" && !usesTrackedCourier)) && renderStickyActions(
                 <button
                     disabled={!canEditOrders}
                     onClick={() => openShippingModal(order, "deliver")}
@@ -228,7 +230,7 @@ export default function FulfillmentActionGroup({
                 </button>
             )}
 
-            {order.status === "Delivered" && !order.replacement_in_progress && !isLalamoveManagedOrder(order) && renderStickyActions(
+            {order.status === "Delivered" && !order.replacement_in_progress && !usesTrackedCourier && renderStickyActions(
                 <div className="space-y-2">
                     <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-2.5 py-2">
                         <CheckCircle2 size={13} className="text-green-500 shrink-0" />
@@ -250,7 +252,7 @@ export default function FulfillmentActionGroup({
                 </div>
             )}
 
-            {order.status === "Delivered" && !order.replacement_in_progress && isLalamoveManagedOrder(order) && (
+            {order.status === "Delivered" && !order.replacement_in_progress && usesTrackedCourier && (
                 <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-2">
                     <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
                     <div className="min-w-0">

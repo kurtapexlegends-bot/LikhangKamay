@@ -56,6 +56,16 @@ class UpdateOrderStatus
                 throw new \Exception('This order status change is not allowed from its current state.');
             }
 
+            $delivery = $lockedOrder->delivery;
+            $usesTrackedCourier = $lockedOrder->shipping_method === 'Delivery'
+                && ($delivery?->isInHouse()
+                    || ($delivery?->provider === OrderDelivery::PROVIDER_LALAMOVE && filled($delivery->external_order_id)));
+            if ($usesTrackedCourier && in_array($status, ['Delivered', 'Completed'], true)) {
+                throw new \Exception($status === 'Delivered'
+                    ? 'Wait for the courier to confirm delivery.'
+                    : 'Wait for the buyer to confirm receipt.');
+            }
+
             // GUARD: Prevent shipping unpaid non-COD orders
             if (in_array($status, ['Shipped', 'Ready for Pickup'])) {
                 if ($lockedOrder->payment_method !== 'COD' && $lockedOrder->payment_status !== 'paid') {
