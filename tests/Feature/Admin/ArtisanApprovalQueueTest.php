@@ -3,7 +3,9 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\User;
+use App\Support\ArtisanDocumentReviews;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -77,6 +79,29 @@ class ArtisanApprovalQueueTest extends TestCase
             ->assertRedirect();
 
         $this->assertSame('approved', $artisan->fresh()->artisan_status);
+    }
+
+    public function test_document_previews_accumulate_when_the_review_table_is_missing(): void
+    {
+        $admin = $this->admin();
+        $artisan = $this->pendingArtisanWithAllDocuments();
+
+        // Production may not have run the migration yet; the session mirror
+        // must still accumulate instead of being overwritten with old keys.
+        Schema::shouldReceive('hasTable')
+            ->with('artisan_document_reviews')
+            ->andReturn(false);
+
+        $keys = [];
+        foreach (['business_permit', 'dti_registration', 'valid_id', 'tin_id'] as $document) {
+            $keys = ArtisanDocumentReviews::mark($artisan->id, $document, $admin->id);
+        }
+
+        $this->assertSame(
+            ['business_permit', 'dti_registration', 'valid_id', 'tin_id'],
+            $keys,
+        );
+        $this->assertSame($keys, session("artisan_review_docs_{$artisan->id}"));
     }
 
     public function test_approval_without_previewing_documents_is_rejected_and_keeps_the_queue(): void

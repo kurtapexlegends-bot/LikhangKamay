@@ -73,6 +73,15 @@ class ArtisanDocumentReviews
         }
 
         $keys = self::keysFor($userId);
+
+        // The database write is the durable path, but it may be unavailable
+        // (migration not yet run) or fail. The key the admin just opened must
+        // always be part of the mirror, otherwise the session is rewritten
+        // without it and the progress bar resets to zero.
+        if (!in_array($documentKey, $keys, true)) {
+            $keys[] = $documentKey;
+        }
+
         session()->put(self::sessionKey($userId), $keys);
 
         return $keys;
