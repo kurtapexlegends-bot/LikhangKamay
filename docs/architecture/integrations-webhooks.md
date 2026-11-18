@@ -89,7 +89,7 @@ sequenceDiagram
 
 ### Security Validation
 *   Register `https://www.likhangkamay.app/webhooks/lalamove` as a Version 3 URL in the Partner Portal environment whose API credentials the storefront uses. The receiver acknowledges the empty registration probe without processing an event.
-*   For native v3 events, the receiver checks the payload API key and verifies the HMAC over the timestamp, method, request path, and JSON `data` using the configured Lalamove API secret. Existing integrations can authenticate with the configured webhook token via Bearer auth, `X-Webhook-Token`, or `?token=`. Events that fail authentication receive HTTP 401.
+*   For native v3 events, the receiver checks the payload API key and verifies the HMAC over the timestamp, method, request path, and compact JSON `data`, with CRLF separators and the configured Lalamove API secret. Existing integrations can authenticate with the configured webhook token via Bearer auth, `X-Webhook-Token`, or `?token=`. Events that fail authentication receive HTTP 401.
 
 ### Fault Tolerance
 The receiver returns HTTP 503 on processing failures so Lalamove can retry. The [webhook service](file:///c:/laragon/www/LikhangKamay/app/Services/Logistics/LalamoveWebhookService.php) deduplicates applied events and keeps a completed delivery from regressing on a later stale update. After registration, use **Webhooks → Webhook attempts** to verify that a delivery status event received HTTP 200.

@@ -59,8 +59,8 @@ class LalamoveWebhookController extends Controller
             return false;
         }
 
-        // The webhook specification signs the nested data with LF separators.
-        $signature = hash_hmac('sha256', "{$timestamp}\nPOST\n{$path}\n\n{$signedData}", $apiSecret);
+        // Live Lalamove v3 events sign the nested data with CRLF separators.
+        $signature = hash_hmac('sha256', "{$timestamp}\r\nPOST\r\n{$path}\r\n\r\n{$signedData}", $apiSecret);
 
         return hash_equals($signature, $body->signature);
     }

@@ -515,7 +515,7 @@ class LalamoveDeliveryFlowTest extends TestCase
         ];
         $payload['signature'] = hash_hmac(
             'sha256',
-            "1795011786\nPOST\n/webhooks/lalamove\n\n" . json_encode($payload['data'], JSON_UNESCAPED_SLASHES),
+            "1795011786\r\nPOST\r\n/webhooks/lalamove\r\n\r\n" . json_encode($payload['data'], JSON_UNESCAPED_SLASHES),
             'fixture-signing-key',
         );
 
