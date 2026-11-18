@@ -56,6 +56,10 @@ class HandleInertiaRequests extends Middleware
                         'has_tin_id' => !empty($user->tin_id),
                         'kyc_liveness_verified_at' => $user->kyc_liveness_verified_at?->toIso8601String(),
                         'kyc_selfie_url' => $user->kyc_selfie_path ? \App\Services\StorageUrl::url($user->kyc_selfie_path) : null,
+                        'effective_premium_tier' => $user->isArtisan() ? $user->getEffectivePremiumTier() : ($user->premium_tier ?? 'free'),
+                        'is_on_trial' => $user->isArtisan() ? $user->isOnTrial() : false,
+                        'trial_ends_at' => $user->isArtisan() ? $user->trial_ends_at?->toIso8601String() : null,
+                        'trial_days_remaining' => $user->isArtisan() ? $user->getTrialDaysRemaining() : 0,
                     ]
                 ) : null,
                 'isStaff' => $user?->isStaff() ?? false,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Check, Rocket, ArrowRight, BadgeCheck, Clock } from 'lucide-react';
+import { Star, Check, Rocket, ArrowRight, BadgeCheck, Clock, Sparkles } from 'lucide-react';
 
 export default function PlanPricingCard({
     plan,
@@ -17,6 +17,8 @@ export default function PlanPricingCard({
     handleDowngrade,
     pendingDowngradeTier,
     daysRemaining,
+    isOnTrial = false,
+    trialDaysRemaining = null,
 }) {
     const PlanIcon = plan.icon;
 
@@ -102,10 +104,23 @@ export default function PlanPricingCard({
                 {isCurrent ? (
                     <button
                         disabled
-                        className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-stone-100 border border-stone-200 px-4 py-2 text-[11px] font-extrabold text-stone-700 cursor-default"
+                        className={`flex w-full items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-[11px] font-extrabold cursor-default ${
+                            isOnTrial && plan.id === 'premium'
+                                ? 'bg-amber-50 border-amber-200 text-amber-800'
+                                : 'bg-stone-100 border-stone-200 text-stone-700'
+                        }`}
                     >
-                        <BadgeCheck className="h-3.5 w-3.5 text-emerald-600" />
-                        Your Current Plan
+                        {isOnTrial && plan.id === 'premium' ? (
+                            <>
+                                <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+                                Active 14-Day Trial
+                            </>
+                        ) : (
+                            <>
+                                <BadgeCheck className="h-3.5 w-3.5 text-emerald-600" />
+                                Your Current Plan
+                            </>
+                        )}
                     </button>
                 ) : !canManagePlan ? (
                     <button

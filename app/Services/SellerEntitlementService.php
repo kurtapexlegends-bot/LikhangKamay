@@ -135,12 +135,15 @@ class SellerEntitlementService
             ->mapWithKeys(fn (string $module) => [$module => $user->isSellerOwner() || $user->canEditSellerModule($module)])
             ->all();
 
+        $effectiveTier = $seller->getEffectivePremiumTier();
+        $tierKey = $this->normalizeTierKey($effectiveTier);
+
         $result = [
             'sellerOwnerId' => $seller->id,
             'sellerOwnerName' => $seller->shop_name ?: $seller->name,
-            'tierKey' => $this->normalizeTierKey($seller->premium_tier),
+            'tierKey' => $tierKey,
             'tierLabel' => $seller->getSellerTierLabel(),
-            'isPremium' => in_array($this->normalizeTierKey($seller->premium_tier), ['premium', 'super_premium'], true),
+            'isPremium' => in_array($tierKey, ['premium', 'super_premium'], true),
             'canUseInHouseDispatch' => $seller->canUseInHouseDispatch(),
             'canPrintAnalyticsReport' => $seller->canPrintAnalyticsReport(),
             'canExportAnalytics' => true,
@@ -239,6 +242,9 @@ class SellerEntitlementService
             'canUseMaterialRecipes' => $seller->canUseMaterialRecipes(),
             'canManageStaff' => $seller->canManageStaff(),
             'pendingDowngradeTier' => $seller->pending_downgrade_tier,
+            'isOnTrial' => $seller->isOnTrial(),
+            'trialEndsAt' => $seller->trial_ends_at?->toIso8601String(),
+            'trialDaysRemaining' => $seller->getTrialDaysRemaining(),
             'subscriptionExpiresAt' => $expiresAt?->toIso8601String(),
             'subscriptionCancelledAt' => $cancelledAt?->toIso8601String(),
             'isCancelled' => $cancelledAt !== null,

@@ -272,6 +272,30 @@ class SellerEntitlementsTest extends TestCase
             ->assertOk();
     }
 
+    public function test_trial_artisan_receives_premium_tier_key_and_trial_metadata(): void
+    {
+        $owner = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'free',
+            'trial_ends_at' => now()->addDays(14),
+            'subscription_expires_at' => now()->addDays(14),
+            'has_used_trial' => true,
+        ]);
+
+        $payload = app(\App\Services\SellerEntitlementService::class)->getSubscriptionPayload($owner);
+
+        $this->assertSame('premium', $payload['tierKey']);
+        $this->assertSame('Premium', $payload['tierLabel']);
+        $this->assertTrue($payload['isOnTrial']);
+        $this->assertSame(25, $payload['limit']);
+        $this->assertGreaterThanOrEqual(13, $payload['trialDaysRemaining']);
+
+        $response = $this->actingAs($owner)->get(route('dashboard'));
+        $response->assertOk();
+        $userProp = $response->viewData('page')['props']['auth']['user'];
+        $this->assertSame('premium', $userProp['effective_premium_tier']);
+        $this->assertTrue($userProp['is_on_trial']);
+    }
+
     private function createPremiumOwner(array $modulesEnabled = []): User
     {
         $owner = User::factory()->artisanApproved()->create([

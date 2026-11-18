@@ -6,11 +6,12 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
     const [hasError, setHasError] = useState(false);
     if (!user) return null;
     
-    // Check both premium_tier (from User model) and subscription_plan (if passed explicitly)
-    const plan = user.premium_tier || user.subscription_plan || 'free';
+    // Check effective_premium_tier, premium_tier, or subscription_plan
+    const plan = user.effective_premium_tier || user.premium_tier || user.subscription_plan || 'free';
     const isSellerOwner = user.role === 'artisan';
     const isPremium = isSellerOwner && plan === 'premium';
     const isElite = isSellerOwner && plan === 'super_premium';
+    const isOnTrial = Boolean(user.is_on_trial);
     const avatarBaseSrc = resolveImageUrl(user.avatar_url || user.avatar, null);
     const avatarVersion = user.avatar_updated_at || null;
     const avatarSrc = avatarBaseSrc && avatarVersion
@@ -19,7 +20,7 @@ export default function UserAvatar({ user, className = 'w-9 h-9' }) {
     const tooltipTitle = isElite 
         ? 'Elite Subscription Plan' 
         : isPremium 
-            ? 'Premium Subscription Plan' 
+            ? (isOnTrial ? 'Premium Introductory Trial' : 'Premium Subscription Plan')
             : undefined;
 
     return (

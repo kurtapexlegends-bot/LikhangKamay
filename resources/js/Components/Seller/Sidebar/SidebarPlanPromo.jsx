@@ -26,7 +26,7 @@ function SidebarPlanPromo({
                 <button
                     type="button"
                     onClick={() => setIsPlanModalOpen(true)}
-                    onMouseEnter={(e) => isCollapsed && handleTooltipShow(e, `${entitlement.tierLabel} Plan`, sellerSubscription ? `Products: ${sellerSubscription.activeCount} / ${sellerSubscription.limit}` : null)}
+                    onMouseEnter={(e) => isCollapsed && handleTooltipShow(e, `${entitlement.tierLabel} Plan${sellerSubscription?.isOnTrial ? ' (14-Day Trial)' : ''}`, sellerSubscription ? `Products: ${sellerSubscription.activeCount} / ${sellerSubscription.limit}` : null)}
                     onMouseLeave={isCollapsed ? handleTooltipLeave : undefined}
                     className="group relative flex flex-col items-center w-full focus-visible:outline-none"
                 >
@@ -53,7 +53,7 @@ function SidebarPlanPromo({
                         <span className={`tracking-wide overflow-hidden transition-[max-width,opacity,margin-left] duration-300 whitespace-nowrap min-w-0 ${
                             isCollapsed ? 'max-w-0 opacity-0 ml-0 hidden' : 'max-w-[150px] opacity-100 ml-1.5'
                         }`}>
-                            {entitlement.tierLabel} Plan
+                            {entitlement.tierLabel} Plan {sellerSubscription?.isOnTrial ? '(Trial)' : ''}
                         </span>
                     </div>
                     

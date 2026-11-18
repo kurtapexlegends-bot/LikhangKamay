@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { router, usePage } from '@inertiajs/react';
-import { Crown, X, ChevronRight } from 'lucide-react';
+import { Crown, X, ChevronRight, Sparkles } from 'lucide-react';
 import { PLANS, PLAN_CONFIG } from '@/utils/planConfig';
 import PlanPricingCard from '@/Components/Seller/Subscriptions/Partials/PlanPricingCard';
 import DowngradeWarningOverlay from '@/Components/Seller/Subscriptions/Partials/DowngradeWarningOverlay';
@@ -127,6 +127,8 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
     if (!isOpen && !isVisible) return null;
 
     const currentIndex = PLANS.findIndex((plan) => plan.id === currentTier);
+    const isOnTrial = Boolean(sellerSubscription?.isOnTrial ?? usePage().props?.auth?.user?.is_on_trial);
+    const trialDaysRemaining = sellerSubscription?.trialDaysRemaining ?? usePage().props?.auth?.user?.trial_days_remaining ?? 14;
     const activeCount = sellerSubscription?.activeCount ?? 0;
     const draftCount = pendingDowngrade ? Math.max(0, activeCount - pendingDowngrade.limit) : 0;
     const showsEliteStandardWarning = currentTier === 'super_premium' && pendingDowngrade?.id === 'free';
@@ -169,14 +171,21 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                     </h2>
                                 </div>
 
-                                <p className="ml-[38px] text-[11px] font-medium text-stone-500">
-                                    Unlock more features for your seller workspace.
-                                </p>
+                                {isOnTrial ? (
+                                    <div className="ml-[38px] mt-0.5 inline-flex items-center gap-1.5 rounded-md bg-amber-50 border border-amber-200/80 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                                        <Sparkles size={11} className="text-amber-600 shrink-0" />
+                                        <span>14-Day All-Access Trial Active ({trialDaysRemaining} {trialDaysRemaining === 1 ? 'day' : 'days'} left)</span>
+                                    </div>
+                                ) : (
+                                    <p className="ml-[38px] text-[11px] font-medium text-stone-500">
+                                        Unlock more features for your seller workspace.
+                                    </p>
+                                )}
                             </div>
 
                             <button
                                 onClick={handleClose}
-                                className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-stone-400 transition-all duration-200 hover:bg-stone-200 hover:text-stone-600"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-stone-400 transition-all duration-200 hover:bg-stone-200 hover:text-stone-600 cursor-pointer"
                             >
                                 <X size={16} />
                             </button>
@@ -218,6 +227,8 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                         handleDowngrade={handleDowngrade}
                                         pendingDowngradeTier={sellerSubscription?.pendingDowngradeTier}
                                         daysRemaining={daysRemaining}
+                                        isOnTrial={isOnTrial}
+                                        trialDaysRemaining={trialDaysRemaining}
                                     />
                                 );
                             })}
