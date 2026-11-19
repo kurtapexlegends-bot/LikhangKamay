@@ -1,26 +1,26 @@
 # Production End-to-End Audit & Verification Matrix
 
 > **Target:** `https://www.likhangkamay.app`  
-> **Execution Date:** `2026-11-18T22:11:02.618Z`  
-> **Duration:** `526.1s`  
+> **Execution Date:** `2026-11-18T23:02:41.631Z`  
+> **Duration:** `429.1s`  
 > **Status:** **ATTENTION REQUIRED**
 
 ## 1. Executive Summary
 
 | Metric | Value |
 | :--- | :--- |
-| **Total Scenarios Evaluated** | 165 |
-| **Passed Checks** | 163 |
+| **Total Scenarios Evaluated** | 164 |
+| **Passed Checks** | 162 |
 | **Warnings** | 0 |
 | **Failed Checks** | 2 |
-| **Active Bugs Logged** | 5 |
+| **Active Bugs Logged** | 4 |
 
 ## 2. Bug & Failure Log
 
-### Bug 1: [HIGH] HTTP 404 Not Found: https://www.likhangkamay.app/vouchers/2
-- **Location:** https://www.likhangkamay.app/vouchers/2
-- **Description:** Resource returned HTTP 404 Not Found (DELETE)
-- **Remediation:** Verify route registration or asset existence.
+### Bug 1: [HIGH] HTTP 405 Method Not Allowed: https://www.likhangkamay.app/discounts
+- **Location:** https://www.likhangkamay.app/discounts
+- **Description:** Endpoint returned HTTP 405 Method Not Allowed (DELETE)
+- **Remediation:** Verify HTTP method handling and check redirect behavior.
 
 ### Bug 2: [HIGH] HTTP 404 Not Found: https://www.likhangkamay.app/storage/products/cover/synthetic_bamboo.jpg
 - **Location:** https://www.likhangkamay.app/storage/products/cover/synthetic_bamboo.jpg
@@ -32,14 +32,9 @@
 - **Description:** Resource returned HTTP 404 Not Found (GET)
 - **Remediation:** Verify route registration or asset existence.
 
-### Bug 4: [HIGH] HTTP 405 Method Not Allowed: https://www.likhangkamay.app/reviews
-- **Location:** https://www.likhangkamay.app/reviews
-- **Description:** Endpoint returned HTTP 405 Method Not Allowed (DELETE)
-- **Remediation:** Verify HTTP method handling and check redirect behavior.
-
-### Bug 5: [HIGH] B2B Sourcing Hub Transaction Relay Failed
-- **Location:** https://www.likhangkamay.app/supply-hub
-- **Description:** Order #ORD-6AFE22322979B status is 'Shipped', expected 'Completed'.
+### Bug 4: [HIGH] B2C Retail Commercial Pipeline Relay Failed
+- **Location:** https://www.likhangkamay.app/checkout
+- **Description:** Final order verification failed for Order #ORD-6AFE2E0BE6605: status='Shipped' (expected 'Completed'), payment_status='pending' (expected 'paid')
 - **Remediation:** Inspect and resolve finding.
 
 
@@ -57,7 +52,7 @@
 | Phase 1 | 1.4 Artisan Profile Load | **PASS** | Target URL: https://www.likhangkamay.app/shop/silang-terracotta-works-42dewr |
 | Phase 1 | 1.5 Register Page Load | **PASS** | - |
 | Phase 1 | 1.5 Registration Validation Errors | **PASS** | Form validation errors properly displayed |
-| Phase 1 | 1.6 Google OAuth Redirect | **PASS** | Target URL reached: https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S1745803693% |
+| Phase 1 | 1.6 Google OAuth Redirect | **PASS** | Target URL reached: https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S1644778407% |
 | Phase 1 | 1.7 Forgot Password Page Load | **PASS** | - |
 | Phase 1 | 1.7 Forgot Password Submit | **PASS** | Submission handled |
 | Phase 1 | 1.8 Artisan Register Page Load | **PASS** | - |
@@ -90,11 +85,11 @@
 | Phase 2 | 2.5 My Orders Inertia Props [Inertia Props] | **PASS** | Verified props [orders] present |
 | Phase 2 | 2.5 Order Receipt Action Present | **PASS** | - |
 | Phase 2 | 2.5b Live Delivery Tracking Component Rendered | **PASS** | Buyer order live tracking card or radar element verified |
-| Phase 2 | 2.5c BIR Official Sales Invoice Endpoint Healthy | **PASS** | BIR Receipt URL (/my-orders/118/receipt?download=1) HTTP status: 200 |
+| Phase 2 | 2.5c BIR Official Sales Invoice Endpoint Healthy | **PASS** | BIR Receipt URL (/my-orders/120/receipt?download=1) HTTP status: 200 |
 | Phase 2 | 2.6 Saved Wishlist Page Load | **PASS** | - |
 | Phase 2 | 2.6b Wishlist Heart Toggle & Remove Flow | **PASS** | DOM Toggle On: true, Redirected to /saved: true, DOM Present: true, Click Remove: true |
 | Phase 2 | 2.7 Buyer Reviews Page Load | **PASS** | - |
-| Phase 2 | 2.7b Customer Review Submitted on Test Order | **PASS** | Review ID: 3, Submitted via DOM: true |
+| Phase 2 | 2.7b Customer Review Submitted on Test Order | **PASS** | Review ID: none, Submitted via DOM: true |
 | Phase 2 | 2.8 Buyer Chat Window Load | **PASS** | - |
 | Phase 2 | 2.8 Chat Input Field Active | **PASS** | - |
 | Phase 2 | 2.8b Chat Inquiry Message Exchange | **FAIL** | Message bubble rendered in DOM: false, timestamp/clock icon verified: true |
@@ -114,8 +109,8 @@
 | Phase 3 | 3.3 Product Search & Filter Controls Available | **PASS** | Catalog search/filter input present: true |
 | Phase 3 | 3.4 3D Asset Manager Endpoint & Contract | **PASS** | 3D Presign API HTTP status: 200 |
 | Phase 3 | 3.5 Marketing Discounts Load | **PASS** | - |
-| Phase 3 | 3.5b Temporary Voucher CRUD Created | **PASS** | Created voucher E2E479354 (ID: 2) |
-| Phase 3 | 3.5b Temporary Voucher CRUD Deleted | **PASS** | Deleted temporary voucher ID: 2 |
+| Phase 3 | 3.5b Temporary Voucher CRUD Created | **PASS** | Created voucher E2E671508 (ID: 3) |
+| Phase 3 | 3.5b Temporary Voucher CRUD Deleted | **PASS** | Deleted temporary voucher ID: 3 |
 | Phase 3 | 3.6 Sponsorships Page Load | **PASS** | - |
 | Phase 3 | 3.7 Orders Fulfillment Load | **PASS** | - |
 | Phase 3 | 3.7 Bulk Labels Action Present | **PASS** | Fulfillment queue controls and bulk actions verified |
@@ -146,15 +141,14 @@
 | Phase 3 | 3.10 Accounting Balance Cards Rendered | **PASS** | - |
 | Phase 3 | 3.11 ERP HR & Attendance Load | **PASS** | - |
 | Phase 3 | 3.11 Add Employee Action Present | **PASS** | Add employee button verified |
-| Phase 3 | 3.11c Temporary Staff Seat Provisioning | **PASS** | Modal opened & provisioned Employee ID: 18 (Code: E2E-515546) |
-| Phase 3 | 3.11c Temporary Staff Seat Teardown | **PASS** | Terminated and deleted temporary employee ID: 18 |
+| Phase 3 | 3.11c Temporary Staff Seat Provisioning | **PASS** | Modal opened & provisioned Employee ID: 19 (Code: E2E-708966) |
+| Phase 3 | 3.11c Temporary Staff Seat Teardown | **PASS** | Terminated and deleted temporary employee ID: 19 |
 | Phase 3 | 3.11b ERP Payroll Desk Load | **PASS** | - |
 | Phase 3 | 3.12 Seller Chat CRM Load | **PASS** | - |
 | Phase 3 | 3.12 Seller Reviews Inertia Contract [Component: Seller/Chat/Reviews] | **PASS** | Matched expected component: Seller/Chat/Reviews |
 | Phase 3 | 3.12 Seller Reviews Inertia Contract [Inertia Props] | **PASS** | Verified props [reviews, products] present |
 | Phase 3 | 3.12 Seller Reviews Master-Detail Layout Present | **PASS** | - |
-| Phase 3 | 3.12b Seller Customer Review Reply | **PASS** | Review #3 replied with HTTP status: 200 |
-| Phase 3 | 3.12b Customer Review Lifecycle Clean Teardown | **PASS** | Review #3 reply and buyer review successfully deleted |
+| Phase 3 | 3.12b Seller Customer Review Reply & Teardown (Clean State) | **PASS** | No pending test reviews detected for reply/teardown (run Phase 2 beforehand for full relay) |
 | Phase 3 | 3.13 Team Messages Load | **PASS** | - |
 | Phase 3 | 3.14 Subscriptions Page Load | **PASS** | - |
 | Phase 3 | 3.14 Shop Settings Page Load | **PASS** | - |
@@ -211,5 +205,5 @@
 | Phase 6 | 6.5 PayMongo GCash Sandbox Session Lifecycle | **PASS** | PayMongo GCash checkout session created, URL validated, and read-back verified in sandbox. |
 | Phase 6 | 6.6 Lalamove Sandbox Quotation, Booking & Webhook Sync | **PASS** | Lalamove sandbox quotation calculated, order booked with ASSIGNING_DRIVER, and webhook transitioned to COMPLETED. |
 | Phase 6 | 6.7 Client-Side File Payload Shield Contract (<4MB) | **PASS** | Found 2 DOM file inputs. Canvas photo compressed to 26.1KB (<4MB). Real 5.2MB DOM file input attachment rejected (Cleared: true, Toast: true). |
-| Phase 7 | Layer 5 B2C Retail Commercial Pipeline Relay | **PASS** | Order #pow-e6c61bee-1396-443f-9176-0f8099bdb5a1 Completed. SHA-256: bdc6bc6c817c9f68... |
-| Phase 8 | Layer 5 B2B Sourcing & Auto-Restock Pipeline | **FAIL** | Order #ORD-6AFE22322979B status is 'Shipped', expected 'Completed'. |
+| Phase 7 | Layer 5 B2C Retail Commercial Pipeline Relay | **FAIL** | Final order verification failed for Order #ORD-6AFE2E0BE6605: status='Shipped' (expected 'Completed'), payment_status='pending' (expected 'paid') |
+| Phase 8 | Layer 5 B2B Sourcing & Auto-Restock Pipeline | **PASS** | Order #pow-b2b-80b7dc83-2285-455b-883d-856b8c6f13b1 Completed. SHA-256: fffb5a5bda9db901... |
