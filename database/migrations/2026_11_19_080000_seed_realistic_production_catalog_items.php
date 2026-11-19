@@ -104,7 +104,7 @@ return new class extends Migration
                 'colors' => ['Earthy Beige', 'Stone Gray'],
                 'height' => 2.5,
                 'width' => 26.0,
-                'weight' => 0.65,
+                'weight' => 650,
                 'description' => 'Wheel-thrown dinner plate crafted with locally harvested Silang clay. Features a tactile raw clay rim and a durable food-safe satin matte glaze perfect for everyday dining.',
             ],
             [
@@ -130,7 +130,7 @@ return new class extends Migration
                 'colors' => ['Charcoal Black', 'Earthy Brown'],
                 'height' => 9.0,
                 'width' => 18.5,
-                'weight' => 0.58,
+                'weight' => 580,
                 'description' => 'Deep ceramic noodle bowl shaped on the potter\'s wheel in Tagaytay. The wood-firing process creates organic ash speckling and unique thermal color variations on every single piece.',
             ],
             [
@@ -156,7 +156,7 @@ return new class extends Migration
                 'colors' => ['Celadon Green', 'Warm White'],
                 'height' => 7.5,
                 'width' => 12.0,
-                'weight' => 0.38,
+                'weight' => 380,
                 'description' => 'Traditional wide-mouth matcha bowl (chawan) crafted for tea ceremonies. Contoured base allows seamless whisking, finished with a subtle crackle celadon glaze.',
             ],
             [
@@ -182,7 +182,7 @@ return new class extends Migration
                 'colors' => ['Terracotta Red', 'Natural Ochre'],
                 'height' => 5.0,
                 'width' => 14.0,
-                'weight' => 0.32,
+                'weight' => 320,
                 'description' => 'Charming shallow serving dish for appetizers, dips, and table centerpieces. Retains the natural warm terracotta exterior with a glossy easy-to-clean inner surface.',
             ],
 
@@ -210,7 +210,7 @@ return new class extends Migration
                 'colors' => ['Speckled Cream', 'Warm Sand'],
                 'height' => 9.5,
                 'width' => 8.5,
-                'weight' => 0.34,
+                'weight' => 340,
                 'description' => 'Generously sized 350ml morning coffee mug with an ergonomic pulled handle. Hand-dipped in speckled oatmeal glaze that celebrates natural mineral impurities in Cavite clay.',
             ],
             [
@@ -236,7 +236,7 @@ return new class extends Migration
                 'colors' => ['Raw Chocolate', 'Matte White'],
                 'height' => 6.0,
                 'width' => 6.5,
-                'weight' => 0.18,
+                'weight' => 180,
                 'description' => 'Single/double espresso cup inspired by Amadeo\'s rich coffee heritage. Features a thick thermal wall that retains crema temperature and an unglazed bottom foot ring.',
             ],
             [
@@ -262,7 +262,7 @@ return new class extends Migration
                 'colors' => ['Forest Green', 'Sand Beige'],
                 'height' => 10.0,
                 'width' => 9.0,
-                'weight' => 0.36,
+                'weight' => 360,
                 'description' => 'Tactile throwing rings accent the body of this sturdy 380ml latte mug. Smooth glaze inside and top rim ensures a pleasant drinking experience while keeping a hand-crafted grip.',
             ],
             [
@@ -288,7 +288,7 @@ return new class extends Migration
                 'colors' => ['Warm Amber', 'Ivory'],
                 'height' => 7.0,
                 'width' => 7.5,
-                'weight' => 0.22,
+                'weight' => 220,
                 'description' => 'Handle-less Japanese-style Yunomi teacup hand-turned in Silang. Insulating clay body keeps hot steeped green tea warm while staying comfortable to hold.',
             ],
 
@@ -316,7 +316,7 @@ return new class extends Migration
                 'colors' => ['Cobalt Blue', 'Crisp White'],
                 'height' => 24.0,
                 'width' => 13.0,
-                'weight' => 1.15,
+                'weight' => 1150,
                 'description' => 'Signature artisan heirloom vase adorned with flowing brushstroke feather motifs in vibrant cobalt oxide. Includes interactive 3D model viewing in the storefront.',
             ],
             [
@@ -342,7 +342,7 @@ return new class extends Migration
                 'colors' => ['Burnished Ochre', 'Brick Red'],
                 'height' => 22.0,
                 'width' => 15.0,
-                'weight' => 1.30,
+                'weight' => 1300,
                 'description' => 'Inspired by ancestral Filipino \'banga\' water jars. Burnished by hand with river pebbles to achieve a smooth natural sheen without synthetic glass glazes.',
             ],
             [
@@ -368,7 +368,7 @@ return new class extends Migration
                 'colors' => ['Chalk White', 'Warm Stone'],
                 'height' => 14.5,
                 'width' => 7.5,
-                'weight' => 0.42,
+                'weight' => 420,
                 'description' => 'Petite desktop bud vase with vertical fluting for a single dried flower stem or fresh botanical sprig. Weighted bottom ensures stability.',
             ],
             [
@@ -394,7 +394,7 @@ return new class extends Migration
                 'colors' => ['Multicolor', 'Terracotta Gold'],
                 'height' => 26.0,
                 'width' => 14.0,
-                'weight' => 1.45,
+                'weight' => 1450,
                 'description' => 'Ornate Mediterranean-inspired amphora vase with hand-pinched side handles and colorful floral underglazes fired onto warm earthenware.',
             ],
 
@@ -421,7 +421,7 @@ return new class extends Migration
                 'colors' => ['Earthy Terracotta'],
                 'height' => 8.0,
                 'width' => 10.0,
-                'weight' => 0.35,
+                'weight' => 350,
                 'description' => 'Porous natural clay pot designed specifically for cacti and succulents. Breathable terracotta walls prevent root rot, complete with centered drainage hole.',
             ],
             [
@@ -446,7 +446,7 @@ return new class extends Migration
                 'colors' => ['Speckled Sand', 'Oatmeal'],
                 'height' => 16.0,
                 'width' => 17.0,
-                'weight' => 1.20,
+                'weight' => 1200,
                 'description' => 'Substantial indoor/outdoor plant pot for monsteras, fiddle leaf figs, or tabletop palms. Fired to vitrification so it will never crack or flake in tropical humidity.',
             ],
             [
@@ -471,7 +471,7 @@ return new class extends Migration
                 'colors' => ['Matte White', 'Natural Abaca'],
                 'height' => 11.0,
                 'width' => 13.0,
-                'weight' => 0.55,
+                'weight' => 550,
                 'description' => 'Spherical hanging planter cradled in three-strand Cavite abaca rope. Slotted aeration cutouts allow healthy air circulation for tropical epiphytes.',
             ],
             [
@@ -496,7 +496,7 @@ return new class extends Migration
                 'colors' => ['Deep Slate', 'Earthy Umber'],
                 'height' => 5.5,
                 'width' => 22.0,
-                'weight' => 0.85,
+                'weight' => 850,
                 'description' => 'Low-profile oval ceramic dish crafted for miniature bonsai trees and tabletop zen rock arrangements. Fitted with twin drainage ports and wiring holes.',
             ],
 
@@ -523,7 +523,7 @@ return new class extends Migration
                 'colors' => ['Terracotta Red', 'Charcoal Gray'],
                 'height' => 3.0,
                 'width' => 11.5,
-                'weight' => 0.25,
+                'weight' => 250,
                 'description' => 'Hand-sculpted dish with brass insert sized for both stick and cone incense. Wide rim catches ash neatly to keep desks, altars, and coffee tables pristine.',
             ],
             [
@@ -548,7 +548,7 @@ return new class extends Migration
                 'colors' => ['Bone White', 'Warm Cream'],
                 'height' => 12.0,
                 'width' => 10.0,
-                'weight' => 0.40,
+                'weight' => 400,
                 'description' => 'Sculptural organic candle holder with flared wax catch plate. Every curve bears subtle thumbprints of the Silang artisan who shaped it.',
             ],
             [
@@ -573,7 +573,7 @@ return new class extends Migration
                 'colors' => ['Seafoam Green', 'Sandy Gray'],
                 'height' => 2.0,
                 'width' => 18.0,
-                'weight' => 0.38,
+                'weight' => 380,
                 'description' => 'Sleek organic valet tray for keys, jewelry, watches, or desk stationary. The reactive seafoam glaze pools beautifully in the tray\'s gentle depression.',
             ],
             [
@@ -598,7 +598,7 @@ return new class extends Migration
                 'colors' => ['Muted Sage', 'Raw Terracotta'],
                 'height' => 11.0,
                 'width' => 9.0,
-                'weight' => 0.45,
+                'weight' => 450,
                 'description' => 'Tealight-powered ceramic oil warmer. Deep reservoir holds water and botanical essential oils (such as lemongrass or ylang-ylang) for hours of steady fragrance diffusion.',
             ],
 
@@ -625,7 +625,7 @@ return new class extends Migration
                 'colors' => ['Granite Charcoal', 'Natural Ash'],
                 'height' => 10.0,
                 'width' => 13.5,
-                'weight' => 1.25,
+                'weight' => 1250,
                 'description' => 'Heavyweight ceramic mortar and pestle crafted for crushing peppercorns, garlic, fresh herbs, and grinding tabletop dipping sauces (sawsawan).',
             ],
             [
@@ -650,7 +650,7 @@ return new class extends Migration
                 'colors' => ['Cream White', 'Speckled Beige'],
                 'height' => 2.5,
                 'width' => 12.0,
-                'weight' => 0.20,
+                'weight' => 200,
                 'description' => 'Indispensable countertop accessory to keep stovetops clean while cooking adobo or sinigang. Contoured to cradle spatulas, ladles, and tasting spoons.',
             ],
 
@@ -678,7 +678,7 @@ return new class extends Migration
                 'colors' => ['Tenmoku Rust', 'Cream White'],
                 'height' => 18.0,
                 'width' => 20.0,
-                'weight' => 1.80,
+                'weight' => 1800,
                 'description' => 'Complete hand-thrown tea service featuring a 650ml teapot with cane handle, matching infuser insert, and three stackable ceramic teacups. Packaged in a native woven box.',
             ],
             [
@@ -704,7 +704,7 @@ return new class extends Migration
                 'colors' => ['Oatmeal Cream', 'Terracotta'],
                 'height' => 12.0,
                 'width' => 16.0,
-                'weight' => 0.95,
+                'weight' => 950,
                 'description' => 'Coordinated morning pair including one wide cereal/granola bowl and a matching 350ml morning mug. Designed for daily use and microwave/dishwasher safe.',
             ],
         ];
@@ -741,7 +741,7 @@ return new class extends Migration
                     'colors' => $pData['colors'],
                     'height' => $pData['height'],
                     'width' => $pData['width'],
-                    'weight' => $pData['weight'],
+                    'weight' => (int) ($pData['weight'] ?? 500),
                     'production_method' => 'Handcrafted',
                     'track_as_supply' => PostgresCompatibleBoolean::dbVal(false),
                     'deleted_at' => null,
