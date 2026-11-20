@@ -174,7 +174,7 @@ export function PlanModal({ isOpen, onClose, currentTier, canManagePlan = true }
                                 {isOnTrial ? (
                                     <div className="ml-[38px] mt-0.5 inline-flex items-center gap-1.5 rounded-md bg-amber-50 border border-amber-200/80 px-2 py-0.5 text-[10px] font-bold text-amber-800">
                                         <Sparkles size={11} className="text-amber-600 shrink-0" />
-                                        <span>14-Day All-Access Trial Active ({trialDaysRemaining} {trialDaysRemaining === 1 ? 'day' : 'days'} left)</span>
+                                        <span>14-Day Basic Trial Active ({trialDaysRemaining} {trialDaysRemaining === 1 ? 'day' : 'days'} left)</span>
                                     </div>
                                 ) : (
                                     <p className="ml-[38px] text-[11px] font-medium text-stone-500">

@@ -23,6 +23,9 @@ export default function SubscriptionPaywallGate({
     shopAvatar = null,
     isProcessing = false,
     handleUpgrade,
+    handleStartTrial = null,
+    canStartTrial = false,
+    hasUsedTrial = false,
     billingCycle = 'monthly',
     setBillingCycle,
     annualDiscount = 20,
@@ -99,13 +102,15 @@ export default function SubscriptionPaywallGate({
                 <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
                     <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-black uppercase tracking-wider mb-4 shadow-2xs">
                         <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                        <span>Reactivate Workshop Access</span>
+                        <span>{canStartTrial ? 'Artisan Plan Selection' : 'Reactivate Workshop Access'}</span>
                     </div>
                     <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-black text-stone-900 tracking-tight leading-tight">
-                        Choose a Plan to Reopen Your Workshop
+                        {canStartTrial ? 'Choose Your Workshop Plan' : 'Choose a Plan to Reopen Your Workshop'}
                     </h1>
                     <p className="mt-3 sm:mt-4 text-stone-600 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
-                        Your subscription has concluded. Select an artisan subscription tier below to immediately restore your store, reactivate your product listings, and reopen full workspace tools.
+                        {canStartTrial
+                            ? 'Welcome to LikhangKamay! Select our 14-day Basic Free Trial to begin setting up your studio, or choose a Premium or Elite tier to unlock advanced operational and dispatch tools.'
+                            : 'Your subscription has concluded. Select an artisan subscription tier below to immediately restore your store, reactivate your product listings, and reopen full workspace tools.'}
                     </p>
                 </div>
 
@@ -119,6 +124,9 @@ export default function SubscriptionPaywallGate({
                         limit={0}
                         isProcessing={isProcessing}
                         handleUpgrade={handleUpgrade}
+                        handleStartTrial={handleStartTrial}
+                        canStartTrial={canStartTrial}
+                        hasUsedTrial={hasUsedTrial}
                         initiateDowngrade={() => {}}
                         handleScheduleRenewal={() => {}}
                         pendingDowngradeTier={null}
@@ -131,10 +139,10 @@ export default function SubscriptionPaywallGate({
                         isOnTrial={false}
                         trialEndsAt={null}
                         trialDaysRemaining={0}
-                        hasSubscriptionHistory={true}
-                        isNewApprovedArtisan={false}
+                        hasSubscriptionHistory={!canStartTrial}
+                        isNewApprovedArtisan={canStartTrial}
                         isCancelled={false}
-                        isExpired={true}
+                        isExpired={!canStartTrial}
                         billingCycle={billingCycle}
                         setBillingCycle={setBillingCycle}
                         annualDiscount={annualDiscount}

@@ -84,10 +84,6 @@ trait HasArtisanSubscriptions
             return $this->pending_downgrade_tier ?? 'free';
         }
 
-        if ($this->isOnTrial()) {
-            return 'premium';
-        }
-
         return $this->premium_tier ?? 'free';
     }
 

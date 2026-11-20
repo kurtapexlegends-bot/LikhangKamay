@@ -16,7 +16,7 @@ class ArtisanTrialAndAnnualBillingTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_approving_artisan_grants_14_day_introductory_trial(): void
+    public function test_approving_artisan_leaves_subscription_unstarted_and_requires_subscription_selection(): void
     {
         Settings::set('subscription_trial_days', 14);
 
@@ -52,12 +52,64 @@ class ArtisanTrialAndAnnualBillingTest extends TestCase
         $artisan->refresh();
 
         $this->assertSame('approved', $artisan->artisan_status);
+        $this->assertFalse($artisan->has_used_trial);
+        $this->assertNull($artisan->trial_ends_at);
+        $this->assertNull($artisan->subscription_expires_at);
+        $this->assertFalse($artisan->hasActiveSubscription());
+
+        // Approved artisan with no active subscription must be redirected to subscription gate
+        $response = $this->actingAs($artisan)->get(route('dashboard'));
+        $response->assertRedirect(route('seller.subscription'));
+    }
+
+    public function test_approved_artisan_can_start_14_day_basic_free_trial(): void
+    {
+        Settings::set('subscription_trial_days', 14);
+
+        $artisan = User::factory()->create([
+            'role' => 'artisan',
+            'artisan_status' => 'approved',
+            'has_used_trial' => false,
+            'subscription_expires_at' => null,
+            'trial_ends_at' => null,
+            'premium_tier' => 'free',
+        ]);
+
+        $response = $this->actingAs($artisan)->post(route('seller.subscription.start-trial'));
+        $response->assertRedirect(route('dashboard'));
+
+        $artisan->refresh();
+
         $this->assertTrue($artisan->has_used_trial);
         $this->assertNotNull($artisan->trial_ends_at);
         $this->assertTrue($artisan->isOnTrial());
-        $this->assertSame('premium', $artisan->getEffectivePremiumTier());
-        $this->assertSame(25, $artisan->getActiveProductLimit());
+        $this->assertTrue($artisan->hasActiveSubscription());
+        $this->assertSame('free', $artisan->getEffectivePremiumTier());
+        $this->assertSame('Basic', $artisan->getSellerTierLabel());
+        $this->assertSame(8, $artisan->getActiveProductLimit());
         $this->assertSame(14, $artisan->getTrialDaysRemaining());
+
+        // Once trial is active, artisan can access dashboard
+        $this->actingAs($artisan)->get(route('dashboard'))->assertOk();
+    }
+
+    public function test_artisan_cannot_start_trial_twice(): void
+    {
+        $artisan = User::factory()->create([
+            'role' => 'artisan',
+            'artisan_status' => 'approved',
+            'has_used_trial' => true,
+            'subscription_expires_at' => null,
+            'trial_ends_at' => null,
+            'premium_tier' => 'free',
+        ]);
+
+        $response = $this->actingAs($artisan)->post(route('seller.subscription.start-trial'));
+        $response->assertSessionHas('error');
+
+        $artisan->refresh();
+        $this->assertNull($artisan->trial_ends_at);
+        $this->assertFalse($artisan->hasActiveSubscription());
     }
 
     public function test_artisan_trial_gracefully_reverts_to_free_tier_after_expiration(): void

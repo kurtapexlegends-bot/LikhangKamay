@@ -40,6 +40,8 @@ export default function Subscription({
     trialDaysRemaining = null,
     hasSubscriptionHistory = false,
     isNewApprovedArtisan = false,
+    canStartTrial = false,
+    hasUsedTrial = false,
     currentBillingCycle = 'monthly',
 }) {
     const [finalDowngradeModalOpen, setFinalDowngradeModalOpen] = useState(false);
@@ -223,6 +225,10 @@ export default function Subscription({
         });
     };
 
+    const handleStartTrial = () => {
+        submitSubscriptionChange(route('seller.subscription.start-trial'), {});
+    };
+
     const initiateDowngrade = (planValue, newLimit) => {
         setTargetPlan({ value: planValue, limit: newLimit });
         setFinalDowngradeModalOpen(true);
@@ -320,6 +326,9 @@ export default function Subscription({
                     shopAvatar={shopAvatar || auth?.user?.avatar_url || auth?.user?.profile_photo_url}
                     isProcessing={isProcessing}
                     handleUpgrade={handleUpgrade}
+                    handleStartTrial={handleStartTrial}
+                    canStartTrial={canStartTrial}
+                    hasUsedTrial={hasUsedTrial}
                     billingCycle={billingCycle}
                     setBillingCycle={setBillingCycle}
                     annualDiscount={planSettings?.subscription_annual_discount ?? 20}
@@ -359,7 +368,7 @@ export default function Subscription({
                                 {isOnTrial ? (
                                     <span className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50/90 px-3.5 py-1 text-xs font-bold text-amber-950 shadow-2xs">
                                         <Sparkles className="h-4 w-4 shrink-0 text-amber-600 animate-pulse" />
-                                        <span>Your Current Plan: <strong className="font-black text-amber-950">Premium (14-Day Trial Active)</strong></span>
+                                        <span>Your Current Plan: <strong className="font-black text-amber-950">Basic (14-Day Trial Active)</strong></span>
                                     </span>
                                 ) : (
                                     <span className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1 text-xs font-bold shadow-2xs ${
@@ -516,6 +525,9 @@ export default function Subscription({
                             trialDaysRemaining={trialDaysRemaining}
                             hasSubscriptionHistory={hasSubscriptionHistory}
                             isNewApprovedArtisan={isNewApprovedArtisan}
+                            canStartTrial={canStartTrial}
+                            hasUsedTrial={hasUsedTrial}
+                            handleStartTrial={handleStartTrial}
                             isCancelled={isCancelled}
                             isExpired={isExpired}
                             billingCycle={billingCycle}

@@ -320,7 +320,7 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                                         <div className="flex items-center justify-between sm:justify-center">
                                             <span className="sm:hidden text-[10px] font-bold text-stone-400 uppercase tracking-widest">Role</span>
                                             <span
-                                                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider shadow-sm ${
+                                                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider shadow-sm whitespace-nowrap ${
                                                     user.role === "artisan"
                                                         ? "bg-orange-100 text-orange-800 border-orange-200"
                                                         : user.role === "staff"
@@ -339,7 +339,7 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                                             <span className="sm:hidden text-[10px] font-bold text-stone-400 uppercase tracking-widest">Status</span>
                                             {user.role === "artisan" ? (
                                                 <span
-                                                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${
+                                                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold whitespace-nowrap ${
                                                         user.artisan_status === "approved"
                                                             ? "bg-green-100 text-green-800 border-green-200"
                                                             : user.artisan_status === "rejected"
@@ -347,12 +347,18 @@ export default function AdminDashboard({ stats, recentUsers, activities }) {
                                                             : "bg-amber-100 text-amber-800 border-amber-200"
                                                     }`}
                                                 >
-                                                    {user.artisan_status === "approved" && "Verified"}
-                                                    {user.artisan_status === "rejected" && "Declined"}
-                                                    {user.artisan_status === "pending" && "Pending"}
+                                                    {user.artisan_status === "approved"
+                                                        ? "Verified"
+                                                        : user.artisan_status === "rejected"
+                                                        ? "Declined"
+                                                        : "Pending"}
                                                 </span>
-                                            ) : user.role === "staff" ? (
-                                                <span className={`text-[10px] font-bold ${statusToneClasses[user.account_state_tone] || ''}`}>
+                                            ) : user.account_state ? (
+                                                <span
+                                                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold whitespace-nowrap ${
+                                                        statusToneClasses[user.account_state_tone] || "bg-stone-100 text-stone-700 border-stone-200"
+                                                    }`}
+                                                >
                                                     {user.account_state}
                                                 </span>
                                             ) : (

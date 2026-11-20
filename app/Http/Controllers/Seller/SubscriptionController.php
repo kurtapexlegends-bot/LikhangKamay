@@ -53,7 +53,9 @@ class SubscriptionController extends Controller
 
         $isOnTrial = $user->isOnTrial();
         $hasSubscriptionHistory = $user->hasSubscriptionHistory();
-        $isNewApprovedArtisan = !$hasSubscriptionHistory && $user->isApproved();
+        $hasUsedTrial = (bool) $user->has_used_trial || $user->trial_ends_at !== null;
+        $canStartTrial = !$hasUsedTrial && $user->subscription_expires_at === null && !$user->hasActiveSubscription();
+        $isNewApprovedArtisan = !$hasSubscriptionHistory && $user->isApproved() && $canStartTrial;
         $trialDaysConfig = (int) \App\Facades\Settings::get('subscription_trial_days', 14);
         $annualDiscount = (float) \App\Facades\Settings::get('subscription_annual_discount', 20.0);
         $trialDaysRemaining = $user->getTrialDaysRemaining();
@@ -70,6 +72,8 @@ class SubscriptionController extends Controller
             ? $user->getEffectivePremiumTier()
             : $previousPlanKey;
 
+        $isExpired = $user->isSubscriptionExpired() || (!$user->hasActiveSubscription() && !$canStartTrial);
+
         return Inertia::render('Seller/Settings/Subscription', [
             'currentPlan' => $resolvedCurrentPlan,
             'rawPlan' => $user->premium_tier,
@@ -81,9 +85,11 @@ class SubscriptionController extends Controller
             'subscriptionExpiresAt' => $expiresAt?->toIso8601String(),
             'subscriptionCancelledAt' => $cancelledAt?->toIso8601String(),
             'isCancelled' => $cancelledAt !== null,
-            'isExpired' => $user->isSubscriptionExpired() || !$user->hasActiveSubscription(),
+            'isExpired' => $isExpired,
             'hasActiveSubscription' => $user->hasActiveSubscription(),
             'isPaywallMode' => !$user->hasActiveSubscription(),
+            'canStartTrial' => $canStartTrial,
+            'hasUsedTrial' => $hasUsedTrial,
             'previousPlanKey' => $previousPlanKey,
             'shopName' => $user->shop_name ?: $user->name,
             'shopAvatar' => $user->avatar_url ?? $user->profile_photo_url,
@@ -104,6 +110,8 @@ class SubscriptionController extends Controller
                 'subscription_annual_discount' => $annualDiscount,
                 'annual_discount_percentage' => $annualDiscount,
                 'is_on_trial' => $isOnTrial,
+                'can_start_trial' => $canStartTrial,
+                'has_used_trial' => $hasUsedTrial,
                 'trial_days_remaining' => $trialDaysRemaining,
                 'has_subscription_history' => $hasSubscriptionHistory,
                 'is_new_approved_artisan' => $isNewApprovedArtisan,
@@ -229,6 +237,51 @@ class SubscriptionController extends Controller
         return back()->with('success', 'Subscription reactivated successfully.');
     }
 
+    public function startTrial(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if (!$user->isArtisan() || !$user->isApproved()) {
+            return redirect()->route('dashboard');
+        }
+
+        if ($user->has_used_trial || $user->trial_ends_at !== null) {
+            return back()->with('error', 'You have already used your introductory trial. Please select a plan to continue.');
+        }
+
+        if ($user->hasActiveSubscription()) {
+            return redirect()->route('dashboard');
+        }
+
+        $trialDays = (int) \App\Facades\Settings::get('subscription_trial_days', 14);
+
+        $user->update([
+            'premium_tier' => 'free',
+            'trial_ends_at' => now()->addDays($trialDays),
+            'subscription_expires_at' => now()->addDays($trialDays),
+            'has_used_trial' => true,
+            'subscription_cancelled_at' => null,
+            'pending_downgrade_tier' => null,
+            'billing_cycle' => 'monthly',
+        ]);
+
+        \App\Models\UserTierLog::create([
+            'user_id' => $user->id,
+            'previous_tier' => null,
+            'new_tier' => 'free',
+        ]);
+
+        app(\App\Actions\Audit\RecordAuditActivity::class)->execute(
+            action: 'artisan.trial_started',
+            description: "Started {$trialDays}-day Basic trial for: {$user->shop_name} ({$user->name})",
+            subject: $user,
+            actorId: $user->id
+        );
+
+        return redirect()->route('dashboard')->with('success', "Welcome to LikhangKamay! Your {$trialDays}-day Basic trial is now active.");
+    }
+
     public function upgrade(Request $request, InitiateSubscriptionUpgrade $action)
     {
         $validated = $request->validate([
@@ -238,6 +291,16 @@ class SubscriptionController extends Controller
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
+        $targetPlan = match ($validated['plan']) {
+            'basic' => 'free',
+            'elite' => 'super_premium',
+            default => $validated['plan'],
+        };
+
+        if ($targetPlan === 'free' && !$user->has_used_trial && !$user->hasActiveSubscription()) {
+            return $this->startTrial($request);
+        }
+
         $billingCycle = $validated['billing_cycle'] ?? 'monthly';
 
         try {

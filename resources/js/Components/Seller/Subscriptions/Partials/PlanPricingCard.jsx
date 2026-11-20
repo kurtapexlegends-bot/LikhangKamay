@@ -105,15 +105,15 @@ export default function PlanPricingCard({
                     <button
                         disabled
                         className={`flex w-full items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-[11px] font-extrabold cursor-default ${
-                            isOnTrial && plan.id === 'premium'
+                            isOnTrial && (plan.id === 'free' || plan.id === 'basic')
                                 ? 'bg-amber-50 border-amber-200 text-amber-800'
                                 : 'bg-stone-100 border-stone-200 text-stone-700'
                         }`}
                     >
-                        {isOnTrial && plan.id === 'premium' ? (
+                        {isOnTrial && (plan.id === 'free' || plan.id === 'basic') ? (
                             <>
                                 <Sparkles className="h-3.5 w-3.5 text-amber-600" />
-                                Active 14-Day Trial
+                                Active 14-Day Basic Trial
                             </>
                         ) : (
                             <>

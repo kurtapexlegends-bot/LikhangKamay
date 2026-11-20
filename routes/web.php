@@ -332,6 +332,7 @@ Route::middleware(['auth', 'staff.security', 'verified'])->group(function () {
 
         // SUBSCRIPTIONS
         Route::get('/subscription', [\App\Http\Controllers\Seller\SubscriptionController::class, 'index'])->middleware('artisan')->name('seller.subscription');
+        Route::post('/subscription/start-trial', [\App\Http\Controllers\Seller\SubscriptionController::class, 'startTrial'])->middleware('artisan')->name('seller.subscription.start-trial');
         Route::post('/subscription/upgrade', [\App\Http\Controllers\Seller\SubscriptionController::class, 'upgrade'])->middleware('artisan')->name('seller.subscription.upgrade');
         Route::post('/subscription/downgrade', [\App\Http\Controllers\Seller\SubscriptionController::class, 'downgrade'])->middleware('artisan')->name('seller.subscription.downgrade');
         Route::post('/subscription/schedule-renewal', [\App\Http\Controllers\Seller\SubscriptionController::class, 'scheduleRenewalPlan'])->middleware('artisan')->name('seller.subscription.schedule-renewal');

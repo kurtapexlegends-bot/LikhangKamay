@@ -46,6 +46,7 @@ class EnsureSellerWorkspaceAccess
             if (!$user->hasActiveSubscription()) {
                 $allowedSubscriptionRoutes = [
                     'seller.subscription',
+                    'seller.subscription.start-trial',
                     'seller.subscription.upgrade',
                     'seller.subscription.payment.success',
                     'seller.subscription.payment.cancel',

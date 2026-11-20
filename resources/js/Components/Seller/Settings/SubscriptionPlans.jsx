@@ -24,6 +24,9 @@ export default function SubscriptionPlans({
     trialDaysRemaining = null,
     hasSubscriptionHistory = false,
     isNewApprovedArtisan = false,
+    canStartTrial = false,
+    hasUsedTrial = false,
+    handleStartTrial = null,
     isCancelled = false,
     isExpired = false,
     billingCycle = 'monthly',
@@ -31,7 +34,7 @@ export default function SubscriptionPlans({
     annualDiscount = 20,
 }) {
     const currentPlanMeta = plans.find((plan) => plan.id === currentPlan) ?? plans[0];
-    const isFirstTimeSeller = !isExpired && (isNewApprovedArtisan || (isOnTrial && !hasSubscriptionHistory));
+    const isFirstTimeSeller = !isExpired && isOnTrial;
 
     return (
         <section className="mx-auto max-w-[1020px] overflow-hidden rounded-[1.75rem] border border-stone-200 bg-white shadow-[0_24px_60px_-42px_rgba(15,23,42,0.32)]">
@@ -80,7 +83,7 @@ export default function SubscriptionPlans({
                             <div>
                                 <div className="flex flex-wrap items-center gap-2">
                                     <span className="text-[10px] font-black uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded-full border border-amber-300">
-                                        Introductory Trial Activated
+                                        Introductory Basic Trial Active
                                     </span>
                                     {trialDaysRemaining !== null && (
                                         <span className="text-xs font-bold text-amber-950 flex items-center gap-1">
@@ -90,10 +93,10 @@ export default function SubscriptionPlans({
                                     )}
                                 </div>
                                 <h3 className="text-sm sm:text-base font-extrabold text-stone-900 mt-1">
-                                    Welcome to LikhangKamay! Your 14-Day All-Access Trial is Live
+                                    Welcome to LikhangKamay! Your 14-Day Basic Trial is Live
                                 </h3>
                                 <p className="text-xs text-stone-600 mt-0.5 leading-relaxed max-w-2xl">
-                                    Explore all artisan studio features risk-free. Your trial automatically transitions to Basic after {trialDaysRemaining ?? 14} days without unexpected charges. Upgrade below anytime to lock in continuous Premium or Elite capacity.
+                                    You have full access to essential catalog and store operations on the Basic plan. Upgrade to Premium or Elite below anytime to unlock staff management, driver dispatch, and wholesale tools.
                                 </p>
                             </div>
                         </div>
@@ -169,12 +172,18 @@ export default function SubscriptionPlans({
                     className="flex overflow-x-auto snap-x snap-mandatory pb-4 gap-4 md:grid md:grid-cols-3 md:gap-6 no-scrollbar"
                 >
                     {plans.map((plan) => {
-                        const isTrialPremium = isOnTrial && plan.id === 'premium';
-                        const current = isTrialPremium || (!isOnTrial && currentPlan === plan.id);
+                        const isBasicPlan = plan.id === 'free' || plan.id === 'basic';
+                        const isTrialBasic = isOnTrial && isBasicPlan;
+                        const isCurrentPlan = !canStartTrial && (isTrialBasic || (!isOnTrial && currentPlan === plan.id));
                         const tierIndex = plans.findIndex((item) => item.id === plan.id);
-                        const currentTierIndex = plans.findIndex((item) => item.id === (isOnTrial ? 'premium' : currentPlan));
-                        const isUpgrade = isOnTrial ? (plan.id === 'super_premium') : (tierIndex > currentTierIndex);
-                        const isDowngrade = isOnTrial ? (plan.id === 'free') : (tierIndex < currentTierIndex);
+                        const normalizedCurrent = isOnTrial ? 'free' : (canStartTrial ? null : currentPlan);
+                        const currentTierIndex = normalizedCurrent ? plans.findIndex((item) => item.id === normalizedCurrent) : -1;
+                        const isUpgrade = canStartTrial
+                            ? !isBasicPlan
+                            : isOnTrial
+                                ? !isBasicPlan
+                                : (currentTierIndex >= 0 && tierIndex > currentTierIndex);
+                        const isDowngrade = !canStartTrial && !isOnTrial && currentTierIndex >= 0 && tierIndex < currentTierIndex;
                         const isPendingPlan = pendingUpgrade?.plan === plan.id && !!pendingUpgrade?.checkoutUrl;
                         const PlanIcon = plan.icon;
                         const isPremiumPlan = plan.id === 'premium';
@@ -185,9 +194,9 @@ export default function SubscriptionPlans({
                         const annualTotal = Math.round((baseMonthlyPrice * 12) * (1 - annualDiscount / 100));
                         const annualMonthlyEquivalent = Math.round(annualTotal / 12);
 
-                        const cardClass = isTrialPremium
+                        const cardClass = isTrialBasic
                             ? 'border-amber-300 ring-2 ring-amber-200/80 shadow-md bg-white'
-                            : current
+                            : isCurrentPlan
                                 ? isElitePlan
                                     ? 'border-violet-300 ring-2 ring-violet-200 shadow-md bg-white'
                                     : isPremiumPlan
@@ -197,13 +206,17 @@ export default function SubscriptionPlans({
                                     ? 'border-violet-200/80 hover:border-violet-300 shadow-sm bg-white'
                                     : isPremiumPlan
                                         ? 'border-amber-200/80 hover:border-amber-300 shadow-sm bg-white'
-                                        : 'border-stone-200 hover:border-stone-300 shadow-sm bg-white';
+                                        : canStartTrial && isBasicPlan
+                                            ? 'border-amber-300 ring-1 ring-amber-200 shadow-sm bg-white'
+                                            : 'border-stone-200 hover:border-stone-300 shadow-sm bg-white';
 
                         const iconClass = isElitePlan
                             ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-sm'
-                            : isPremiumPlan || isTrialPremium
+                            : isPremiumPlan
                                 ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-sm'
-                                : 'bg-stone-100 text-stone-700 border border-stone-200';
+                                : canStartTrial && isBasicPlan
+                                    ? 'bg-stone-900 text-white shadow-sm'
+                                    : 'bg-stone-100 text-stone-700 border border-stone-200';
 
                         const upgradeButtonClass = isElitePlan
                             ? 'bg-violet-600 text-white hover:bg-violet-700 shadow-sm'
@@ -223,13 +236,18 @@ export default function SubscriptionPlans({
                                     <div className="flex-1 min-w-0">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <h3 className="text-xl sm:text-[1.55rem] font-black leading-none tracking-tight text-stone-900">{plan.name}</h3>
-                                            {isExpired && current ? (
+                                            {isExpired && isCurrentPlan ? (
                                                 <span className="rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] whitespace-nowrap border bg-amber-50 text-amber-900 border-amber-300 flex items-center gap-1 shadow-2xs">
                                                     <Sparkles className="h-2.5 w-2.5 text-amber-600" />
                                                     Your Previous Plan
                                                 </span>
-                                            ) : isTrialPremium ? (
+                                            ) : isTrialBasic ? (
                                                 <span className="rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap border bg-amber-50 text-amber-800 border-amber-300 animate-pulse flex items-center gap-1">
+                                                    <Sparkles className="h-2.5 w-2.5 text-amber-600" />
+                                                    Active 14-Day Trial
+                                                </span>
+                                            ) : canStartTrial && isBasicPlan ? (
+                                                <span className="rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.12em] whitespace-nowrap border bg-amber-50 text-amber-800 border-amber-300 flex items-center gap-1 shadow-2xs">
                                                     <Sparkles className="h-2.5 w-2.5 text-amber-600" />
                                                     14-Day Free Trial
                                                 </span>
@@ -244,64 +262,96 @@ export default function SubscriptionPlans({
                                 </div>
 
                                 <div className="mt-5 min-h-[76px]">
-                                    <AnimatePresence mode="wait">
-                                        <motion.div
-                                            key={billingCycle}
-                                            initial={{ opacity: 0, y: -4 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: 4 }}
-                                            transition={{ duration: 0.16, ease: 'easeOut' }}
-                                        >
+                                    {canStartTrial && isBasicPlan ? (
+                                        <div>
                                             <div className="flex items-end gap-1.5">
-                                                <p className="text-[2.35rem] font-black tracking-tight text-stone-900">
-                                                    ₱{isYearly ? annualTotal.toLocaleString() : baseMonthlyPrice.toLocaleString()}
-                                                </p>
-                                                <p className="pb-1 text-[0.92rem] font-semibold text-stone-400">
-                                                    {isYearly ? '/ year' : '/ mo'}
-                                                </p>
-                                                {isTrialPremium && (
-                                                    <span className="mb-2 ml-1 text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 animate-pulse">
-                                                        Active Trial
-                                                    </span>
-                                                )}
+                                                <p className="text-[2.35rem] font-black tracking-tight text-stone-900">₱0</p>
+                                                <p className="pb-1 text-[0.92rem] font-semibold text-stone-400">/ 14 days</p>
+                                                <span className="mb-2 ml-1 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300">
+                                                    Free Trial
+                                                </span>
                                             </div>
                                             <p className="text-xs font-semibold text-stone-500">
-                                                {isTrialPremium
-                                                    ? `${trialDaysRemaining ?? 14} days remaining • Full Premium Access`
-                                                    : isYearly
+                                                Free 14-day trial • No credit card required
+                                            </p>
+                                        </div>
+                                    ) : isTrialBasic ? (
+                                        <div>
+                                            <div className="flex items-end gap-1.5">
+                                                <p className="text-[2.35rem] font-black tracking-tight text-stone-900">₱0</p>
+                                                <p className="pb-1 text-[0.92rem] font-semibold text-stone-400">/ 14 days</p>
+                                                <span className="mb-2 ml-1 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 animate-pulse">
+                                                    Active Trial
+                                                </span>
+                                            </div>
+                                            <p className="text-xs font-semibold text-stone-500">
+                                                {trialDaysRemaining ?? 14} days remaining • Basic Tier
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <AnimatePresence mode="wait">
+                                            <motion.div
+                                                key={billingCycle}
+                                                initial={{ opacity: 0, y: -4 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: 4 }}
+                                                transition={{ duration: 0.16, ease: 'easeOut' }}
+                                            >
+                                                <div className="flex items-end gap-1.5">
+                                                    <p className="text-[2.35rem] font-black tracking-tight text-stone-900">
+                                                        ₱{isYearly ? annualTotal.toLocaleString() : baseMonthlyPrice.toLocaleString()}
+                                                    </p>
+                                                    <p className="pb-1 text-[0.92rem] font-semibold text-stone-400">
+                                                        {isYearly ? '/ year' : '/ mo'}
+                                                    </p>
+                                                </div>
+                                                <p className="text-xs font-semibold text-stone-500">
+                                                    {isYearly
                                                         ? `₱${annualMonthlyEquivalent}/mo equivalent (Save ${annualDiscount}%)`
                                                         : 'Billed monthly'}
-                                            </p>
-                                        </motion.div>
-                                    </AnimatePresence>
+                                                </p>
+                                            </motion.div>
+                                        </AnimatePresence>
+                                    )}
                                 </div>
 
                                 <ul className="mt-5 space-y-3">
                                     {plan.features.map((feature, index) => (
                                         <li key={index} className="flex items-start gap-3">
-                                            <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${plan.featureIconClass || (isElitePlan ? 'text-violet-600' : isPremiumPlan || isTrialPremium ? 'text-amber-600' : 'text-stone-500')}`} />
+                                            <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${plan.featureIconClass || (isElitePlan ? 'text-violet-600' : isPremiumPlan ? 'text-amber-600' : 'text-stone-500')}`} />
                                             <span className="text-[13px] leading-6 text-stone-700">{feature}</span>
                                         </li>
                                     ))}
                                 </ul>
 
                                 <div className="mt-auto pt-5">
-                                    {current ? (
-                                        isTrialPremium ? (
+                                    {canStartTrial && isBasicPlan ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => (handleStartTrial ? handleStartTrial() : handleUpgrade('free'))}
+                                            disabled={isProcessing}
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-stone-900 text-white hover:bg-stone-800 px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm min-h-[44px]"
+                                        >
+                                            <Sparkles className="h-4 w-4 text-amber-400" />
+                                            <span>Start 14-Day Free Trial</span>
+                                            <ArrowRight className="h-4 w-4" />
+                                        </button>
+                                    ) : isCurrentPlan ? (
+                                        isTrialBasic ? (
                                             <button
                                                 type="button"
                                                 disabled
-                                                className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-amber-50 border border-amber-300 px-4 py-2.5 text-[14px] font-extrabold text-amber-800 cursor-default shadow-2xs"
+                                                className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-amber-50 border border-amber-300 px-4 py-2.5 text-[14px] font-extrabold text-amber-800 cursor-default shadow-2xs min-h-[44px]"
                                             >
                                                 <Sparkles className="h-4 w-4 text-amber-600" />
-                                                <span>14-Day Trial Active ({trialDaysRemaining ?? 14}d left)</span>
+                                                <span>14-Day Basic Trial Active ({trialDaysRemaining ?? 14}d left)</span>
                                             </button>
                                         ) : isExpired ? (
                                             <button
                                                 type="button"
                                                 onClick={() => handleUpgrade(plan.id, billingCycle)}
                                                 disabled={isProcessing}
-                                                className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${upgradeButtonClass}`}
+                                                className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${upgradeButtonClass} min-h-[44px]`}
                                             >
                                                 <span>Renew {plan.name} ({isYearly ? 'Annual' : 'Monthly'})</span>
                                                 <ArrowRight className="h-4 w-4" />
@@ -311,7 +361,7 @@ export default function SubscriptionPlans({
                                                 <button
                                                     type="button"
                                                     disabled
-                                                    className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-stone-100 border border-stone-200 px-4 py-2.5 text-[14px] font-extrabold text-stone-700 cursor-default"
+                                                    className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] bg-stone-100 border border-stone-200 px-4 py-2.5 text-[14px] font-extrabold text-stone-700 cursor-default min-h-[44px]"
                                                 >
                                                     <BadgeCheck className="h-4 w-4 text-emerald-600" />
                                                     Your Current Plan
@@ -336,28 +386,26 @@ export default function SubscriptionPlans({
                                             type="button"
                                             onClick={() => (isPendingPlan ? window.location.assign(pendingUpgrade.checkoutUrl) : handleUpgrade(plan.id, billingCycle))}
                                             disabled={isProcessing}
-                                            className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${upgradeButtonClass}`}
+                                            className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${upgradeButtonClass} min-h-[44px]`}
                                         >
-                                            {isProcessing ? 'Processing...' : isPendingPlan ? 'Continue Payment' : isExpired ? `Choose ${plan.name} (${isYearly ? 'Annual' : 'Monthly'})` : `Upgrade to ${plan.name} (${isYearly ? 'Annual' : 'Monthly'})`}
+                                            {isProcessing ? 'Processing...' : isPendingPlan ? 'Continue Payment' : (canStartTrial || isExpired ? `Buy ${plan.name} (${isYearly ? 'Annual' : 'Monthly'})` : `Upgrade to ${plan.name} (${isYearly ? 'Annual' : 'Monthly'})`)}
                                             {!isProcessing && <ArrowRight className="h-[15px] w-[15px]" />}
                                         </button>
                                     ) : isDowngrade ? (
                                         isOnTrial ? (
                                             <button
                                                 type="button"
-                                                onClick={() => handleUpgrade(plan.id, billingCycle)}
-                                                disabled={isProcessing}
-                                                className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${upgradeButtonClass}`}
+                                                disabled
+                                                className="inline-flex w-full items-center justify-center gap-2 rounded-[1rem] border border-stone-200 bg-stone-100 px-4 py-2.5 text-[14px] font-bold text-stone-400 cursor-not-allowed min-h-[44px]"
                                             >
-                                                <span>Choose {plan.name} ({isYearly ? 'Annual' : 'Monthly'})</span>
-                                                <ArrowRight className="h-4 w-4" />
+                                                <span>Included in Trial</span>
                                             </button>
                                         ) : isExpired ? (
                                             <button
                                                 type="button"
                                                 onClick={() => handleUpgrade(plan.id, billingCycle)}
                                                 disabled={isProcessing}
-                                                className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${upgradeButtonClass}`}
+                                                className={`inline-flex w-full items-center justify-center gap-2 rounded-[1rem] px-4 py-2.5 text-[14px] font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${upgradeButtonClass} min-h-[44px]`}
                                             >
                                                 <span>Choose {plan.name} ({isYearly ? 'Annual' : 'Monthly'})</span>
                                                 <ArrowRight className="h-4 w-4" />
@@ -366,7 +414,7 @@ export default function SubscriptionPlans({
                                             <button
                                                 type="button"
                                                 disabled
-                                                className="inline-flex w-full items-center justify-center gap-1.5 rounded-[1rem] bg-amber-50 border border-amber-200/80 px-4 py-2.5 text-[13px] font-bold text-amber-800 cursor-default"
+                                                className="inline-flex w-full items-center justify-center gap-1.5 rounded-[1rem] bg-amber-50 border border-amber-200/80 px-4 py-2.5 text-[13px] font-bold text-amber-800 cursor-default min-h-[44px]"
                                             >
                                                 <Clock3 className="h-4 w-4 text-amber-600" />
                                                 Scheduled on Renewal
@@ -375,7 +423,7 @@ export default function SubscriptionPlans({
                                             <button
                                                 type="button"
                                                 onClick={() => initiateDowngrade(plan.id, plan.limit)}
-                                                className="inline-flex w-full items-center justify-center rounded-[1rem] border border-stone-300 bg-white px-4 py-2.5 text-[13px] font-bold text-stone-700 transition-all hover:border-amber-400 hover:text-stone-900 active:scale-95 shadow-2xs"
+                                                className="inline-flex w-full items-center justify-center rounded-[1rem] border border-stone-300 bg-white px-4 py-2.5 text-[13px] font-bold text-stone-700 transition-all hover:border-amber-400 hover:text-stone-900 active:scale-95 shadow-2xs min-h-[44px]"
                                             >
                                                 Switch to {plan.name} on Renewal
                                             </button>
@@ -383,7 +431,7 @@ export default function SubscriptionPlans({
                                             <button
                                                 type="button"
                                                 onClick={() => initiateDowngrade(plan.id, plan.limit)}
-                                                className="inline-flex w-full items-center justify-center rounded-[1rem] border-2 border-stone-200 bg-white px-4 py-2.5 text-[14px] font-bold text-stone-600 transition-all hover:border-stone-300 hover:text-stone-900 active:scale-95"
+                                                className="inline-flex w-full items-center justify-center rounded-[1rem] border-2 border-stone-200 bg-white px-4 py-2.5 text-[14px] font-bold text-stone-600 transition-all hover:border-stone-300 hover:text-stone-900 active:scale-95 min-h-[44px]"
                                             >
                                                 Downgrade to {plan.name}
                                             </button>
