@@ -27,7 +27,7 @@ export default function UniformShiftSection({
                             className={`w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] mt-1 bg-white shadow-2xs ${
                                 errors.shift_start_time ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
                             }`}
-                            value={data.shift_start_time || '08:00'}
+                            value={data.shift_start_time ?? '08:00'}
                             onChange={(e) => {
                                 setData('shift_start_time', e.target.value);
                                 if (errors.shift_start_time) clearErrors('shift_start_time');
@@ -45,7 +45,7 @@ export default function UniformShiftSection({
                             className={`w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] mt-1 bg-white shadow-2xs ${
                                 errors.shift_end_time ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
                             }`}
-                            value={data.shift_end_time || '17:00'}
+                            value={data.shift_end_time ?? '17:00'}
                             onChange={(e) => {
                                 setData('shift_end_time', e.target.value);
                                 if (errors.shift_end_time) clearErrors('shift_end_time');
@@ -156,7 +156,7 @@ export default function UniformShiftSection({
                             className={`w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] mt-1 bg-white shadow-2xs ${
                                 errors.break_window_start ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
                             }`}
-                            value={data.break_window_start || '11:30'}
+                            value={data.break_window_start ?? '11:30'}
                             onChange={(e) => {
                                 setData('break_window_start', e.target.value);
                                 if (errors.break_window_start) clearErrors('break_window_start');
@@ -173,7 +173,7 @@ export default function UniformShiftSection({
                             className={`w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] mt-1 bg-white shadow-2xs ${
                                 errors.break_window_end ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
                             }`}
-                            value={data.break_window_end || '13:30'}
+                            value={data.break_window_end ?? '13:30'}
                             onChange={(e) => {
                                 setData('break_window_end', e.target.value);
                                 if (errors.break_window_end) clearErrors('break_window_end');

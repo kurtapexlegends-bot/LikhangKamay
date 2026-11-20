@@ -95,6 +95,60 @@ class FlexibleStaffShiftScheduleTest extends TestCase
         $this->assertFalse($employee->isScheduledWorkingDay($sunday, $owner));
     }
 
+    public function test_saving_a_linked_staff_schedule_applies_during_manila_clock_in(): void
+    {
+        config(['app.timezone' => 'UTC', 'app.workshop_timezone' => 'Asia/Manila']);
+        $owner = $this->createOwnerWithHrAccess();
+        $owner->update(['enforce_strict_shift_window' => true]);
+        $employee = Employee::create([
+            'user_id' => $owner->id,
+            'employee_id' => 'EMP-SHIFT1',
+            'name' => 'Custom Shift Staff',
+            'role' => 'Artisan',
+            'salary' => 20000,
+            'join_date' => now(),
+            'status' => 'Active',
+        ]);
+        $staff = User::factory()->staff($owner)->create([
+            'employee_id' => $employee->id,
+            'email' => 'staff@example.test',
+        ]);
+        $settings = [
+            'employee_id' => $employee->employee_id,
+            'name' => $employee->name,
+            'role' => $employee->role,
+            'salary' => $employee->salary,
+            'create_login_account' => true,
+            'email' => $staff->email,
+            'staff_role_preset_key' => 'hr',
+            'schedule_type' => 'custom',
+            'shift_schedule_mode' => 'per_day',
+            'working_days' => ['mon'],
+            'shift_start_time' => '08:00',
+            'shift_end_time' => '17:00',
+            'daily_shifts' => ['mon' => ['is_work' => true, 'start' => '13:00', 'end' => '21:00']],
+            'earliest_clock_in_minutes' => 15,
+            'enforce_strict_shift_window' => null,
+        ];
+        $this->actingAs($owner)->patch(route('hr.update', $employee->id), $settings)
+            ->assertSessionHasNoErrors()->assertSessionHas('success');
+        $this->assertNull($employee->fresh()->enforce_strict_shift_window);
+        $this->assertSame('EMP-SHIFT1', $employee->fresh()->employee_id);
+        $this->assertSame('21:00', $employee->fresh()->daily_shifts['mon']['end']);
+
+        // 13:05 in Manila, still morning in UTC.
+        $this->travelTo(Carbon::parse('2026-08-24 05:05:00', 'UTC'), function () use ($staff) {
+            $session = app(StaffAttendanceService::class)->ensureClockedIn($staff->fresh());
+
+            $this->assertFalse($session->is_late);
+            $this->assertFalse($session->is_flagged);
+            $this->assertSame('05:05', $session->fresh()->clock_in_at->format('H:i'));
+        });
+
+        $this->patch(route('hr.update', $employee->id), [...$settings, 'email' => 'new@example.test'])
+            ->assertSessionHasErrors('email');
+    }
+
     public function test_staff_clock_in_evaluates_against_custom_shift_hours(): void
     {
         $owner = $this->createOwnerWithHrAccess();
@@ -126,7 +180,7 @@ class FlexibleStaffShiftScheduleTest extends TestCase
         $attendanceService = new StaffAttendanceService();
 
         // 1. Clock in at 13:10 (within 15-min grace period) -> Not late
-        Carbon::setTestNow(Carbon::parse('2026-08-24 13:10:00', config('app.timezone')));
+        Carbon::setTestNow(Carbon::parse('2026-08-24 13:10:00', config('app.workshop_timezone'))->utc());
         $session1 = $attendanceService->ensureClockedIn($staff);
 
         $this->assertNotNull($session1);
@@ -137,7 +191,7 @@ class FlexibleStaffShiftScheduleTest extends TestCase
         $attendanceService->closeOpenSession($staff, StaffAttendanceService::MODE_CLOCKED_OUT);
 
         // 2. Next day clock in at 13:30 (30 mins after shift start, grace period is 15 mins) -> Late by 30 mins
-        Carbon::setTestNow(Carbon::parse('2026-08-25 13:30:00', config('app.timezone')));
+        Carbon::setTestNow(Carbon::parse('2026-08-25 13:30:00', config('app.workshop_timezone'))->utc());
         $session2 = $attendanceService->ensureClockedIn($staff);
 
         $this->assertNotNull($session2);
@@ -285,7 +339,7 @@ class FlexibleStaffShiftScheduleTest extends TestCase
         $attendanceService = app(StaffAttendanceService::class);
 
         // Clock in from 10km away (14.6500, 121.0500) during normal morning shift on Monday
-        Carbon::setTestNow(Carbon::parse('2026-08-24 08:05:00', config('app.timezone')));
+        Carbon::setTestNow(Carbon::parse('2026-08-24 08:05:00', config('app.workshop_timezone'))->utc());
 
         $session = $attendanceService->ensureClockedIn($staff, [
             'latitude' => 14.6500,

@@ -224,13 +224,19 @@ class HRStaffProvisioner
         ];
 
         if ($shouldManageLoginSettings) {
+            $gmailForNewAddress = function (string $attribute, string $value, \Closure $fail) use ($linkedLogin): void {
+                if ($value !== $linkedLogin?->email && !preg_match('/^[A-Z0-9._%+-]+@gmail\.com$/i', $value)) {
+                    $fail('Staff login accounts must use a Gmail address.');
+                }
+            };
+
             $rules = array_merge($rules, [
                 'email' => [
                     'required',
                     'string',
                     'email',
                     'max:255',
-                    'regex:/^[A-Z0-9._%+-]+@gmail\.com$/i',
+                    $gmailForNewAddress,
                     $linkedLogin
                         ? \Illuminate\Validation\Rule::unique('users', 'email')->ignore($linkedLogin->id)
                         : \Illuminate\Validation\Rule::unique('users', 'email'),

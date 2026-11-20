@@ -86,7 +86,7 @@ class DailyShiftAttendanceTest extends TestCase
 
         $staff = User::factory()->staff($owner)->create([
             'name' => $employee->name,
-            'email_verified_at' => now(config('app.timezone')),
+            'email_verified_at' => now(config('app.workshop_timezone')),
             'must_change_password' => false,
             'employee_id' => $employee->id,
             'staff_role_preset_key' => 'custom',
@@ -94,7 +94,7 @@ class DailyShiftAttendanceTest extends TestCase
         ]);
 
         // Saturday August 29, 2026 at 08:05 AM (on time)
-        Carbon::setTestNow(Carbon::parse('2026-08-29 08:05:00', config('app.timezone')));
+        Carbon::setTestNow(Carbon::parse('2026-08-29 08:05:00', config('app.workshop_timezone'))->utc());
 
         $service = app(StaffAttendanceService::class);
         $session = $service->ensureClockedIn($staff, [
@@ -105,7 +105,7 @@ class DailyShiftAttendanceTest extends TestCase
         $this->assertSame(0, $session->late_minutes);
 
         // Staff clocks out at 12:00 PM (end of half-day shift) -> no undertime
-        Carbon::setTestNow(Carbon::parse('2026-08-29 12:00:00', config('app.timezone')));
+        Carbon::setTestNow(Carbon::parse('2026-08-29 12:00:00', config('app.workshop_timezone'))->utc());
         $closedSession = $service->closeOpenSession($staff, StaffAttendanceService::MODE_CLOCKED_OUT);
 
         $this->assertFalse($closedSession->is_early_departure);

@@ -11,7 +11,7 @@ Welcome to the LikhangKamay Second Brain vault. This documentation map is design
 *   **[[integrations-webhooks|External Integrations & Webhooks]]** covers PayMongo checkout recovery and Lalamove v3 registration, event ordering, and delivery retries.
 *   **[[ui-design-tokens|UI/UX & Design Tokens]]**: Artisan theme standards, color palettes, spacing, and guidelines to avoid automated design elements.
 *   **[[erp-procurement|ERP: Procurement & Inventory]]**: Stock restocks, raw supplies, recipes, and maker-checker rules.
-*   **[[erp-hr-attendance|ERP: HR & Attendance]]**: Shifts, clock-in states, idle timeouts, and payroll calculations.
+*   **[[erp-hr-attendance|ERP: HR & Attendance]]** covers workshop and per-employee schedules, Philippine-time clock-in, idle timeouts, and payroll calculations.
 *   **[[crm-messaging|CRM: Messaging & Templates]]**: Customer chat templates, team channels, typing indicators, and threaded replies.
 *   **[[email-studio|Mail Studio & Audience Broadcast]]**: Dynamic system email customization, audience targeting, variable hydration tags, and Resend driver integration.
 *   **[[subscriptions-sponsorships|Subscriptions & Sponsorships]]**: Elite/Standard tier limits, PayMongo upgrades, and product retention rules.

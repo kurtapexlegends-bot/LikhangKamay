@@ -1,15 +1,17 @@
 import React, { useMemo } from 'react';
 import { 
     X, Calendar, CalendarDays, Sliders, Check, 
-    Coins, Calculator, CheckCircle2, Clock, SunMedium, 
-    Coffee, TrendingUp, AlertTriangle, Info 
+    Coins, Calculator, CheckCircle2,
+    TrendingUp, AlertTriangle, Info
 } from 'lucide-react';
 import { useForm } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
+import FormErrorSummary from '@/Components/Common/FormErrorSummary';
 import { useToast } from '@/Components/ToastContext';
-import { modalCloseButtonClass } from '@/utils/hrHelpers';
+import { getWorkshopPayrollFormData, modalCloseButtonClass } from '@/utils/hrHelpers';
+import ShiftHoursCard from '@/Components/Seller/Settings/Tabs/ShiftHoursCard';
 
 function ScheduleOptionCard({ active, onClick, icon: Icon, title, daysBadge, simpleDesc }) {
     return (
@@ -59,48 +61,29 @@ export default function HRSettingsModal({
 }) {
     const { addToast } = useToast();
 
-    const { data, setData, post, processing, errors, clearErrors } = useForm({
-        overtime_rate: sellerSettings.overtime_rate || 50.00,
-        overtime_multiplier: sellerSettings.overtime_multiplier || 1.25,
-        payroll_factor_method: sellerSettings.payroll_factor_method || 'custom',
-        rest_day_ot_multiplier: sellerSettings.rest_day_ot_multiplier || 1.69,
-        holiday_ot_multiplier: sellerSettings.holiday_ot_multiplier || 2.60,
-        payroll_working_days: sellerSettings.payroll_working_days || 22,
-        standard_workday_hours: sellerSettings.standard_workday_hours || 8.0,
-        shift_start_time: sellerSettings.shift_start_time || '08:00',
-        shift_end_time: sellerSettings.shift_end_time || '17:00',
-        grace_period_minutes: sellerSettings.grace_period_minutes ?? 15,
-        break_window_start: sellerSettings.break_window_start || '11:30',
-        break_window_end: sellerSettings.break_window_end || '13:30',
-        break_allowance_minutes: sellerSettings.break_allowance_minutes ?? 60,
-    });
+    const { data, setData, post, processing, errors, clearErrors } = useForm(getWorkshopPayrollFormData(sellerSettings));
+    const loadedForm = React.useRef(false);
 
     React.useEffect(() => {
-        if (isOpen) {
-            setData({
-                overtime_rate: sellerSettings.overtime_rate || 50.00,
-                overtime_multiplier: sellerSettings.overtime_multiplier || 1.25,
-                payroll_factor_method: sellerSettings.payroll_factor_method || 'custom',
-                rest_day_ot_multiplier: sellerSettings.rest_day_ot_multiplier || 1.69,
-                holiday_ot_multiplier: sellerSettings.holiday_ot_multiplier || 2.60,
-                payroll_working_days: sellerSettings.payroll_working_days || 22,
-                standard_workday_hours: sellerSettings.standard_workday_hours || 8.0,
-                shift_start_time: sellerSettings.shift_start_time || '08:00',
-                shift_end_time: sellerSettings.shift_end_time || '17:00',
-                grace_period_minutes: sellerSettings.grace_period_minutes ?? 15,
-                break_window_start: sellerSettings.break_window_start || '11:30',
-                break_window_end: sellerSettings.break_window_end || '13:30',
-                break_allowance_minutes: sellerSettings.break_allowance_minutes ?? 60,
-            });
+        if (!isOpen) {
+            loadedForm.current = false;
+        } else if (!loadedForm.current) {
+            loadedForm.current = true;
+            setData(getWorkshopPayrollFormData(sellerSettings));
+            clearErrors();
         }
-    }, [isOpen, sellerSettings]);
+    }, [isOpen, sellerSettings, setData, clearErrors]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!canEditHrRecords) return;
         post(route('hr.settings'), {
             preserveScroll: true,
-            onSuccess: () => {
+            onSuccess: (page) => {
+                if (page.props.flash?.error) {
+                    addToast(page.props.flash.error, 'error');
+                    return;
+                }
                 onClose();
                 addToast('Workshop & Payroll settings saved.', 'success');
             },
@@ -307,144 +290,14 @@ export default function HRSettingsModal({
                         </div>
                     </div>
 
-                    {/* Section 2: Shift Schedule */}
-                    <div className="border-t border-stone-150 pt-5 space-y-4">
-                        <div>
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">
-                                Workshop Shift Hours &amp; Lunch Break
-                            </label>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-3">
-                                <div className="flex items-center gap-1.5">
-                                    <SunMedium size={15} className="text-amber-700" />
-                                    <span className="text-xs font-bold text-stone-900">Shift Working Hours</span>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2.5">
-                                    <div>
-                                        <InputLabel value="Work Starts At" />
-                                        <input 
-                                            type="time" 
-                                            className={`w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] mt-1 ${
-                                                errors.shift_start_time ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
-                                            }`}
-                                            value={data.shift_start_time || '08:00'} 
-                                            onChange={e => {
-                                                setData('shift_start_time', e.target.value);
-                                                if (errors.shift_start_time) clearErrors('shift_start_time');
-                                            }} 
-                                            required 
-                                        />
-                                        {errors.shift_start_time && <InputError message={errors.shift_start_time} className="mt-1" />}
-                                    </div>
-                                    <div>
-                                        <InputLabel value="Work Ends At" />
-                                        <input 
-                                            type="time" 
-                                            className={`w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] mt-1 ${
-                                                errors.shift_end_time ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
-                                            }`}
-                                            value={data.shift_end_time || '17:00'} 
-                                            onChange={e => {
-                                                setData('shift_end_time', e.target.value);
-                                                if (errors.shift_end_time) clearErrors('shift_end_time');
-                                            }} 
-                                            required 
-                                        />
-                                        {errors.shift_end_time && <InputError message={errors.shift_end_time} className="mt-1" />}
-                                    </div>
-                                </div>
-                                <div>
-                                    <InputLabel value="Late Grace Period" />
-                                    <div className="mt-1 relative rounded-xl shadow-2xs">
-                                        <input 
-                                            type="number" 
-                                            className={`w-full rounded-xl border pr-16 text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] ${
-                                                errors.grace_period_minutes ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
-                                            }`}
-                                            value={data.grace_period_minutes ?? 15} 
-                                            onChange={e => {
-                                                setData('grace_period_minutes', e.target.value);
-                                                if (errors.grace_period_minutes) clearErrors('grace_period_minutes');
-                                            }} 
-                                            min="0" 
-                                            max="120"
-                                            required 
-                                        />
-                                        <span className="absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-stone-400 pointer-events-none">
-                                            minutes
-                                        </span>
-                                    </div>
-                                    {errors.grace_period_minutes && <InputError message={errors.grace_period_minutes} className="mt-1" />}
-                                    <span className="text-[10px] text-stone-500 mt-1 block">Arrivals within 15 mins are on-time</span>
-                                </div>
-                            </div>
-
-                            <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-3">
-                                <div className="flex items-center gap-1.5">
-                                    <Coffee size={15} className="text-amber-800" />
-                                    <span className="text-xs font-bold text-stone-900">Lunch / Meal Break</span>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2.5">
-                                    <div>
-                                        <InputLabel value="Lunch Starts At" />
-                                        <input 
-                                            type="time" 
-                                            className={`w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] mt-1 ${
-                                                errors.break_window_start ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
-                                            }`}
-                                            value={data.break_window_start || '11:30'} 
-                                            onChange={e => {
-                                                setData('break_window_start', e.target.value);
-                                                if (errors.break_window_start) clearErrors('break_window_start');
-                                            }} 
-                                        />
-                                        {errors.break_window_start && <InputError message={errors.break_window_start} className="mt-1" />}
-                                    </div>
-                                    <div>
-                                        <InputLabel value="Lunch Ends At" />
-                                        <input 
-                                            type="time" 
-                                            className={`w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] mt-1 ${
-                                                errors.break_window_end ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
-                                            }`}
-                                            value={data.break_window_end || '13:30'} 
-                                            onChange={e => {
-                                                setData('break_window_end', e.target.value);
-                                                if (errors.break_window_end) clearErrors('break_window_end');
-                                            }} 
-                                        />
-                                        {errors.break_window_end && <InputError message={errors.break_window_end} className="mt-1" />}
-                                    </div>
-                                </div>
-                                <div>
-                                    <InputLabel value="Max Break Time" />
-                                    <div className="mt-1 relative rounded-xl shadow-2xs">
-                                        <input 
-                                            type="number" 
-                                            className={`w-full rounded-xl border pr-16 text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[42px] ${
-                                                errors.break_allowance_minutes ? 'border-rose-300 bg-rose-50/50 focus:border-rose-500' : 'border-stone-300 focus:border-clay-500'
-                                            }`}
-                                            value={data.break_allowance_minutes ?? 60} 
-                                            onChange={e => {
-                                                setData('break_allowance_minutes', e.target.value);
-                                                if (errors.break_allowance_minutes) clearErrors('break_allowance_minutes');
-                                            }} 
-                                            min="0" 
-                                            max="180"
-                                            required 
-                                        />
-                                        <span className="absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-stone-400 pointer-events-none">
-                                            minutes
-                                        </span>
-                                    </div>
-                                    {errors.break_allowance_minutes && <InputError message={errors.break_allowance_minutes} className="mt-1" />}
-                                    <span className="text-[10px] text-stone-500 mt-1 block">Standard meal break is 60 mins (1 hr)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <FormErrorSummary errors={errors} />
+                    <ShiftHoursCard
+                        data={data}
+                        setData={setData}
+                        errors={errors}
+                        clearErrors={clearErrors}
+                        canEdit={canEditHrRecords}
+                    />
 
                     {/* Section 3: Overtime Multipliers */}
                     <div className="border-t border-stone-150 pt-5 space-y-3">

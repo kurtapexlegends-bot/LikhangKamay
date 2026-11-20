@@ -84,7 +84,7 @@ export default function PerDayShiftSection({
                             </h4>
                             <p className="text-[11px] text-stone-500">
                                 {isWork
-                                    ? `${dayConfig.start || '08:00'} – ${dayConfig.end || '17:00'}${hasBreak ? ` • ${dayConfig.break_minutes ?? 60}m meal break` : ' • No meal break'}`
+                                    ? `${dayConfig.start ?? '08:00'} – ${dayConfig.end ?? '17:00'}${hasBreak ? ` • ${dayConfig.break_minutes ?? 60}m meal break` : ' • No meal break'}`
                                     : 'Rest Day (Workshop Closed)'}
                             </p>
                         </div>
@@ -148,7 +148,7 @@ export default function PerDayShiftSection({
                                     <input
                                         type="time"
                                         className="w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[40px] mt-1 bg-white shadow-2xs border-stone-300 focus:border-clay-500"
-                                        value={dayConfig.start || '08:00'}
+                                        value={dayConfig.start ?? '08:00'}
                                         onChange={(e) => updateDayShift(activeDayKey, 'start', e.target.value)}
                                         disabled={!canEdit}
                                         required
@@ -159,7 +159,7 @@ export default function PerDayShiftSection({
                                     <input
                                         type="time"
                                         className="w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[40px] mt-1 bg-white shadow-2xs border-stone-300 focus:border-clay-500"
-                                        value={dayConfig.end || '17:00'}
+                                        value={dayConfig.end ?? '17:00'}
                                         onChange={(e) => updateDayShift(activeDayKey, 'end', e.target.value)}
                                         disabled={!canEdit}
                                         required
@@ -197,7 +197,7 @@ export default function PerDayShiftSection({
                                             <input
                                                 type="time"
                                                 className="w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[40px] mt-1 bg-white shadow-2xs border-stone-300 focus:border-clay-500"
-                                                value={dayConfig.break_start || '11:30'}
+                                                value={dayConfig.break_start ?? '11:30'}
                                                 onChange={(e) => updateDayShift(activeDayKey, 'break_start', e.target.value)}
                                                 disabled={!canEdit}
                                             />
@@ -207,7 +207,7 @@ export default function PerDayShiftSection({
                                             <input
                                                 type="time"
                                                 className="w-full rounded-xl border text-xs font-bold text-stone-850 focus:ring-clay-500 min-h-[40px] mt-1 bg-white shadow-2xs border-stone-300 focus:border-clay-500"
-                                                value={dayConfig.break_end || '13:30'}
+                                                value={dayConfig.break_end ?? '13:30'}
                                                 onChange={(e) => updateDayShift(activeDayKey, 'break_end', e.target.value)}
                                                 disabled={!canEdit}
                                             />

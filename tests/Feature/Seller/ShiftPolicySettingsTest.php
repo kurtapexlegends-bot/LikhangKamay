@@ -62,4 +62,34 @@ class ShiftPolicySettingsTest extends TestCase
 
         $response->assertSessionHasErrors(['shift_start_time', 'grace_period_minutes', 'break_allowance_minutes']);
     }
+
+    public function test_editing_only_workshop_hours_keeps_existing_attendance_settings(): void
+    {
+        $dailyShifts = ['mon' => ['is_work' => true, 'start' => '10:00', 'end' => '19:00']];
+        $seller = User::factory()->artisanApproved()->create([
+            'premium_tier' => 'premium',
+            'modules_enabled' => ['hr' => true],
+            'shift_schedule_mode' => 'per_day',
+            'daily_shifts' => $dailyShifts,
+            'earliest_clock_in_minutes' => 45,
+            'enforce_strict_shift_window' => false,
+            'enable_statutory_deductions' => true,
+        ]);
+
+        $this->actingAs($seller)->post(route('hr.settings'), [
+            'payroll_working_days' => 22,
+            'standard_workday_hours' => 8,
+            'shift_start_time' => '09:00',
+            'shift_end_time' => '18:00',
+        ])->assertSessionHasNoErrors()->assertSessionHas('success');
+
+        $seller->refresh();
+        $this->assertSame('09:00', $seller->shift_start_time);
+        $this->assertSame('18:00', $seller->shift_end_time);
+        $this->assertSame('per_day', $seller->shift_schedule_mode);
+        $this->assertSame($dailyShifts, $seller->daily_shifts);
+        $this->assertSame(45, $seller->earliest_clock_in_minutes);
+        $this->assertFalse($seller->enforce_strict_shift_window);
+        $this->assertTrue($seller->enable_statutory_deductions);
+    }
 }

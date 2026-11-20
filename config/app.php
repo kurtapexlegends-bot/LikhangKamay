@@ -67,6 +67,8 @@ return [
 
     'timezone' => 'UTC',
 
+    'workshop_timezone' => env('WORKSHOP_TIMEZONE', 'Asia/Manila'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration

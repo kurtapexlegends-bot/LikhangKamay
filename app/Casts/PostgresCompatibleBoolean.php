@@ -7,15 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class PostgresCompatibleBoolean implements CastsAttributes
 {
+    public function __construct(private bool $preserveNull = false) {}
+
     /**
      * Cast the given value from the database into a PHP boolean.
      *
      * @param  array<string, mixed>  $attributes
      */
-    public function get(Model $model, string $key, mixed $value, array $attributes): bool
+    public function get(Model $model, string $key, mixed $value, array $attributes): ?bool
     {
         if (is_null($value)) {
-            return false;
+            return $this->preserveNull ? null : false;
         }
 
         return filter_var($value, FILTER_VALIDATE_BOOLEAN);
@@ -29,6 +31,10 @@ class PostgresCompatibleBoolean implements CastsAttributes
      */
     public function set(Model $model, string $key, mixed $value, array $attributes): mixed
     {
+        if ($value === null && $this->preserveNull) {
+            return null;
+        }
+
         if ($value instanceof \Illuminate\Contracts\Database\Query\Expression) {
             $rawVal = method_exists($value, 'getValue')
                 ? $value->getValue($model->getConnection()->getQueryGrammar())

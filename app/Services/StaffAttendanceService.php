@@ -47,6 +47,7 @@ class StaffAttendanceService
         }
 
         $now = $this->now();
+        $workshopNow = $this->workshopTime($now);
         $photoPath = null;
 
         // Process Base64 selfie photo if provided
@@ -143,8 +144,8 @@ class StaffAttendanceService
         $sellerOwner = User::find($staff->getEffectiveSellerId());
         $employee = $staff->employee;
         $shiftPolicy = $employee 
-            ? $employee->getEffectiveShiftPolicy($sellerOwner, $now) 
-            : ($sellerOwner ? $sellerOwner->getEffectiveShiftPolicy($now) : [
+            ? $employee->getEffectiveShiftPolicy($sellerOwner, $workshopNow)
+            : ($sellerOwner ? $sellerOwner->getEffectiveShiftPolicy($workshopNow) : [
                 'shift_start_time' => '08:00',
                 'shift_end_time' => '17:00',
                 'grace_period_minutes' => 15,
@@ -160,17 +161,17 @@ class StaffAttendanceService
         $isOutOfShiftWindow = false;
         $outOfShiftReason = null;
 
-        $isRestDay = $employee ? $employee->isRestDay($now, $sellerOwner) : false;
+        $isRestDay = $employee ? $employee->isRestDay($workshopNow, $sellerOwner) : false;
 
         if (!empty($shiftPolicy['shift_start_time'])) {
             try {
-                $shiftStart = Carbon::parse($now->toDateString() . ' ' . $shiftPolicy['shift_start_time'], config('app.timezone'));
+                $shiftStart = Carbon::parse($workshopNow->toDateString() . ' ' . $shiftPolicy['shift_start_time'], $workshopNow->getTimezone());
                 $earliestBuffer = (int) ($shiftPolicy['earliest_clock_in_minutes'] ?? 30);
                 $earliestAllowed = $shiftStart->copy()->subMinutes($earliestBuffer);
                 $graceThreshold = $shiftStart->copy()->addMinutes((int) ($shiftPolicy['grace_period_minutes'] ?? 15));
 
                 $shiftEnd = !empty($shiftPolicy['shift_end_time'])
-                    ? Carbon::parse($now->toDateString() . ' ' . $shiftPolicy['shift_end_time'], config('app.timezone'))
+                    ? Carbon::parse($workshopNow->toDateString() . ' ' . $shiftPolicy['shift_end_time'], $workshopNow->getTimezone())
                     : $shiftStart->copy()->addHours(9);
                 $latestAllowed = $shiftEnd->copy()->addMinutes(60);
 
@@ -266,7 +267,7 @@ class StaffAttendanceService
             'staff_user_id' => $staff->id,
             'seller_owner_id' => $staff->getEffectiveSellerId(),
             'employee_id' => $staff->employee_id,
-            'attendance_date' => $now->toDateString(),
+            'attendance_date' => $workshopNow->toDateString(),
             'clock_in_at' => $now,
             'last_heartbeat_at' => $now,
             'last_activity_at' => $now,
@@ -436,18 +437,19 @@ class StaffAttendanceService
         if ($mode === self::MODE_CLOCKED_OUT) {
             $staff->loadMissing('employee');
             $sellerOwner = User::find($staff->getEffectiveSellerId());
+            $workshopClockIn = $this->workshopTime($clockIn);
             $shiftPolicy = $staff->employee 
-                ? $staff->employee->getEffectiveShiftPolicy($sellerOwner, $clockIn) 
-                : ($sellerOwner ? $sellerOwner->getEffectiveShiftPolicy($clockIn) : [
+                ? $staff->employee->getEffectiveShiftPolicy($sellerOwner, $workshopClockIn)
+                : ($sellerOwner ? $sellerOwner->getEffectiveShiftPolicy($workshopClockIn) : [
                     'shift_start_time' => '08:00',
                     'shift_end_time' => '17:00',
                 ]);
 
             if (!empty($shiftPolicy['shift_end_time']) && $openSession->clock_in_at) {
                 try {
-                    $shiftDateStr = $clockIn->toDateString();
-                    $shiftStart = Carbon::parse($shiftDateStr . ' ' . ($shiftPolicy['shift_start_time'] ?? '08:00'), config('app.timezone'));
-                    $shiftEnd = Carbon::parse($shiftDateStr . ' ' . $shiftPolicy['shift_end_time'], config('app.timezone'));
+                    $shiftDateStr = $workshopClockIn->toDateString();
+                    $shiftStart = Carbon::parse($shiftDateStr . ' ' . ($shiftPolicy['shift_start_time'] ?? '08:00'), $workshopClockIn->getTimezone());
+                    $shiftEnd = Carbon::parse($shiftDateStr . ' ' . $shiftPolicy['shift_end_time'], $workshopClockIn->getTimezone());
 
                     // Only count as early departure if leaving before shift end during the workday
                     if ($now->gte($shiftStart->copy()->subHours(2)) && $now->lt($shiftEnd)) {
@@ -564,7 +566,7 @@ class StaffAttendanceService
 
                     $minutesSilent = $lastSignOfLife->diffInMinutes($now);
                     $attDate = $session->attendance_date ? Carbon::parse($session->attendance_date) : null;
-                    $isPastDay = $attDate ? ($attDate->toDateString() < $now->toDateString()) : false;
+                    $isPastDay = $attDate ? ($attDate->toDateString() < $this->workshopTime($now)->toDateString()) : false;
 
                     if ($minutesSilent >= $timeoutMinutes || ($isPastDay && $minutesSilent >= 60)) {
                         $closedAt = $lastSignOfLife->copy()->addMinutes(15);
@@ -608,12 +610,12 @@ class StaffAttendanceService
 
             if ($session && $session->attendance_date) {
                 $attDate = Carbon::parse($session->attendance_date);
-                if ($attDate->toDateString() < $this->now()->toDateString()) {
+                if ($attDate->toDateString() < $this->workshopTime()->toDateString()) {
                     $this->autoPauseInactiveSessions();
                     return StaffAttendanceSession::query()
                         ->where("staff_user_id", $staff->id)
                         ->whereNull('clock_out_at')
-                        ->whereDate('attendance_date', $this->now()->toDateString())
+                        ->whereDate('attendance_date', $this->workshopTime()->toDateString())
                         ->latest("clock_in_at")
                         ->first();
                 }
@@ -643,7 +645,7 @@ class StaffAttendanceService
         $this->autoPauseInactiveSessions();
 
         $period = $this->resolveMonth($month);
-        $today = $this->now()->toDateString();
+        $today = $this->workshopTime()->toDateString();
         $workingDays = (int) ($seller->payroll_working_days ?? 22);
         $employeeIds = $employees->pluck("id")->filter()->values();
 
@@ -741,8 +743,8 @@ class StaffAttendanceService
                 'total_break_minutes' => (int) $daySessions->sum('total_break_minutes'),
                 'is_extended_break' => (bool) $daySessions->contains('is_extended_break', true),
                 'photo_url' => $daySessions->firstWhere('clock_in_photo_path', '!=', null)?->photo_url,
-                'clock_in_time' => $firstSession?->clock_in_at?->format('h:i A'),
-                'clock_out_time' => $lastSession?->clock_out_at?->format('h:i A'),
+                'clock_in_time' => $firstSession?->clock_in_at?->copy()->setTimezone(config('app.workshop_timezone'))->format('h:i A'),
+                'clock_out_time' => $lastSession?->clock_out_at?->copy()->setTimezone(config('app.workshop_timezone'))->format('h:i A'),
                 'sessions_count' => $daySessions->count(),
             ];
 
@@ -783,7 +785,7 @@ class StaffAttendanceService
             'open_session' => $latestSession && !$latestSession->clock_out_at,
             'month_label' => $period->format('F Y'),
             'calendar_days' => $calendarDays,
-            'effective_shift_policy' => $employee->getEffectiveShiftPolicy($seller, $this->now()),
+            'effective_shift_policy' => $employee->getEffectiveShiftPolicy($seller, $this->workshopTime()),
             'schedule_type' => $employee->schedule_type ?: 'default',
             'working_days' => $employee->getEffectiveWorkingDays($seller),
         ];
@@ -830,8 +832,8 @@ class StaffAttendanceService
             $sellerOwner = User::find($staff->getEffectiveSellerId());
             $employee = $staff->employee;
             $shiftPolicy = $employee 
-                ? $employee->getEffectiveShiftPolicy($sellerOwner, $this->now()) 
-                : ($sellerOwner ? $sellerOwner->getEffectiveShiftPolicy($this->now()) : [
+                ? $employee->getEffectiveShiftPolicy($sellerOwner, $this->workshopTime())
+                : ($sellerOwner ? $sellerOwner->getEffectiveShiftPolicy($this->workshopTime()) : [
                     'schedule_type' => 'default',
                     'is_custom' => false,
                     'working_days' => ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'],
@@ -846,8 +848,8 @@ class StaffAttendanceService
                     'standard_workday_hours' => 8.0,
                 ]);
 
-            $shiftPolicy['is_today_scheduled_workday'] = $employee ? $employee->isScheduledWorkingDay($this->now(), $sellerOwner) : true;
-            $shiftPolicy['is_today_rest_day'] = $employee ? $employee->isRestDay($this->now(), $sellerOwner) : false;
+            $shiftPolicy['is_today_scheduled_workday'] = $employee ? $employee->isScheduledWorkingDay($this->workshopTime(), $sellerOwner) : true;
+            $shiftPolicy['is_today_rest_day'] = $employee ? $employee->isRestDay($this->workshopTime(), $sellerOwner) : false;
 
             return [
                 'has_open_session' => (bool) $openSession,
@@ -974,7 +976,7 @@ class StaffAttendanceService
     {
         return StaffAttendanceSession::query()
             ->where("staff_user_id", $staff->id)
-            ->whereDate('attendance_date', $this->now()->toDateString())
+            ->whereDate('attendance_date', $this->workshopTime()->toDateString())
             ->orderBy("clock_in_at")
             ->get();
     }
@@ -988,7 +990,7 @@ class StaffAttendanceService
 
             $now = $this->now();
             $attDate = $session->attendance_date ? Carbon::parse($session->attendance_date) : null;
-            $isPastDay = $attDate ? ($attDate->toDateString() < $now->toDateString()) : false;
+            $isPastDay = $attDate ? ($attDate->toDateString() < $this->workshopTime($now)->toDateString()) : false;
 
             $clockIn = $session->clock_in_at ? Carbon::parse($session->clock_in_at) : null;
             if (!$clockIn) {
@@ -1013,7 +1015,7 @@ class StaffAttendanceService
 
     protected function resolveMonth(?CarbonInterface $month = null): CarbonInterface
     {
-        return ($month ? Carbon::parse($month) : $this->now())->startOfMonth();
+        return ($month ? Carbon::parse($month, config('app.workshop_timezone')) : $this->workshopTime())->startOfMonth();
     }
 
     protected function defaultCloseReasonFor(string $mode): string
@@ -1028,6 +1030,11 @@ class StaffAttendanceService
     protected function now(): CarbonInterface
     {
         return now(config('app.timezone'));
+    }
+
+    private function workshopTime(?CarbonInterface $time = null): CarbonInterface
+    {
+        return ($time ?? $this->now())->copy()->setTimezone(config('app.workshop_timezone'));
     }
 
     protected function formatWorkedHoursLabel(int $workedMinutes): string
@@ -1052,7 +1059,7 @@ class StaffAttendanceService
 
     public function attendanceMonthLabel(): string
     {
-        return now(config('app.timezone'))->format('F Y');
+        return $this->workshopTime()->format('F Y');
     }
 
     public function transformEmployeeRecords(\Illuminate\Support\Collection $employeeRecords, array $attendanceSummaries): \Illuminate\Support\Collection
@@ -1098,6 +1105,10 @@ class StaffAttendanceService
                 'daily_shifts' => $employee->daily_shifts,
                 'standard_workday_hours' => $employee->standard_workday_hours,
                 'grace_period_minutes' => $employee->grace_period_minutes,
+                'earliest_clock_in_minutes' => $employee->earliest_clock_in_minutes,
+                'enforce_strict_shift_window' => $employee->enforce_strict_shift_window,
+                'break_window_start' => $employee->break_window_start,
+                'break_window_end' => $employee->break_window_end,
                 'break_allowance_minutes' => $employee->break_allowance_minutes,
                 'vehicle_type' => $employee->vehicle_type ?: 'Motorcycle',
                 'vehicle_plate_number' => $employee->vehicle_plate_number,

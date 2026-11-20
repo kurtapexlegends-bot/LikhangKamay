@@ -27,6 +27,16 @@ This document details the employee payroll formulas, clock-in/clock-out lifecycl
 
 ## 2. Staff Attendance Lifecycle
 
+### Workshop hours and employee overrides
+
+[Workshop payroll settings](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/Settings/Tabs/PayrollRulesTab.jsx) and the [HR settings modal](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/HRSettingsModal.jsx) use the same controls for uniform and per-day shifts. [HRController](file:///c:/laragon/www/LikhangKamay/app/Http/Controllers/Seller/HRController.php) applies only the submitted settings so changes to workshop hours preserve other payroll and attendance rules.
+
+[Edit Staff](file:///c:/laragon/www/LikhangKamay/resources/js/Components/Seller/HR/EmployeeFormModal.jsx) reloads existing employee hours and overrides. Staff IDs can contain letters and hyphens, such as `SHIFT-1`. When an employee has no strict clock-in override, they inherit the workshop policy.
+
+[StaffAttendanceService](file:///c:/laragon/www/LikhangKamay/app/Services/StaffAttendanceService.php) evaluates shift windows and determines the attendance date in the [configured workshop timezone](file:///c:/laragon/www/LikhangKamay/config/app.php), which defaults to `Asia/Manila`. Session timestamps are stored in UTC. [In-house dispatch](file:///c:/laragon/www/LikhangKamay/app/Services/Logistics/InHouseDispatchService.php) uses the same workshop date for driver attendance.
+
+### Session states
+
 Staff sessions are managed by [StaffAttendanceService.php](file:///c:/laragon/www/LikhangKamay/app/Services/StaffAttendanceService.php):
 
 ```mermaid

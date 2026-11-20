@@ -115,11 +115,17 @@ export default function EmployeeFormModal({
         assigned_location_id: null,
         allow_remote_clock_in: false,
         schedule_type: 'default',
+        shift_schedule_mode: 'uniform',
         working_days: defaultWorkingDays,
-        shift_start_time: '',
-        shift_end_time: '',
+        shift_start_time: null,
+        shift_end_time: null,
+        daily_shifts: null,
         standard_workday_hours: '',
         grace_period_minutes: '',
+        earliest_clock_in_minutes: null,
+        enforce_strict_shift_window: null,
+        break_window_start: null,
+        break_window_end: null,
         break_allowance_minutes: '',
         vehicle_type: 'Motorcycle',
         vehicle_plate_number: '',
@@ -134,13 +140,18 @@ export default function EmployeeFormModal({
     });
 
     const [manualEmployeeRole, setManualEmployeeRole] = useState(data.role || DEFAULT_EMPLOYEE_ROLE);
+    const loadedForm = React.useRef(null);
 
     React.useEffect(() => {
         if (!isOpen) {
+            loadedForm.current = null;
             clearStagedDocuments();
             return;
         }
 
+        const formKey = mode === 'add' ? 'add' : employee?.id;
+        if (!formKey || loadedForm.current === formKey) return;
+        loadedForm.current = formKey;
         setShowPassword(false);
 
         if (mode === 'add') {
@@ -155,11 +166,17 @@ export default function EmployeeFormModal({
                     assigned_location_id: null,
                     allow_remote_clock_in: false,
                     schedule_type: 'default',
+                    shift_schedule_mode: 'uniform',
                     working_days: defaultWorkingDays,
-                    shift_start_time: '',
-                    shift_end_time: '',
+                    shift_start_time: null,
+                    shift_end_time: null,
+                    daily_shifts: null,
                     standard_workday_hours: '',
                     grace_period_minutes: '',
+                    earliest_clock_in_minutes: null,
+                    enforce_strict_shift_window: null,
+                    break_window_start: null,
+                    break_window_end: null,
                     break_allowance_minutes: '',
                     vehicle_type: 'Motorcycle',
                     vehicle_plate_number: '',
@@ -195,11 +212,17 @@ export default function EmployeeFormModal({
                     assigned_location_id: employee.assigned_location_id || null,
                     allow_remote_clock_in: !!employee.allow_remote_clock_in,
                     schedule_type: employee.schedule_type || 'default',
+                    shift_schedule_mode: employee.shift_schedule_mode || 'uniform',
                     working_days: empWorkingDays,
-                    shift_start_time: employee.shift_start_time || '',
-                    shift_end_time: employee.shift_end_time || '',
+                    shift_start_time: employee.shift_start_time ?? null,
+                    shift_end_time: employee.shift_end_time ?? null,
+                    daily_shifts: employee.daily_shifts ?? null,
                     standard_workday_hours: employee.standard_workday_hours ?? '',
                     grace_period_minutes: employee.grace_period_minutes ?? '',
+                    earliest_clock_in_minutes: employee.earliest_clock_in_minutes ?? null,
+                    enforce_strict_shift_window: employee.enforce_strict_shift_window ?? null,
+                    break_window_start: employee.break_window_start ?? null,
+                    break_window_end: employee.break_window_end ?? null,
                     break_allowance_minutes: employee.break_allowance_minutes ?? '',
                     vehicle_type: employee.vehicle_type || 'Motorcycle',
                     vehicle_plate_number: employee.vehicle_plate_number || '',
@@ -258,9 +281,9 @@ export default function EmployeeFormModal({
         shouldValidateEmail
     );
 
-    const isEmailGmail = !data.email || data.email.toLowerCase().endsWith('@gmail.com');
     const isEmployeeIdSaved = mode === 'edit' && employee && data.employee_id === employee.employee_id;
     const isEmailSaved = mode === 'edit' && employee?.login_account && data.email === employee.login_account.email;
+    const isEmailGmail = isEmailSaved || !data.email || data.email.toLowerCase().endsWith('@gmail.com');
 
     React.useEffect(() => {
         if (!isOpen) return;
@@ -268,7 +291,7 @@ export default function EmployeeFormModal({
         if (!emailInput) return;
 
         if (data.email) {
-            if (!data.email.toLowerCase().endsWith('@gmail.com')) {
+            if (!isEmailGmail) {
                 emailInput.setCustomValidity('Email address must end with @gmail.com');
             } else if (emailValidation && emailValidation.isValid === false) {
                 emailInput.setCustomValidity(emailValidation.message || 'This email is already registered.');
@@ -278,7 +301,7 @@ export default function EmployeeFormModal({
         } else {
             emailInput.setCustomValidity('');
         }
-    }, [data.email, emailValidation?.isValid, emailValidation?.message, isOpen]);
+    }, [data.email, emailValidation?.isValid, emailValidation?.message, isEmailGmail, isOpen, mode]);
 
     const getPresetRoleLabel = (presetKey) => {
         return rolePresets.find(p => p.key === presetKey)?.label || 'Custom';

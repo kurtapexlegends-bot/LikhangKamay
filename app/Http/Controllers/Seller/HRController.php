@@ -316,7 +316,7 @@ class HRController extends Controller
     {
         abort_unless(HRWorkflowHelper::canEditHrRecords($this->sellerActor()), 403, 'Read-only people access can only view records.');
 
-        $request->validate([
+        $settings = $request->validate([
             'overtime_rate' => 'nullable|numeric|min:0',
             'overtime_multiplier' => 'nullable|numeric|min:0.01|max:10',
             'payroll_factor_method' => ['nullable', 'string', Rule::in(['custom', '261', '313'])],
@@ -344,26 +344,30 @@ class HRController extends Controller
             'enable_statutory_deductions' => 'nullable|boolean',
         ]);
 
-        User::where('id', $this->sellerOwnerId())->update([
-            'overtime_rate' => $request->overtime_rate ?? 50.00,
-            'overtime_multiplier' => $request->overtime_multiplier ?? 1.25,
-            'payroll_factor_method' => $request->payroll_factor_method ?? 'custom',
-            'enable_statutory_deductions' => $request->boolean('enable_statutory_deductions'),
-            'rest_day_ot_multiplier' => $request->rest_day_ot_multiplier ?? 1.69,
-            'holiday_ot_multiplier' => $request->holiday_ot_multiplier ?? 2.60,
-            'payroll_working_days' => $request->payroll_working_days,
-            'standard_workday_hours' => $request->standard_workday_hours ?? 8.00,
-            'shift_start_time' => $request->shift_start_time ?? '08:00',
-            'shift_end_time' => $request->shift_end_time ?? '17:00',
-            'shift_schedule_mode' => $request->shift_schedule_mode ?? 'uniform',
-            'daily_shifts' => $request->has('daily_shifts') ? $request->daily_shifts : null,
-            'grace_period_minutes' => $request->grace_period_minutes ?? 15,
-            'earliest_clock_in_minutes' => $request->earliest_clock_in_minutes ?? 30,
-            'enforce_strict_shift_window' => $request->boolean('enforce_strict_shift_window', true),
-            'break_window_start' => $request->break_window_start ?? '11:30',
-            'break_window_end' => $request->break_window_end ?? '13:30',
-            'break_allowance_minutes' => $request->break_allowance_minutes ?? 60,
-        ]);
+        // Only apply fields this form submitted, and save through the model's casts.
+        $defaults = [
+            'overtime_rate' => 50.00,
+            'overtime_multiplier' => 1.25,
+            'payroll_factor_method' => 'custom',
+            'enable_statutory_deductions' => false,
+            'rest_day_ot_multiplier' => 1.69,
+            'holiday_ot_multiplier' => 2.60,
+            'shift_start_time' => '08:00',
+            'shift_end_time' => '17:00',
+            'shift_schedule_mode' => 'uniform',
+            'grace_period_minutes' => 15,
+            'earliest_clock_in_minutes' => 30,
+            'enforce_strict_shift_window' => true,
+            'break_window_start' => '11:30',
+            'break_window_end' => '13:30',
+            'break_allowance_minutes' => 60,
+        ];
+
+        foreach (array_intersect_key($defaults, $settings) as $key => $default) {
+            $settings[$key] ??= $default;
+        }
+
+        $this->sellerOwner()->forceFill($settings)->save();
 
         return redirect()->back()->with('success', 'Employees & Payroll settings updated successfully.');
     }

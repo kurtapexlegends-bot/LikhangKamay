@@ -259,7 +259,7 @@ export default function EmployeeSchedulePolicyCard({
                                     <input
                                         type="time"
                                         className={`${modalFieldClass} h-9.5 text-xs font-medium`}
-                                        value={data.shift_start_time || defaultShiftStart}
+                                        value={data.shift_start_time ?? defaultShiftStart}
                                         onChange={e => setData('shift_start_time', e.target.value)}
                                     />
                                 </div>
@@ -271,7 +271,7 @@ export default function EmployeeSchedulePolicyCard({
                                     <input
                                         type="time"
                                         className={`${modalFieldClass} h-9.5 text-xs font-medium`}
-                                        value={data.shift_end_time || defaultShiftEnd}
+                                        value={data.shift_end_time ?? defaultShiftEnd}
                                         onChange={e => setData('shift_end_time', e.target.value)}
                                     />
                                 </div>
@@ -316,7 +316,7 @@ export default function EmployeeSchedulePolicyCard({
                                         >
                                             <span>{day.label}</span>
                                             <span className={`text-[9px] font-medium ${isSelected ? 'text-clay-100' : isWork ? 'text-emerald-700' : 'text-stone-400'}`}>
-                                                {isWork ? `${dayConfig.start || '08:00'}` : 'Rest'}
+                                                {isWork ? `${dayConfig.start ?? '08:00'}` : 'Rest'}
                                             </span>
                                         </button>
                                     );
@@ -382,7 +382,7 @@ export default function EmployeeSchedulePolicyCard({
                                                         <input
                                                             type="time"
                                                             className={`${modalFieldClass} h-9.5 text-xs font-medium`}
-                                                            value={dayConfig.start || '08:00'}
+                                                            value={dayConfig.start ?? '08:00'}
                                                             onChange={e => updateStaffDayShift(activeStaffDayKey, 'start', e.target.value)}
                                                         />
                                                     </div>
@@ -393,7 +393,7 @@ export default function EmployeeSchedulePolicyCard({
                                                         <input
                                                             type="time"
                                                             className={`${modalFieldClass} h-9.5 text-xs font-medium`}
-                                                            value={dayConfig.end || '17:00'}
+                                                            value={dayConfig.end ?? '17:00'}
                                                             onChange={e => updateStaffDayShift(activeStaffDayKey, 'end', e.target.value)}
                                                         />
                                                     </div>
@@ -420,7 +420,7 @@ export default function EmployeeSchedulePolicyCard({
                                                                 <input
                                                                     type="time"
                                                                     className={`${modalFieldClass} h-8 text-[11px] font-medium`}
-                                                                    value={dayConfig.break_start || '11:30'}
+                                                                    value={dayConfig.break_start ?? '11:30'}
                                                                     onChange={e => updateStaffDayShift(activeStaffDayKey, 'break_start', e.target.value)}
                                                                 />
                                                             </div>
@@ -429,7 +429,7 @@ export default function EmployeeSchedulePolicyCard({
                                                                 <input
                                                                     type="time"
                                                                     className={`${modalFieldClass} h-8 text-[11px] font-medium`}
-                                                                    value={dayConfig.break_end || '13:30'}
+                                                                    value={dayConfig.break_end ?? '13:30'}
                                                                     onChange={e => updateStaffDayShift(activeStaffDayKey, 'break_end', e.target.value)}
                                                                 />
                                                             </div>

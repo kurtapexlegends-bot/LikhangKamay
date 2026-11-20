@@ -65,7 +65,7 @@ class Employee extends Model
         'shift_schedule_mode' => 'string',
         'daily_shifts' => 'array',
         'allow_remote_clock_in' => \App\Casts\PostgresCompatibleBoolean::class,
-        'enforce_strict_shift_window' => \App\Casts\PostgresCompatibleBoolean::class,
+        'enforce_strict_shift_window' => \App\Casts\PostgresCompatibleBoolean::class . ':1',
         'break_allowance_minutes' => 'integer',
         'grace_period_minutes' => 'integer',
         'earliest_clock_in_minutes' => 'integer',

@@ -30,7 +30,7 @@ class UpdateEmployeeAction
         bool $shouldManageLoginSettings,
         bool $wantsLoginAccount,
         ?User $linkedLogin = null,
-        ?int $employeeId = null
+        ?string $employeeId = null
     ): array {
         $supportedModules = $this->entitlementService->getSupportedStaffModules();
         $auditBefore = $linkedLogin ? HRWorkflowHelper::buildStaffAccessSnapshot($linkedLogin) : null;

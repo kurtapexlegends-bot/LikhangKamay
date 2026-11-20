@@ -606,3 +606,26 @@ export const getHrAccessSummary = (canEditHrRecords, canProvisionStaffAccounts, 
     if (canUpdateStaffAccounts) return { tone: 'border-amber-200 bg-amber-50 text-amber-700', label: 'Editable people access' };
     return { tone: 'border-stone-200 bg-stone-50 text-stone-600', label: 'Records only' };
 };
+
+export function getWorkshopPayrollFormData(sellerOwner) {
+    return {
+        overtime_rate: sellerOwner.overtime_rate ?? 50.00,
+        overtime_multiplier: sellerOwner.overtime_multiplier || 1.25,
+        payroll_factor_method: sellerOwner.payroll_factor_method || 'custom',
+        enable_statutory_deductions: sellerOwner.enable_statutory_deductions ?? false,
+        rest_day_ot_multiplier: sellerOwner.rest_day_ot_multiplier || 1.69,
+        holiday_ot_multiplier: sellerOwner.holiday_ot_multiplier || 2.60,
+        payroll_working_days: sellerOwner.payroll_working_days || 22,
+        standard_workday_hours: sellerOwner.standard_workday_hours || 8.0,
+        shift_start_time: sellerOwner.shift_start_time || '08:00',
+        shift_end_time: sellerOwner.shift_end_time || '17:00',
+        shift_schedule_mode: sellerOwner.shift_schedule_mode || 'uniform',
+        daily_shifts: sellerOwner.daily_shifts || null,
+        grace_period_minutes: sellerOwner.grace_period_minutes ?? 15,
+        earliest_clock_in_minutes: sellerOwner.earliest_clock_in_minutes ?? 30,
+        enforce_strict_shift_window: sellerOwner.enforce_strict_shift_window ?? true,
+        break_window_start: sellerOwner.break_window_start || '11:30',
+        break_window_end: sellerOwner.break_window_end || '13:30',
+        break_allowance_minutes: sellerOwner.break_allowance_minutes ?? 60,
+    };
+}

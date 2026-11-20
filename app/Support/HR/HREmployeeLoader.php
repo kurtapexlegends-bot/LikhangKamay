@@ -138,6 +138,8 @@ class HREmployeeLoader
             'shift_schedule_mode' => $seller->shift_schedule_mode ?? 'uniform',
             'daily_shifts' => $seller->daily_shifts,
             'grace_period_minutes' => (int) ($seller->grace_period_minutes ?? 15),
+            'earliest_clock_in_minutes' => (int) ($seller->earliest_clock_in_minutes ?? 30),
+            'enforce_strict_shift_window' => (bool) ($seller->enforce_strict_shift_window ?? true),
             'break_window_start' => $seller->break_window_start ?? '11:30',
             'break_window_end' => $seller->break_window_end ?? '13:30',
             'break_allowance_minutes' => (int) ($seller->break_allowance_minutes ?? 60),

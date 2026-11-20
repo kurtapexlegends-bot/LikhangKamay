@@ -61,7 +61,7 @@ class InHouseDispatchService
             return [];
         }
 
-        $today = Carbon::today();
+        $today = Carbon::today(config('app.workshop_timezone'));
         $employeeIds = $drivers->pluck('id')->all();
         $staffUserIds = $drivers->pluck('loginAccount.id')->filter()->values()->all();
 
